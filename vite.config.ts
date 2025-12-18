@@ -49,7 +49,17 @@ export default defineConfig({
     // https://uni-echarts.xiaohe.ink
     UniEcharts(),
     // https://uni-helper.cn/plugin-uni
-    Uni(),
+    Uni({
+      vueOptions: {
+        template: {
+          transformAssetUrls: {
+            tags: {
+              'wd-img': ['src']
+            }
+          }
+        }
+      }
+    }),
     // https://github.com/uni-ku/bundle-optimizer
     Optimization({
       logger: false,

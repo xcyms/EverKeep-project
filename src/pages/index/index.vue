@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { onMounted, ref, watch } from 'vue'
 
-const statusBarHeight = ref(0)
+const toast = useToast()
+const statusBarHeight = ref(0) // 获取状态栏高度
+const safeAreaInsetsBottom = ref(0) // 底部安全区域高度
 const categoryId = ref(0)
 const leftColumnImages = ref<any[]>([]) // 存储左列图片数据
 const rightColumnImages = ref<any[]>([]) // 存储右列图片数据
@@ -15,6 +17,7 @@ onMounted(() => {
   uni.getSystemInfo({
     success: (res) => {
       statusBarHeight.value = res.statusBarHeight || 0
+      safeAreaInsetsBottom.value = res.safeAreaInsets?.bottom || 0 // 获取底部安全区域高度
     },
   })
   fetchImages(categoryId.value, true) // 初始加载第一个 Tab 的图片
@@ -98,20 +101,17 @@ function fetchImages(catId: number, reset: boolean = false) {
 
     page.value++
     loading.value = false
-  }, 500)
+  }, 2000)
 }
 
 function handleLogin() {
   isLoggedIn.value = !isLoggedIn.value // 切换登录状态
-  uni.showToast({
-    title: isLoggedIn.value ? '登录成功' : '已登出',
-    icon: 'none'
-  })
+  toast.success(isLoggedIn.value ? '登录成功' : '已登出')
   fetchImages(categoryId.value, true) // 登录/登出后重新获取当前 Tab 的图片
 }
 
 // 监听 categoryId 变化以重置并获取图片
-watch(categoryId, (newCatId) => {
+watch(categoryId, (newCatId: number) => {
   fetchImages(newCatId, true)
 })
 
@@ -139,42 +139,43 @@ function loadMore() {
         <block v-for="item in category" :key="item.id">
           <wd-tab :title="item.name">
             <scroll-view
-              scroll-y
-              class="h-full"
+              class="flex items-center justify-center"
               @scrolltolower="loadMore"
               v-if="(item.id === 0) || (item.id !== 0 && isLoggedIn)"
             >
-              <view class="flex gap-2 p-2">
+              <view v-if="loading" class="h-[85vh] flex items-center justify-center"><wd-loading size="50px" /></view>
+              <view v-else class="flex gap-2 p-2">
                 <view class="flex flex-1 flex-col gap-2">
                   <view v-for="img in leftColumnImages" :key="img.id">
-                    <wd-img :src="img.url" mode="widthFix" :enable-preview="true" :show-menu-by-longpress="true" radius="10" class="w-full">
-                      <template #error>
-                        <wd-img src="/static/image_error.png" mode="widthFix" class="w-full" />
-                      </template>
-                    </wd-img>
+                    <wd-img :src="img.url" mode="widthFix" class="w-full" radius="10" :enable-preview="true" :show-menu-by-longpress="true" custom-class="wd-img-block" />
                   </view>
                 </view>
                 <view class="flex flex-1 flex-col gap-2">
                   <view v-for="img in rightColumnImages" :key="img.id">
-                    <wd-img :src="img.url" mode="widthFix" :enable-preview="true" :show-menu-by-longpress="true" radius="10" class="w-full">
-                      <template #error>
-                        <wd-img src="/static/image_error.png" mode="widthFix" class="w-full" />
-                      </template>
-                    </wd-img>
+                    <wd-img :src="img.url" mode="widthFix" class="w-full" radius="10" :enable-preview="true" :show-menu-by-longpress="true" custom-class="wd-img-block" />
                   </view>
                 </view>
               </view>
-              <view v-if="loading" class="py-10 text-center"><wd-loading size="50px" /></view>
             </scroll-view>
-            <template v-else>
-              <view class="h-60 flex flex-col items-center justify-center text-gray-600">
-                <text class="mb-4">登录后可查看更多内容</text>
-                <wd-button @click="handleLogin" type="primary">立即登录</wd-button>
-              </view>
-            </template>
           </wd-tab>
         </block>
       </wd-tabs>
     </view>
+    <!-- 未登录底部模糊提示栏 -->
+    <view
+      v-if="!isLoggedIn"
+      :style="{ bottom: `${50 + safeAreaInsetsBottom}px` }"
+      class="fixed left-0 right-0 h-30 flex flex-col items-center justify-center gap-4 rounded-md bg-white/80 py-4 text-gray-600 backdrop-blur-sm"
+    >
+      <wd-text text="登录后可查看更多内容" class="mb-4" />
+      <wd-button @click="handleLogin" type="primary">立即登录</wd-button>
+    </view>
   </div>
 </template>
+
+<style lang="scss">
+  // 覆盖默认渲染的样式防止图片不显示
+  .wd-img-block {
+    display: block !important;
+  }
+</style>
