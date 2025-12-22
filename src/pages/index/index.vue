@@ -23,30 +23,6 @@ const hasMore = ref(true) // 假设初始有更多内容
 const page = ref(1)
 const pageSize = 10 // 每次获取的图片数量
 
-const { send: getUserInfo } = useRequest(() => Apis.lsky.profile({
-  headers: {
-    Authorization: `Bearer ${user.token}`,
-  },
-}))
-
-onMounted(() => {
-  uni.getSystemInfo({
-    success: (res) => {
-      statusBarHeight.value = res.statusBarHeight || 0
-      safeAreaInsetsBottom.value = res.safeAreaInsets?.bottom || 0 // 获取底部安全区域高度
-    },
-  })
-  if (user.isLoggedIn) {
-    getUserInfo({}).then((res) => {
-      if (res.status) {
-        user.user = res.data
-      } else {
-        toast.error(res.message || '获取用户信息失败')
-      }
-    })
-  }
-})
-
 const category = ref([
   {
     name: '画廊',
@@ -180,12 +156,29 @@ watch(categoryId, (newCatId: number) => {
   fetchImages(newCatId, true)
 }, { immediate: true }) // 添加 immediate: true，确保在组件挂载时立即执行一次
 
+// 监听登录状态变化，重新加载数据
+watch(() => user.isLoggedIn, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    fetchImages(categoryId.value, true)
+  }
+})
+
 // 加载更多图片 (用于无限滚动)
 async function loadMore() {
   if (hasMore.value && !loading.value && categoryId.value !== 0 && user.isLoggedIn) {
     await fetchImages(categoryId.value)
   }
 }
+
+onMounted(() => {
+  uni.getSystemInfo({
+    success: (res) => {
+      statusBarHeight.value = res.statusBarHeight || 0
+      safeAreaInsetsBottom.value = res.safeAreaInsets?.bottom || 0 // 获取底部安全区域高度
+    },
+  })
+})
+
 </script>
 
 <template>
@@ -221,7 +214,7 @@ async function loadMore() {
                 </view>
               </view>
             </scroll-view>
-            
+
           </wd-tab>
         </block>
       </wd-tabs>
