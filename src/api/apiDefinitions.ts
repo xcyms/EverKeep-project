@@ -48,4 +48,5 @@ export default {
   'lsky.logout': ['DELETE', '/tokens'],
   'lsky.getImages': ['GET', '/images'],
   'lsky.albums': ['GET', '/albums'],
+  'lsky.upload': ['POST', '/upload'],
 };

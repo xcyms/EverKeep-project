@@ -10,6 +10,7 @@ type _LocationUrl =
   "/pages/login/index" |
   "/pages/me/me" |
   "/pages/message/index" |
+  "/pages/search/images" |
   "/pages/search/index" |
   "/subPages/ci/index" |
   "/subPages/create-uni/index" |
