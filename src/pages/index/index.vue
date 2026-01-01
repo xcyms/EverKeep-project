@@ -22,6 +22,7 @@ const { statusBarHeight, menuButtonRight, safeAreaInsetsBottom } = useSystemInfo
 const categoryId = ref(0)
 const order = ref<'newest' | 'earliest' | 'utmost' | 'least'>('newest')
 const showSortSheet = ref(false)
+const { isDark } = useManualTheme()
 
 const orderOptions: SortOption[] = [
   { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'time' },
@@ -147,10 +148,10 @@ onReachBottom(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8f9fa] pb-10">
+  <div class="min-h-screen bg-[#f8f9fa] pb-10 dark:bg-black">
     <!-- 沉浸式顶部 Tab 栏 - 使用 fixed 固定 -->
     <div
-      class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-1 backdrop-blur-xl transition-all"
+      class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-1 backdrop-blur-xl transition-all dark:bg-black/60"
       :style="{ paddingTop: `${statusBarHeight}px` }"
     >
       <div class="flex items-center justify-between" :style="{ paddingRight: `${menuButtonRight}px` }">
@@ -159,6 +160,7 @@ onReachBottom(() => {
             v-model="categoryId"
             animated
             inactive-color="#999"
+            :active-color="isDark ? '#fff' : '#333'"
             line-height="2px"
             @change="changeCategory"
             custom-class="!bg-transparent"
@@ -171,7 +173,7 @@ onReachBottom(() => {
         </div>
         <!-- 排序触发按钮 -->
         <div class="h-10 flex flex-shrink-0 items-center justify-center px-3" @tap="showSortSheet = true">
-          <wd-icon name="order-descending" size="18px" color="#666" />
+          <wd-icon name="order-descending" size="18px" :color="isDark ? '#eee' : '#666'" />
         </div>
       </div>
     </div>
@@ -194,7 +196,7 @@ onReachBottom(() => {
     <view
       v-if="!user.isLoggedIn"
       :style="{ bottom: `${50 + safeAreaInsetsBottom}px` }"
-      class="fixed left-0 right-0 z-[100] h-30 flex flex-col items-center justify-center gap-4 rounded-md bg-white/80 py-4 text-gray-600 backdrop-blur-sm"
+      class="fixed left-0 right-0 z-[100] h-30 flex flex-col items-center justify-center gap-4 rounded-md bg-white/80 py-4 text-gray-600 backdrop-blur-sm dark:bg-black/60 dark:text-gray-300"
     >
       <wd-text text="登录后可查看更多内容" class="mb-4" />
       <wd-button @click="handleLogin" type="primary">立即登录</wd-button>

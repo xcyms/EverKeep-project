@@ -26,6 +26,7 @@ const searchQuery = ref('')
 const order = ref<'newest' | 'earliest' | 'utmost' | 'least'>('newest')
 const showSortSheet = ref(false)
 const uploading = ref(false)
+const { isDark } = useManualTheme()
 
 const orderOptions: SortOption[] = [
   { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'time' },
@@ -178,21 +179,23 @@ onReachBottom(() => {
 </script>
 
 <template>
-  <div class="bg-[#f8f9fa] pb-10">
+  <div class="bg-[#f8f9fa] pb-10 dark:bg-black">
     <!-- 沉浸式顶栏 -->
-    <div class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-3 pb-2 backdrop-blur-xl transition-all"
+    <div
+      class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-3 pb-2 backdrop-blur-xl transition-all dark:bg-black/60"
       :style="{ paddingTop: `${statusBarHeight + 6}px` }">
       <div class="flex items-center" :style="{ paddingRight: `${menuButtonRight}px` }">
         <div class="mr-2 h-10 flex items-center justify-center px-1" @tap="goBack">
-          <wd-icon name="arrow-left" size="20px" color="#333" />
+          <wd-icon name="arrow-left" size="20px" :color="isDark ? '#eee' : '#333'" />
         </div>
         <div class="flex-1">
-          <wd-search v-model="searchQuery" placeholder="搜索相册内图片..." @search="handleSearch" @clear="handleSearch"
-            :hide-cancel="true" custom-class="!bg-gray-100/80 !rounded-xl !p-0" />
+          <wd-search
+            v-model="searchQuery" placeholder="搜索相册内图片..." @search="handleSearch" @clear="handleSearch"
+            :hide-cancel="true" custom-class="!bg-gray-100/80 dark:!bg-gray-800/60 !rounded-xl !p-0" />
         </div>
         <!-- 排序触发按钮 -->
         <div class="ml-1 h-10 flex flex-shrink-0 items-center justify-center px-2" @tap="showSortSheet = true">
-          <wd-icon name="order-descending" size="18px" color="#666" />
+          <wd-icon name="order-descending" size="18px" :color="isDark ? '#eee' : '#666'" />
         </div>
       </div>
     </div>
@@ -217,7 +220,8 @@ onReachBottom(() => {
     </div>
 
     <!-- 排序操作面板 -->
-    <SortSheet v-model="showSortSheet" :options="orderOptions" :current-value="order" title="排序方式"
+    <SortSheet
+      v-model="showSortSheet" :options="orderOptions" :current-value="order" title="排序方式"
       subtitle="选择图片内容的展示顺序" @select="handleSortSelect" />
   </div>
 </template>

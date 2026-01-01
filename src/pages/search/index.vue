@@ -5,6 +5,7 @@ import { onPageScroll, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { computed, onMounted, ref, watch } from 'vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import SortSheet from '@/components/common/SortSheet.vue'
+import { useManualTheme } from '@/composables/useManualTheme'
 import { usePageCache } from '@/composables/usePageCache'
 import { CACHE_KEYS, CACHE_TTL, PLACEHOLDER_IMAGE } from '@/utils/constants'
 
@@ -22,6 +23,7 @@ const router = useRouter()
 const user = useAuthStore()
 const toast = useToast()
 const { statusBarHeight, menuButtonRight } = useSystemInfo()
+const { isDark } = useManualTheme()
 const searchQuery = ref('')
 const albumList = ref<AlbumItem[]>([])
 const isFirstLoad = ref(true)
@@ -278,18 +280,20 @@ onReachBottom(() => {
 </script>
 
 <template>
-  <div class="bg-[#f8f9fa] pb-10">
+  <div class="min-h-screen bg-[#f8f9fa] pb-10 transition-colors duration-300 dark:bg-black">
     <!-- 沉浸式搜索头部 - 使用 fixed 确保不随页面滚动 -->
-    <div class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-3 pb-2 backdrop-blur-xl"
+    <div
+      class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-3 pb-2 backdrop-blur-xl transition-all dark:bg-black/60"
       :style="{ paddingTop: `${statusBarHeight + 6}px` }">
       <div class="flex items-center" :style="{ paddingRight: `${menuButtonRight}px` }">
         <div class="flex-1">
-          <wd-search v-model="searchQuery" placeholder="搜索相册、摄影师..." @search="handleSearch" @clear="handleSearch"
-            :hide-cancel="true" custom-class="!bg-gray-100/80 !rounded-xl !p-0" />
+          <wd-search
+            v-model="searchQuery" placeholder="搜索相册、摄影师..." @search="handleSearch" @clear="handleSearch"
+            :hide-cancel="true" custom-class="!bg-gray-100/80 dark:!bg-gray-800/80 !rounded-xl !p-0" />
         </div>
         <!-- 排序触发按钮 -->
         <div class="ml-1 h-10 flex flex-shrink-0 items-center justify-center px-2" @tap="showSortSheet = true">
-          <wd-icon name="order-descending" size="18px" color="#666" />
+          <wd-icon name="order-descending" size="18px" :color="isDark ? '#999' : '#666'" />
         </div>
       </div>
     </div>
@@ -302,11 +306,11 @@ onReachBottom(() => {
       <!-- 骨架屏状态 -->
       <div v-if="isFirstLoad && albumList.length === 0" class="flex gap-4 px-1">
         <div v-for="col in 2" :key="col" class="flex flex-1 flex-col">
-          <div v-for="i in 3" :key="i" class="mb-4 overflow-hidden rounded-2xl bg-white p-0 shadow-sm">
-            <div class="animate-pulse bg-gray-200" :style="{ height: i % 2 === 0 ? '180px' : '220px' }" />
+          <div v-for="i in 3" :key="i" class="mb-4 overflow-hidden rounded-2xl bg-white p-0 shadow-sm dark:bg-gray-900">
+            <div class="animate-pulse bg-gray-200 dark:bg-gray-800" :style="{ height: i % 2 === 0 ? '180px' : '220px' }" />
             <div class="p-3 space-y-2">
-              <div class="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-              <div class="h-3 w-1/2 animate-pulse rounded bg-gray-100" />
+              <div class="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+              <div class="h-3 w-1/2 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
             </div>
           </div>
         </div>
@@ -314,19 +318,21 @@ onReachBottom(() => {
 
       <!-- 结果统计 -->
       <div v-if="albumList.length > 0" class="mb-4 flex items-center justify-between px-1">
-        <span class="text-base text-gray-900 font-bold italic">Discovery</span>
-        <span class="text-[11px] text-gray-400 font-medium tracking-wider">{{ albumList.length }} ALBUMS</span>
+        <span class="text-base text-gray-900 font-bold italic dark:text-gray-100">Discovery</span>
+        <span class="text-[11px] text-gray-400 font-medium tracking-wider dark:text-gray-500">{{ albumList.length }} ALBUMS</span>
       </div>
 
       <!-- 瀑布流布局容器 - 使用 Flex 改写以提升稳定性 -->
       <div v-if="albumList.length > 0" class="flex gap-4 px-1">
         <!-- 左列 -->
         <div class="flex flex-1 flex-col">
-          <div v-for="album in leftColList" :key="album.id"
-            class="group relative mb-4 flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:opacity-80"
+          <div
+            v-for="album in leftColList" :key="album.id"
+            class="group relative mb-4 flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:bg-gray-900 active:opacity-80 dark:shadow-none"
             @tap="goImages(album.id)">
-            <div class="relative w-full overflow-hidden bg-gray-100">
-              <image :src="album.cover" mode="widthFix" class="block h-auto w-full" lazy-load
+            <div class="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <image
+                :src="album.cover" mode="widthFix" class="block h-auto w-full" lazy-load
                 @error="handleImageError(album)" />
               <div
                 class="absolute right-2.5 top-2.5 z-10 rounded-full bg-black/30 px-2 py-0.5 text-[10px] text-white font-bold backdrop-blur-md">
@@ -334,8 +340,8 @@ onReachBottom(() => {
               </div>
             </div>
             <div class="p-3">
-              <div class="text-sm text-gray-800 font-bold leading-snug">{{ album.name }}</div>
-              <div v-if="album.intro" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed">
+              <div class="text-sm text-gray-800 font-bold leading-snug dark:text-gray-200">{{ album.name }}</div>
+              <div v-if="album.intro" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed dark:text-gray-500">
                 {{ album.intro }}
               </div>
             </div>
@@ -344,11 +350,13 @@ onReachBottom(() => {
 
         <!-- 右列 -->
         <div class="flex flex-1 flex-col">
-          <div v-for="album in rightColList" :key="album.id"
-            class="group relative mb-4 flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:opacity-80"
+          <div
+            v-for="album in rightColList" :key="album.id"
+            class="group relative mb-4 flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:bg-gray-900 active:opacity-80 dark:shadow-none"
             @tap="goImages(album.id)">
-            <div class="relative w-full overflow-hidden bg-gray-100">
-              <image :src="album.cover" mode="widthFix" class="block h-auto w-full" lazy-load
+            <div class="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <image
+                :src="album.cover" mode="widthFix" class="block h-auto w-full" lazy-load
                 @error="handleImageError(album)" />
               <div
                 class="absolute right-2.5 top-2.5 z-10 rounded-full bg-black/30 px-2 py-0.5 text-[10px] text-white font-bold backdrop-blur-md">
@@ -356,8 +364,8 @@ onReachBottom(() => {
               </div>
             </div>
             <div class="p-3">
-              <div class="text-sm text-gray-800 font-bold leading-snug">{{ album.name }}</div>
-              <div v-if="album.intro" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed">
+              <div class="text-sm text-gray-800 font-bold leading-snug dark:text-gray-200">{{ album.name }}</div>
+              <div v-if="album.intro" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed dark:text-gray-500">
                 {{ album.intro }}
               </div>
             </div>
@@ -375,17 +383,24 @@ onReachBottom(() => {
     </div>
 
     <!-- 悬浮功能按钮 -->
-    <div class="fixed bottom-24 right-6 z-50 flex flex-col gap-4 transition-all duration-300"
+    <div
+      class="fixed bottom-24 right-6 z-50 flex flex-col gap-4 transition-all duration-300"
       :class="[showBackTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0']">
       <div
-        class="h-12 w-12 flex items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-md transition-transform active:scale-90"
+        class="h-12 w-12 flex items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-md transition-transform active:scale-90 dark:bg-gray-800/90"
         @click="scrollToTop">
-        <wd-icon name="arrow-up" size="20px" color="#333" />
+        <wd-icon name="arrow-up" size="20px" :color="isDark ? '#ddd' : '#333'" />
       </div>
     </div>
 
     <!-- 排序操作面板 -->
-    <SortSheet v-model="showSortSheet" :options="orderOptions" :current-value="order" title="排序方式"
-      subtitle="选择相册内容的展示顺序" @select="handleSortSelect" />
+    <SortSheet
+      v-model="showSortSheet"
+      :options="orderOptions"
+      :current-value="order"
+      title="排序方式"
+      subtitle="选择相册内容的展示顺序"
+      @select="handleSortSelect"
+    />
   </div>
 </template>

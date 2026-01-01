@@ -2,6 +2,7 @@
 import type { MessageItem } from '@/types/page'
 import { computed, onMounted, ref } from 'vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import { useManualTheme } from '@/composables/useManualTheme'
 
 definePage({
   name: 'message',
@@ -15,6 +16,7 @@ definePage({
 const toast = useToast()
 const messageStore = useMessageStore()
 const { statusBarHeight } = useSystemInfo()
+const { isDark } = useManualTheme()
 const activeTab = ref(0)
 
 // 从 store 获取消息数据
@@ -89,14 +91,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8f9fa] pb-10">
+  <div class="min-h-screen bg-[#f8f9fa] pb-10 transition-colors duration-300 dark:bg-black">
     <!-- 沉浸式毛玻璃顶栏 -->
     <div
-      class="sticky top-0 z-50 w-full border-b border-white/20 bg-white/70 backdrop-blur-xl"
+      class="sticky top-0 z-50 w-full border-b border-white/20 bg-white/70 backdrop-blur-xl transition-all dark:border-white/5 dark:bg-black/60"
       :style="{ paddingTop: `${statusBarHeight}px` }"
     >
       <div class="h-12 flex items-center px-5">
-        <span class="text-lg text-gray-900 font-bold tracking-tight">消息中心</span>
+        <span class="text-lg text-gray-900 font-bold tracking-tight dark:text-gray-100">消息中心</span>
         <div v-if="hasUnread" class="ml-2 h-2 w-2 rounded-full bg-red-500" />
       </div>
 
@@ -122,27 +124,27 @@ onMounted(() => {
       <div
         v-for="item in messages"
         :key="item.id"
-        class="relative flex gap-4 overflow-hidden rounded-2xl bg-white p-4 shadow-[0_4px_20px_rgb(0,0,0,0.02)] transition-all active:scale-[0.98] active:bg-gray-50"
+        class="relative flex gap-4 overflow-hidden rounded-2xl bg-white p-4 shadow-[0_4px_20px_rgb(0,0,0,0.02)] transition-all active:scale-[0.98] active:bg-gray-50 dark:bg-gray-900 dark:shadow-none dark:active:bg-gray-800"
         @tap="handleMessageClick(item)"
       >
         <!-- 消息图标 -->
-        <div class="h-11 w-11 flex flex-shrink-0 items-center justify-center rounded-xl" :class="item.iconBg">
-          <wd-icon :name="item.icon" size="22px" :custom-class="item.iconColor" />
+        <div class="h-11 w-11 flex flex-shrink-0 items-center justify-center rounded-xl transition-colors" :class="isDark ? 'bg-gray-800' : item.iconBg">
+          <wd-icon :name="item.icon" size="22px" :custom-class="isDark ? '!text-gray-400' : item.iconColor" />
         </div>
 
         <!-- 消息内容 -->
         <div class="flex-1 overflow-hidden">
           <div class="mb-1 flex items-center justify-between">
-            <span class="truncate text-[15px] text-gray-900 font-bold">{{ item.title }}</span>
-            <span class="text-[11px] text-gray-400 font-medium">{{ item.time }}</span>
+            <span class="truncate text-[15px] text-gray-900 font-bold dark:text-gray-100">{{ item.title }}</span>
+            <span class="text-[11px] text-gray-400 font-medium dark:text-gray-500">{{ item.time }}</span>
           </div>
-          <p class="line-clamp-2 text-xs text-gray-500 leading-relaxed">
+          <p class="line-clamp-2 text-xs text-gray-500 leading-relaxed dark:text-gray-400">
             {{ item.content }}
           </p>
         </div>
 
         <!-- 未读红点 -->
-        <div v-if="item.unread" class="absolute right-3 top-3 h-2 w-2 border-2 border-white rounded-full bg-red-500" />
+        <div v-if="item.unread" class="absolute right-3 top-3 h-2 w-2 border-2 border-white rounded-full bg-red-500 dark:border-gray-900" />
       </div>
     </div>
 
@@ -152,7 +154,7 @@ onMounted(() => {
     <!-- 一键已读 -->
     <div v-if="hasUnread" class="fixed bottom-24 left-1/2 z-40 -translate-x-1/2">
       <div
-        class="flex items-center gap-2 rounded-full bg-gray-900/90 px-5 py-2.5 text-xs text-white font-bold shadow-xl backdrop-blur-md transition-all active:scale-95"
+        class="flex items-center gap-2 rounded-full bg-gray-900/90 px-5 py-2.5 text-xs text-white font-bold shadow-xl backdrop-blur-md transition-all active:scale-95 dark:bg-gray-800/90"
         @tap="handleMarkAllRead"
       >
         <wd-icon name="check-circle" size="14px" />
