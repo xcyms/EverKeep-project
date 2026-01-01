@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { ref, watch } from 'vue'
+import { DEFAULT_AVATAR } from '@/utils/constants'
+
 definePage({
   name: 'me',
   layout: 'tabbar',
@@ -7,41 +10,54 @@ definePage({
     navigationStyle: 'custom',
   },
 })
+
 const user = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 const loading = ref(false)
-const showContactPopup = ref(false) // 是否显示联系方式弹窗
-const statusBarHeight = ref(0)
+const showContactPopup = ref(false)
+const { statusBarHeight } = useSystemInfo()
 
-const { send: getUserInfo } = useRequest((config) => Apis.lsky.profile({
-  ...config,
-  headers: {
-    ...config.headers,
-    Authorization: `Bearer ${user.token}`,
-  },
-}), {
-  immediate: false,
-})
+const { send: getUserInfo } = useRequest(
+  (config) =>
+    Apis.lsky.profile({
+      ...config,
+      headers: {
+        ...config.headers,
+        Authorization: `Bearer ${user.token}`,
+      },
+    }),
+  {
+    immediate: false,
+  }
+)
 
-const { send: logout } = useRequest((config) => Apis.lsky.logout({
-  ...config,
-  headers: {
-    ...config.headers,
-    Authorization: `Bearer ${user.token}`,
-  },
-}), {
-  immediate: false,
-})
+const { send: logout } = useRequest(
+  (config) =>
+    Apis.lsky.logout({
+      ...config,
+      headers: {
+        ...config.headers,
+        Authorization: `Bearer ${user.token}`,
+      },
+    }),
+  {
+    immediate: false,
+  }
+)
 
 async function doLogout() {
   loading.value = true
-  await logout({}).then(() => {
+  try {
+    await logout({})
     toast.success('退出登录成功')
-    user.logout();
-  }).finally(() => {
+    user.logout()
+  } catch (error) {
+    console.error('退出登录失败:', error)
+    toast.error('退出登录失败')
+  } finally {
     loading.value = false
-  })
+  }
 }
 
 function goLogin() {
@@ -64,35 +80,28 @@ function copyEmail() {
     success: () => {
       toast.success('邮箱已复制')
       showContactPopup.value = false
-    }
+    },
   })
 }
 
 // 监听登录状态变化，重新加载数据
-watch(() => user.isLoggedIn, (newVal) => {
-  if (newVal) {
-    // 登录后稍微延迟获取，确保 token 已被持久化或 Store 已完全更新
-    setTimeout(() => {
-      getUserInfo({}).then((res) => {
-        if (res.status) {
-          // 强制更新 Pinia 中的用户信息，触发响应式
-          user.user = { ...res.data }
-        } else {
-          toast.error(res.message || '获取用户信息失败')
-        }
-      })
-    }, 100)
-  }
-}, { immediate: true })
-
-onMounted(() => {
-  uni.getSystemInfo({
-    success: (res) => {
-      statusBarHeight.value = res.statusBarHeight || 0
-    },
-  })
-})
-
+watch(
+  () => user.isLoggedIn,
+  (newVal) => {
+    if (newVal) {
+      setTimeout(() => {
+        getUserInfo({}).then((res) => {
+          if (res.status) {
+            user.updateUser(res.data)
+          } else {
+            toast.error(res.message || '获取用户信息失败')
+          }
+        })
+      }, 100)
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -108,14 +117,14 @@ onMounted(() => {
         <div class="relative mb-4">
           <div class="absolute inset-0 scale-110 rounded-full bg-blue-100/50 blur-md" />
           <image
-            :src="user.isLoggedIn ? 'https://lsky.navhub.abrdns.com/i/2025/12/22/6948fb68f1834.png' : '/static/default-avatar.png'"
+            :src="user.isLoggedIn ? user.userAvatar : DEFAULT_AVATAR"
             mode="aspectFill"
             class="relative h-24 w-24 border-4 border-white rounded-full shadow-blue-100/50 shadow-xl"
           />
         </div>
         <div class="flex flex-col items-center" @click="goLogin">
           <div class="text-[16px] text-gray-900 font-600 tracking-tight">
-            {{ user.isLoggedIn ? user.user?.name || '管理员用户' : '点击登录体验更多' }}
+            {{ user.isLoggedIn ? user.userName : '点击登录体验更多' }}
           </div>
           <div class="mt-1 flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-0.5 text-[11px] text-gray-400 font-medium">
             <wd-icon name="user" size="12px" />

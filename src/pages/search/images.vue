@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import type { SortOption } from '@/types/common'
+import type { ImageItem } from '@/types/page'
 import { onLoad, onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, ref, watch } from 'vue'
+import SortSheet from '@/components/common/SortSheet.vue'
 import ImageWaterfall from '@/components/ImageWaterfall.vue'
+import { useListPagination } from '@/composables/usePagination'
+import { PAGINATION } from '@/utils/constants'
 
 definePage({
   name: 'images',
@@ -14,86 +19,80 @@ definePage({
 const router = useRouter()
 const user = useAuthStore()
 const toast = useToast()
+const { statusBarHeight, menuButtonRight } = useSystemInfo()
 
-const albumId = ref(null)
-const statusBarHeight = ref(0)
-const menuButtonRight = ref(0)
-const loading = ref(false)
-const hasMore = ref(true)
-const page = ref(1)
+const albumId = ref<string | null>(null)
 const searchQuery = ref('')
 const order = ref<'newest' | 'earliest' | 'utmost' | 'least'>('newest')
 const showSortSheet = ref(false)
 const uploading = ref(false)
 
-const orderOptions = [
-  { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧' },
-  { name: '最早发布', value: 'earliest', subname: '按上传时间从旧到新' },
-  { name: '最大尺寸', value: 'utmost', subname: '按文件大小从大到小' },
-  { name: '最小尺寸', value: 'least', subname: '按文件大小从小到大' },
+const orderOptions: SortOption[] = [
+  { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'time' },
+  { name: '最早发布', value: 'earliest', subname: '按上传时间从旧到新', icon: 'history' },
+  { name: '最大尺寸', value: 'utmost', subname: '按文件大小从大到小', icon: 'order-descending' },
+  { name: '最小尺寸', value: 'least', subname: '按文件大小从小到大', icon: 'order-descending' },
 ]
 
-const images = ref<any[]>([])
+// 使用 useListPagination 管理图片列表
+const {
+  list: images,
+  loading,
+  hasMore,
+  loadMore,
+  refresh,
+  reset,
+} = useListPagination<ImageItem>({
+  fetchFn: async (currentPage) => {
+    if (!albumId.value) {
+      throw new Error('相册ID不能为空')
+    }
 
-// 获取图片接口
-const { send: getImages } = useRequest((currentPage: number, id: number, keyword: string, currentOrder: 'newest' | 'earliest' | 'utmost' | 'least') => Apis.lsky.getImages({
-  params: {
-    page: currentPage,
-    order: currentOrder,
-    album_id: id,
-    keyword,
+    const res = await Apis.lsky.getImages({
+      params: {
+        page: currentPage,
+        order: order.value,
+        album_id: Number(albumId.value),
+        keyword: searchQuery.value,
+      },
+      headers: {
+        Authorization: `Bearer ${user.token}`,
+      },
+    })
+
+    if (res.status) {
+      return {
+        data: res.data.data || [],
+        current_page: res.data.current_page,
+        last_page: res.data.last_page,
+        total: res.data.total || 0,
+        per_page: res.data.per_page || PAGINATION.DEFAULT_PAGE_SIZE,
+      }
+    }
+
+    throw new Error(res.message || '获取图片失败')
   },
-  headers: {
-    'Authorization': `Bearer ${user.token}`,
-  },
-}), {
+  pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
   immediate: false,
 })
 
-// 加载图片数据
-async function fetchImages(reset = false) {
-  if (loading.value || (!hasMore.value && !reset)) return
-  loading.value = true
-
-  if (reset) {
-    images.value = []
-    page.value = 1
-    hasMore.value = true
-  }
-
-  try {
-    const res = await getImages(page.value, albumId.value!, searchQuery.value, order.value)
-    if (res.status) {
-      const newData = res.data.data || []
-      images.value.push(...newData)
-
-      page.value++
-      hasMore.value = res.data.current_page < res.data.last_page
-    } else {
-      toast.error(res.message || '获取图片失败')
-    }
-  } catch (error) {
-    console.error('Error fetching images:', error);
-    toast.error('请求失败，请稍后重试')
-  } finally {
-    loading.value = false
-  }
-}
-
 // 处理搜索
 function handleSearch() {
-  fetchImages(true)
+  uni.pageScrollTo({ scrollTop: 0, duration: 200 })
+  reset()
+  refresh()
 }
 
 // 处理排序选择
-function handleSortSelect(item: any) {
-  order.value = item.value
-  showSortSheet.value = false
+function handleSortSelect(option: SortOption) {
+  order.value = option.value as 'newest' | 'earliest' | 'utmost' | 'least'
 }
 
 // 监听排序变化
 watch(order, () => {
-  fetchImages(true)
+  uni.pageScrollTo({ scrollTop: 0, duration: 200 })
+  reset()
+  refresh()
 })
 
 // 处理上传
@@ -111,26 +110,24 @@ function handleUpload() {
         uploading.value = true
         uni.showLoading({ title: '正在上传...', mask: true })
 
-        // 在微信小程序中，直接使用 uni.uploadFile 是最稳健的方式
-        // 它会自动处理 multipart/form-data 和 boundary
         uni.uploadFile({
-          // 使用 Vite 的环境变量语法
           url: `${import.meta.env.VITE_API_BASE_URL}/upload`,
           filePath: tempFilePath,
-          name: 'file', // 后端接收的字段名
+          name: 'file',
           header: {
-            'Authorization': `Bearer ${user.token}`,
-            'Accept': 'application/json'
+            Authorization: `Bearer ${user.token}`,
+            Accept: 'application/json',
           },
           formData: {
-            'album_id': String(albumId.value)
+            album_id: String(albumId.value),
           },
           success: (uploadRes) => {
             const data = JSON.parse(uploadRes.data)
             if (data.status) {
               toast.success('上传成功')
               setTimeout(() => {
-                fetchImages(true)
+                reset()
+                refresh()
               }, 800)
             } else {
               toast.error(data.message || '上传失败')
@@ -143,7 +140,7 @@ function handleUpload() {
           complete: () => {
             uploading.value = false
             uni.hideLoading()
-          }
+          },
         })
       } catch (error) {
         console.error('Upload catch error:', error)
@@ -151,7 +148,7 @@ function handleUpload() {
         uploading.value = false
         uni.hideLoading()
       }
-    }
+    },
   })
 }
 
@@ -166,20 +163,8 @@ function goBack() {
 }
 
 onMounted(() => {
-  uni.getSystemInfo({
-    success: (res) => {
-      statusBarHeight.value = res.statusBarHeight || 0
-      // #ifdef MP-WEIXIN
-      const menuButton = uni.getMenuButtonBoundingClientRect()
-      if (menuButton) {
-        menuButtonRight.value = res.windowWidth - menuButton.left
-      }
-      // #endif
-    },
-  })
-
   if (albumId.value) {
-    fetchImages(true)
+    refresh()
   } else {
     toast.error('参数错误')
     setTimeout(() => uni.navigateBack(), 1500)
@@ -188,30 +173,22 @@ onMounted(() => {
 
 // 触底加载
 onReachBottom(() => {
-  fetchImages()
+  loadMore()
 })
 </script>
 
 <template>
   <div class="bg-[#f8f9fa] pb-10">
     <!-- 沉浸式顶栏 -->
-    <div
-      class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-3 pb-2 backdrop-blur-xl transition-all"
-      :style="{ paddingTop: `${statusBarHeight + 6}px` }"
-    >
+    <div class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-3 pb-2 backdrop-blur-xl transition-all"
+      :style="{ paddingTop: `${statusBarHeight + 6}px` }">
       <div class="flex items-center" :style="{ paddingRight: `${menuButtonRight}px` }">
         <div class="mr-2 h-10 flex items-center justify-center px-1" @tap="goBack">
           <wd-icon name="arrow-left" size="20px" color="#333" />
         </div>
         <div class="flex-1">
-          <wd-search
-            v-model="searchQuery"
-            placeholder="搜索相册内图片..."
-            @search="handleSearch"
-            @clear="handleSearch"
-            :hide-cancel="true"
-            custom-class="!bg-gray-100/80 !rounded-xl !p-0"
-          />
+          <wd-search v-model="searchQuery" placeholder="搜索相册内图片..." @search="handleSearch" @clear="handleSearch"
+            :hide-cancel="true" custom-class="!bg-gray-100/80 !rounded-xl !p-0" />
         </div>
         <!-- 排序触发按钮 -->
         <div class="ml-1 h-10 flex flex-shrink-0 items-center justify-center px-2" @tap="showSortSheet = true">
@@ -228,98 +205,19 @@ onReachBottom(() => {
       <ImageWaterfall :list="images" :loading="loading" />
 
       <!-- 加载状态 -->
-      <wd-loadmore
-        custom-class="py-8"
-        :state="loading ? 'loading' : (hasMore ? 'loading' : 'finished')"
-      />
+      <wd-loadmore custom-class="py-8" :state="loading ? 'loading' : (hasMore ? 'loading' : 'finished')" />
     </div>
 
     <!-- 悬浮上传按钮 -->
-    <div
-      class="fixed bottom-10 right-6 z-50 transform-gpu transition-all active:scale-90"
-      @tap="handleUpload"
-    >
-      <div class="h-14 w-14 flex items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_8px_32px_rgba(59,130,246,0.3)]">
+    <div class="fixed bottom-10 right-6 z-50 transform-gpu transition-all active:scale-90" @tap="handleUpload">
+      <div
+        class="h-14 w-14 flex items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_8px_32px_rgba(59,130,246,0.3)]">
         <wd-icon name="add" size="24px" />
       </div>
     </div>
 
     <!-- 排序操作面板 -->
-    <wd-popup
-      v-model="showSortSheet"
-      position="bottom"
-      round
-      custom-class="rounded-t-[32rpx] overflow-hidden"
-      :z-index="10001"
-      safe-area-inset-bottom
-    >
-      <div class="bg-white/95 px-6 pb-2 backdrop-blur-md">
-        <!-- 顶部装饰条 -->
-        <div class="flex justify-center py-3">
-          <div class="h-1 w-10 rounded-full bg-gray-200" />
-        </div>
-
-        <!-- 头部 -->
-        <div class="flex items-center justify-between pb-4 pt-2">
-          <div class="flex flex-col">
-            <span class="text-lg text-gray-900 font-bold">排序方式</span>
-            <span class="mt-0.5 text-xs text-gray-400">选择图片内容的展示顺序</span>
-          </div>
-          <div
-            class="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 transition-colors active:bg-gray-200"
-            @tap="showSortSheet = false"
-          >
-            <wd-icon name="close" size="16px" color="#666" />
-          </div>
-        </div>
-
-        <!-- 选项列表 -->
-        <div class="py-2 space-y-2">
-          <div
-            v-for="item in orderOptions"
-            :key="item.value"
-            class="group flex items-center justify-between rounded-2xl p-4 transition-all active:bg-blue-50/50"
-            :class="[order === item.value ? 'bg-blue-50/40' : 'bg-gray-50/50']"
-            @tap="handleSortSelect(item)"
-          >
-            <div class="flex items-center gap-3">
-              <div
-                class="h-10 w-10 flex items-center justify-center rounded-xl transition-colors"
-                :class="[order === item.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-400']"
-              >
-                <wd-icon
-                  :name="item.value.includes('est') ? 'time' : 'chart-bar'"
-                  size="20px"
-                />
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[15px] transition-colors" :class="[order === item.value ? 'text-blue-700 font-semibold' : 'text-gray-700']">
-                  {{ item.name }}
-                </span>
-                <span class="text-xs transition-colors" :class="[order === item.value ? 'text-blue-500/80' : 'text-gray-400']">
-                  {{ item.subname }}
-                </span>
-              </div>
-            </div>
-            <div
-              v-if="order === item.value"
-              class="h-6 w-6 flex items-center justify-center rounded-full bg-blue-600"
-            >
-              <wd-icon name="check" size="14px" color="#fff" />
-            </div>
-          </div>
-        </div>
-
-        <!-- 底部完成按钮 -->
-        <div class="py-6">
-          <div
-            class="w-full rounded-2xl bg-gray-900 py-4 text-center text-[16px] text-white font-bold shadow-gray-200 shadow-lg transition-all active:scale-[0.98] active:opacity-90"
-            @tap="showSortSheet = false"
-          >
-            完成
-          </div>
-        </div>
-      </div>
-    </wd-popup>
+    <SortSheet v-model="showSortSheet" :options="orderOptions" :current-value="order" title="排序方式"
+      subtitle="选择图片内容的展示顺序" @select="handleSortSelect" />
   </div>
 </template>

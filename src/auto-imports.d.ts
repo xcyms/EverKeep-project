@@ -7,9 +7,16 @@
 export {}
 declare global {
   const $$userConfigMap: typeof import('./api/index')['$$userConfigMap']
+  const ANIMATION_DURATION: typeof import('./utils/constants')['ANIMATION_DURATION']
   const Apis: typeof import('./api/index')['Apis']
+  const CACHE_KEYS: typeof import('./utils/constants')['CACHE_KEYS']
+  const CACHE_TTL: typeof import('./utils/constants')['CACHE_TTL']
   const CommonUtil: typeof import('wot-design-uni')['CommonUtil']
+  const DEFAULT_AVATAR: typeof import('./utils/constants')['DEFAULT_AVATAR']
+  const EASING: typeof import('./utils/constants')['EASING']
   const EffectScope: typeof import('vue')['EffectScope']
+  const PAGINATION: typeof import('./utils/constants')['PAGINATION']
+  const PLACEHOLDER_IMAGE: typeof import('./utils/constants')['PLACEHOLDER_IMAGE']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const alovaInstance: typeof import('./api/index')['alovaInstance']
   const api: typeof import('./api/index')['default']
@@ -234,6 +241,7 @@ declare global {
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
   const useLastChanged: typeof import('@vueuse/core')['useLastChanged']
+  const useListPagination: typeof import('./composables/usePagination')['useListPagination']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
   const useManualRefHistory: typeof import('@vueuse/core')['useManualRefHistory']
@@ -244,6 +252,7 @@ declare global {
   const useMemoize: typeof import('@vueuse/core')['useMemoize']
   const useMemory: typeof import('@vueuse/core')['useMemory']
   const useMessage: typeof import('wot-design-uni')['useMessage']
+  const useMessageStore: typeof import('./store/message')['useMessageStore']
   const useModel: typeof import('vue')['useModel']
   const useMounted: typeof import('@vueuse/core')['useMounted']
   const useMouse: typeof import('@vueuse/core')['useMouse']
@@ -257,6 +266,7 @@ declare global {
   const useObjectUrl: typeof import('@vueuse/core')['useObjectUrl']
   const useOffsetPagination: typeof import('@vueuse/core')['useOffsetPagination']
   const useOnline: typeof import('@vueuse/core')['useOnline']
+  const usePageCache: typeof import('./composables/usePageCache')['usePageCache']
   const usePageLeave: typeof import('@vueuse/core')['usePageLeave']
   const usePagination: typeof import('alova/client')['usePagination']
   const useParallax: typeof import('@vueuse/core')['useParallax']
@@ -295,6 +305,7 @@ declare global {
   const useStyleTag: typeof import('@vueuse/core')['useStyleTag']
   const useSupported: typeof import('@vueuse/core')['useSupported']
   const useSwipe: typeof import('@vueuse/core')['useSwipe']
+  const useSystemInfo: typeof import('./composables/useSystemInfo')['useSystemInfo']
   const useTabbar: typeof import('./composables/useTabbar')['useTabbar']
   const useTemplateRef: typeof import('vue')['useTemplateRef']
   const useTemplateRefsList: typeof import('@vueuse/core')['useTemplateRefsList']
@@ -362,9 +373,16 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly $$userConfigMap: UnwrapRef<typeof import('./api/index')['$$userConfigMap']>
+    readonly ANIMATION_DURATION: UnwrapRef<typeof import('./utils/constants')['ANIMATION_DURATION']>
     readonly Apis: UnwrapRef<typeof import('./api/index')['Apis']>
+    readonly CACHE_KEYS: UnwrapRef<typeof import('./utils/constants')['CACHE_KEYS']>
+    readonly CACHE_TTL: UnwrapRef<typeof import('./utils/constants')['CACHE_TTL']>
     readonly CommonUtil: UnwrapRef<typeof import('wot-design-uni')['CommonUtil']>
+    readonly DEFAULT_AVATAR: UnwrapRef<typeof import('./utils/constants')['DEFAULT_AVATAR']>
+    readonly EASING: UnwrapRef<typeof import('./utils/constants')['EASING']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly PAGINATION: UnwrapRef<typeof import('./utils/constants')['PAGINATION']>
+    readonly PLACEHOLDER_IMAGE: UnwrapRef<typeof import('./utils/constants')['PLACEHOLDER_IMAGE']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly alovaInstance: UnwrapRef<typeof import('./api/index')['alovaInstance']>
     readonly api: UnwrapRef<typeof import('./api/index')['default']>
@@ -589,6 +607,7 @@ declare module 'vue' {
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
+    readonly useListPagination: UnwrapRef<typeof import('./composables/usePagination')['useListPagination']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
@@ -599,6 +618,7 @@ declare module 'vue' {
     readonly useMemoize: UnwrapRef<typeof import('@vueuse/core')['useMemoize']>
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
     readonly useMessage: UnwrapRef<typeof import('wot-design-uni')['useMessage']>
+    readonly useMessageStore: UnwrapRef<typeof import('./store/message')['useMessageStore']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
     readonly useMouse: UnwrapRef<typeof import('@vueuse/core')['useMouse']>
@@ -612,6 +632,7 @@ declare module 'vue' {
     readonly useObjectUrl: UnwrapRef<typeof import('@vueuse/core')['useObjectUrl']>
     readonly useOffsetPagination: UnwrapRef<typeof import('@vueuse/core')['useOffsetPagination']>
     readonly useOnline: UnwrapRef<typeof import('@vueuse/core')['useOnline']>
+    readonly usePageCache: UnwrapRef<typeof import('./composables/usePageCache')['usePageCache']>
     readonly usePageLeave: UnwrapRef<typeof import('@vueuse/core')['usePageLeave']>
     readonly usePagination: UnwrapRef<typeof import('alova/client')['usePagination']>
     readonly useParallax: UnwrapRef<typeof import('@vueuse/core')['useParallax']>
@@ -650,6 +671,7 @@ declare module 'vue' {
     readonly useStyleTag: UnwrapRef<typeof import('@vueuse/core')['useStyleTag']>
     readonly useSupported: UnwrapRef<typeof import('@vueuse/core')['useSupported']>
     readonly useSwipe: UnwrapRef<typeof import('@vueuse/core')['useSwipe']>
+    readonly useSystemInfo: UnwrapRef<typeof import('./composables/useSystemInfo')['useSystemInfo']>
     readonly useTabbar: UnwrapRef<typeof import('./composables/useTabbar')['useTabbar']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useTemplateRefsList: UnwrapRef<typeof import('@vueuse/core')['useTemplateRefsList']>
