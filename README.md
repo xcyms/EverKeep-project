@@ -1,115 +1,90 @@
 <p align="center">
-  <img alt="logo" src="https://starter.wot-ui.cn/logo.svg" width="200">
+  <img alt="logo" src="./src/static/logo.png" width="120">
 </p>
 
 <h1 align="center">
-Wot Starter
+mConsole
 </h1>
 
-<p align="center">基于<a href="https://github.com/uni-helper/vitesse-uni-app">vitesse-uni-app</a>的深度整合 Wot UI 组件库，现代化的 uni-app 快速起手项目</p>
+<p align="center">一款专为 <a href="https://github.com/lsky-org/lsky-pro">Lsky Pro (兰空图床)</a> 打造的现代化移动端管理面板</p>
 
 <p align="center">
-  <a href="https://starter.wot-ui.cn/demo/#/">📱 在线预览</a>
-  <a href="https://starter.wot-ui.cn/">📖 在线文档</a>
+  基于 <strong>uni-app</strong> + <strong>Vue 3</strong> + <strong>Wot Design Uni</strong> 开发，提供极致流畅的移动端图床管理体验。
 </p>
 
-## 特性
+## ✨ 特性
 
-- ⚡️ [Vue 3](https://github.com/vuejs/core), [Vite](https://github.com/vitejs/vite), [pnpm](https://pnpm.io/), [esbuild](https://github.com/evanw/esbuild) - 就是快！
+- 🚀 **性能卓越**：基于 Vue 3 + Vite + pnpm，响应迅速，开发体验极佳。
+- 📱 **多端适配**：原生支持 H5、微信小程序、App 等主流平台。
+- 🎨 **精美 UI**：深度集成 Wot Design Uni，支持**暗黑模式**、**主题色自定义**及**跟随系统主题**。
+- 🖼️ **瀑布流展示**：优化的瀑布流布局，支持相册与图片的极速加载与预览。
+- 🔍 **高效搜索**：支持多维度相册搜索及相册内图片筛选，提供灵活的排序功能。
+- 📤 **便捷上传**：支持移动端随时随地上传图片，可自定义存储相册。
+- 📊 **容量看板**：直观的存储空间可视化，实时统计图片及相册数据。
+- 🔔 **消息中心**：集成的系统消息与活动通知中心。
+- 🛠️ **现代技术栈**：UnoCSS 原子化 CSS、Pinia 状态管理、Alova 极致高效请求。
 
-- 🗂 [基于文件的路由](./src/pages)
+## 🛠️ 技术栈
 
-- 📦 [组件自动化加载](./src/components)
+- **框架**: [uni-app](https://uniapp.dcloud.net.cn/) (Vue 3 Composition API)
+- **构建工具**: [Vite](https://vitejs.dev/)
+- **UI 组件库**: [Wot Design Uni](https://wot-ui.chineseseo.org.cn/)
+- **样式引擎**: [UnoCSS](https://unocss.dev/)
+- **状态管理**: [Pinia](https://pinia.vuejs.org/)
+- **请求工具**: [Alova](https://alova.js.org/)
+- **数据可视化**: [ECharts](https://echarts.apache.org/) (via [uni-echarts](https://github.com/lucidity99/uni-echarts))
+- **常用 Hooks**: [VueUse](https://vueuse.org/)
 
-- 📑 [布局系统](./src/layouts)
+## 🚀 快速上手
 
-- 🐂 [Wot UI](https://github.com/Moonofweisheng/wot-design-uni) - 基于 Vue3 + TypeScript 的 uni-app 组件库，提供 70+ 高质量组件，支持国际化（内置多语言包）、暗黑模式与通过 CSS 变量进行主题定制
+### 环境要求
 
-- 🚦 [Uni Mini Router](https://github.com/Moonofweisheng/uni-mini-router) - 适用于uni-app&vue3的轻量级路由库
+- Node.js >= 20
+- pnpm >= 9
 
-- 🔄 [Uni Mini CI](https://github.com/Moonofweisheng/uni-mini-ci) - 一个小程序端持续集成的插件
+### 安装
 
-- 🌐 [Alova](https://alova.js.org/zh-CN/) - 极致高效的请求工具集
+```bash
+pnpm install
+```
 
-- 🆒 [Uni Ku](https://uni-ku.js.org/) - 非常酷的 uni-app 插件库
+### 开发调试
 
-- 📊 [Uni Echarts](https://uni-echarts.xiaohe.ink/) - 适用于 uni-app 的 Apache ECharts 组件
+```bash
+# 启动 H5 端
+pnpm dev
 
-- 🎨 [UnoCSS](https://github.com/unocss/unocss) - 高性能且极具灵活性的即时原子化 CSS 引擎
+# 启动微信小程序端
+pnpm dev:mp-weixin
 
-- 😃 [各种图标集为你所用](https://github.com/antfu/unocss/tree/main/packages/preset-icons)
+# 启动支付宝小程序端
+pnpm dev:mp-alipay
+```
 
-- 🔥 使用 [新的 `<script setup>` 语法](https://github.com/vuejs/rfcs/pull/227)
+### 项目打包
 
-- 📥 [API 自动加载](https://github.com/antfu/unplugin-auto-import) - 直接使用 Composition API 无需引入
+```bash
+# 打包 H5 端
+pnpm build
 
-- 🦾 [TypeScript](https://www.typescriptlang.org/) & [ESLint](https://eslint.org/) - 保证代码质量
+# 打包微信小程序端
+pnpm build:mp-weixin
+```
 
+## 📂 项目结构
 
-## 快速上手
+```text
+src/
+├── api/            # 接口请求封装与 Mock 数据
+├── components/     # 业务公共组件
+├── composables/    # 组合式 API (主题、分页、缓存、系统信息等)
+├── layouts/        # 页面布局模板 (Tabbar 等)
+├── pages/          # 业务页面 (首页、相册、搜索、消息、个人中心等)
+├── static/         # 静态资源 (图标、图片等)
+├── store/          # Pinia 状态管理
+└── utils/          # 常量定义与工具函数
+```
 
-详细说明见 [快速上手](https://starter.wot-ui.cn/guide/installation.html)。
+## 📄 开源协议
 
-## 更新日志
-
-详细日志见 [更新日志](https://starter.wot-ui.cn/guide/changelog.html)。
-
-## 社区
-
-[加群沟通](https://wot-ui.cn/guide/join-group.html)
-
-## 周边生态
-
-| 项目                                                                                                        | 描述                                                 |
-| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| [wot-ui-intellisense](https://github.com/wot-ui/wot-ui-intellisense)                  | wot-ui vscode 代码提示插件     |
-| [awesome-uni-app](https://github.com/uni-helper/awesome-uni-app)                                            | 多端统一开发框架 uni-app 优秀开发资源汇总            |
-| [create-uni](https://github.com/uni-helper/create-uni)                                                      | 快速创建 uni-app 项目                                |
-| [wot-starter-retail](https://github.com/Moonofweisheng/wot-starter-retail)                                  | 基于 wot-ui 的 uni-app 零售行业模板          |
-| [uni-mini-ci](https://github.com/Moonofweisheng/uni-mini-ci)                                                | 一个 uni-app 小程序端构建后支持 CI（持续集成）的插件 |
-| [uni-mini-router](https://github.com/Moonofweisheng/uni-mini-router)                                        | 一个基于 vue3 和 Typescript 的轻量级 uni-app 路由库  |
-| [wot-design-uni AI 助手](https://www.coze.cn/store/bot/7347916532258701363)                                 | 一个能回答你关于 wot-ui 组件库问题的智能助手 |
-| [uni-ku-root](https://github.com/uni-ku/root)                                                               | 一个模拟 App.vue 原有能力的根组件插件                  |
-| [uni-echarts](https://uni-echarts.xiaohe.ink/)                                                             | 适用于 uni-app 的 Apache ECharts 组件                  |
-
-## 贡献者们
-
-感谢以下所有给 Wot Starter 贡献过代码的 [开发者](https://github.com/wot-ui/wot-starter/graphs/contributors)。
-
-<a href="https://github.com/wot-ui/wot-starter/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=wot-ui/wot-starter" />
-</a>
-
-## 捐赠本项目
-
-开发一个好的模板是一项耗时的工作，尤其是要多端适配。为此 Wot Starter 的开发者经常肝到深夜 ……
-
-如果您认为 Wot Starter 帮助到了您的开发工作，您可以捐赠 Wot Starter 的研发工作，捐赠无门槛，哪怕是一杯可乐也好。
-
-捐赠后您的昵称、留言等将会展示在[捐赠榜单](https://wot-ui.cn/reward/donor.html)中。
-
-
-### 爱发电捐赠
-
-<a href="https://afdian.com/a/weisheng233">https://afdian.com/a/weisheng233</a>
-
-### 扫码捐赠
-
-<p>
-<img src="https://wot-ui.cn/weixinQrcode.jpg" width="200" height="200" style="margin-right:30px"/>
-<img src="https://wot-ui.cn/alipayQrcode.jpg" width="200" height="200" />
-</p>
-
-## 鸣谢
-
-- [uni-helper](https://github.com/uni-helper) - 感谢 uni-helper 团队为 uni-app 开发体验优化做出的贡献。
-- [vitesse-uni-app](https://github.com/uni-helper/vitesse-uni-app) - 感谢 vitesse-uni-app 提供的快速起手项目。
-- [uni-ku](https://uni-ku.js.org/) - 感谢 uni-ku 团队为 uni-app 插件生态做出的贡献。
-
-
-## 开源协议
-
-本项目基于 [MIT](https://zh.wikipedia.org/wiki/MIT%E8%A8%B1%E5%8F%AF%E8%AD%89) 协议，请自由地享受和参与开源。
-
-
-[![Star History Chart](https://api.star-history.com/svg?repos=wot-ui/wot-starter&type=Date)](https://star-history.com/#wot-ui/wot-starter&Date)
+本项目基于 [MIT](./LICENSE) 协议开源。
