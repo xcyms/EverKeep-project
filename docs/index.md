@@ -2,9 +2,9 @@
 layout: home
 
 hero:
-  name: "Wot Starter"
-  text: "飞一般开发体验的 \nuni-app 模板"
-  tagline: 基于 vitesse-uni-app 深度整合 Wot UI 组件库，背靠 Uni Helper、Wot UI 团队，告别 HBuilderX ，拥抱现代前端开发工具链，让你拥有飞一般的开发体验
+  name: "mConsole"
+  text: "通用的移动端 \n图片管理工具"
+  tagline: 基于 uni-app 深度整合 Wot UI 组件库，旨在为各类图床与云存储提供统一、高效、美观的移动端管理体验。告别繁琐，拥抱现代。
   image:
     src: /logo.svg
     alt: Wot UI

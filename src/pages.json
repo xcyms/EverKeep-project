@@ -61,19 +61,6 @@
         "navigationStyle": "custom"
       }
     },
-    // #ifdef H5
-    {
-      "path": "pages/search/index",
-      "type": "page",
-      "name": "search",
-      "layout": "tabbar",
-      "style": {
-        "navigationBarTitleText": "搜索",
-        "navigationStyle": "custom"
-      }
-    },
-    // #endif
-    // #ifdef MP-WEIXIN
     {
       "path": "pages/search/index",
       "type": "page",
@@ -85,8 +72,6 @@
         "enablePullDownRefresh": false
       }
     },
-    // #endif
-    // #ifdef MP-WEIXIN
     {
       "path": "pages/me/about",
       "type": "page",
@@ -96,8 +81,6 @@
         "navigationStyle": "custom"
       }
     },
-    // #endif
-    // #ifdef MP-WEIXIN
     {
       "path": "pages/search/images",
       "type": "page",
@@ -107,7 +90,6 @@
         "navigationStyle": "custom"
       }
     }
-    // #endif
   ],
   "subPackages": [
     {
