@@ -45,33 +45,36 @@ const {
   reset,
 } = useListPagination<ImageItem>({
   fetchFn: async (currentPage) => {
-    if (!albumId.value) {
-      throw new Error('相册ID不能为空')
-    }
+    // 模拟网络延迟
+    await new Promise(resolve => setTimeout(resolve, 1800))
 
-    const res = await Apis.lsky.getImages({
-      params: {
-        page: currentPage,
-        order: order.value,
-        album_id: Number(albumId.value),
-        keyword: searchQuery.value,
-      },
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-    })
+    const mockImages: ImageItem[] = []
+    const totalPages = 5
 
-    if (res.status) {
-      return {
-        data: res.data.data || [],
-        current_page: res.data.current_page,
-        last_page: res.data.last_page,
-        total: res.data.total || 0,
-        per_page: res.data.per_page || PAGINATION.DEFAULT_PAGE_SIZE,
+    if (currentPage <= totalPages) {
+      for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
+        const width = 200 + Math.floor(Math.random() * 100)
+        const height = 200 + Math.floor(Math.random() * 200)
+        const id = (currentPage - 1) * PAGINATION.DEFAULT_PAGE_SIZE + i + 1
+        mockImages.push({
+          key: `album-img-${albumId.value}-${currentPage}-${id}`,
+          name: `图片 ${id}`,
+          links: {
+            url: `https://picsum.photos/id/${Math.floor(Math.random() * 100) + 100}/${width}/${height}`,
+          },
+          width,
+          height,
+        })
       }
     }
 
-    throw new Error(res.message || '获取图片失败')
+    return {
+      data: mockImages,
+      current_page: currentPage,
+      last_page: totalPages,
+      total: totalPages * PAGINATION.DEFAULT_PAGE_SIZE,
+      per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+    }
   },
   pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
   immediate: false,

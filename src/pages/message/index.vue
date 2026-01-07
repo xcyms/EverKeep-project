@@ -10,6 +10,7 @@ definePage({
   style: {
     navigationBarTitleText: '消息',
     navigationStyle: 'custom',
+    enablePullDownRefresh: true,
   },
 })
 

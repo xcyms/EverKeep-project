@@ -43,14 +43,14 @@ export const CACHE_TTL = {
  * 分页配置
  */
 export const PAGINATION = {
-  DEFAULT_PAGE_SIZE: 16,
+  DEFAULT_PAGE_SIZE: 10,
   MAX_PAGE_SIZE: 50,
 } as const
 
 /**
  * 图片占位符
  */
-export const PLACEHOLDER_IMAGE = 'https://lsky.navhub.abrdns.com/i/2025/12/24/694b95fc16251.png'
+export const PLACEHOLDER_IMAGE = '/static/image-error.png'
 
 /**
  * 默认头像

@@ -15,7 +15,7 @@ definePage({
   style: {
     navigationBarTitleText: '搜索',
     navigationStyle: 'custom',
-    enablePullDownRefresh: false,
+    enablePullDownRefresh: true,
   },
 })
 
@@ -88,27 +88,9 @@ const defaultAlbums: AlbumItem[] = [
 const { data: cachedAlbums, refresh: refreshCache } = usePageCache<AlbumItem[]>({
   key: CACHE_KEYS.SEARCH_ALBUMS,
   fetchFn: async () => {
-    if (!user.isLoggedIn) {
-      return defaultAlbums
-    }
-    const res = await Apis.lsky.albums({
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-      params: {
-        keyword: '',
-        page: 1,
-        order: order.value,
-      },
-    })
-    if (res.status) {
-      return (res.data.data || []).map((item: any) => ({
-        ...item,
-        _error: false,
-        cover: item.cover || PLACEHOLDER_IMAGE,
-      }))
-    }
-    return []
+    // 模拟网络延迟
+    await new Promise(resolve => setTimeout(resolve, 1800))
+    return defaultAlbums.map(item => ({ ...item, _error: false }))
   },
   ttl: CACHE_TTL.MEDIUM,
   immediate: false,
@@ -122,35 +104,8 @@ watch(cachedAlbums, (newData) => {
   }
 })
 
-// 加载相册数据
-const { send: searchAlbums } = useRequest(
-  (keyword: string, currentPage: number, orderValue: 'newest' | 'earliest' | 'most' | 'least') =>
-    Apis.lsky.albums({
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-      params: {
-        keyword,
-        page: currentPage,
-        order: orderValue,
-      },
-    }),
-  {
-    immediate: false,
-  }
-)
-
 // 获取相册数据
 async function fetchAlbums(isLoadMore = false) {
-  if (!user.isLoggedIn) {
-    if (!isLoadMore) {
-      albumList.value = defaultAlbums.map((item) => ({ ...item, _error: false }))
-      hasMore.value = false
-      isFirstLoad.value = false
-    }
-    return
-  }
-
   if (!isLoadMore && albumList.value.length === 0) {
     isFirstLoad.value = true
   }
@@ -158,24 +113,34 @@ async function fetchAlbums(isLoadMore = false) {
   loading.value = true
 
   try {
-    const res = await searchAlbums(searchQuery.value, page.value, order.value)
+    // 模拟网络延迟
+    await new Promise(resolve => setTimeout(resolve, 1800))
 
-    if (res.status) {
-      const newData = (res.data.data || []).map((item: any) => ({
-        ...item,
-        _error: false,
-        cover: item.cover || PLACEHOLDER_IMAGE,
-      }))
+    const mockData: AlbumItem[] = []
+    const totalPages = 3
 
-      if (isLoadMore) {
-        albumList.value.push(...newData)
-      } else {
-        albumList.value = newData
+    // 模拟分页数据
+    if (page.value <= totalPages) {
+      for (let i = 0; i < 6; i++) {
+        const id = (page.value - 1) * 6 + i + 1
+        mockData.push({
+          id: `mock-${id}`,
+          name: searchQuery.value ? `搜索结果: ${searchQuery.value} ${id}` : `相册 ${id}`,
+          image_num: Math.floor(Math.random() * 50) + 1,
+          intro: `这是一个模拟相册的描述内容，用于演示 UI 效果。序号：${id}`,
+          cover: `https://picsum.photos/id/${Math.floor(Math.random() * 50) + 50}/400/300`,
+          _error: false
+        })
       }
-      hasMore.value = res.data.last_page > res.data.current_page
-    } else {
-      toast.error(res.message || '加载相册失败')
     }
+
+    if (isLoadMore) {
+      albumList.value.push(...mockData)
+    } else {
+      albumList.value = mockData
+    }
+
+    hasMore.value = page.value < totalPages
   } catch (error) {
     console.log(error)
     toast.error('加载相册失败')

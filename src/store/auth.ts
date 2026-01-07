@@ -11,11 +11,11 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     /**
-     * 检查 token 是否有效（7天有效期）
+     * 检查 token 是否有效（30分钟有效期）
      */
     isTokenValid: (state) => {
       if (!state.token || !state.loginTime) return false
-      const expiryTime = 7 * 24 * 60 * 60 * 1000 // 7天
+      const expiryTime = 30 * 60 * 1000 // 30分钟
       return Date.now() - state.loginTime < expiryTime
     },
 

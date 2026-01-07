@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { uuid } from '@alova/shared'
+
 definePage({
   name: 'login',
   style: {
@@ -16,6 +18,7 @@ const text = ref('获取验证码')
 const isCountingDown = ref(false)
 const statusBarHeight = ref(0) // 获取状态栏高度
 const protocolShow = ref(false) // 协议弹窗显示状态
+const loginLoading = ref(false) // 登录loading状态
 
 const model = reactive<{
   username: string
@@ -44,18 +47,6 @@ function handleProtocolClick() {
 function handleClose() {
   protocolShow.value = false
 }
-
-const { loading: loginLoading, send: login } = useRequest(
-  (email: string, password: string) => Apis.lsky.login({
-    data: {
-      email,
-      password,
-    },
-  }),
-  {
-    immediate: false,
-  },
-)
 
 async function handleSubmit() {
   if (!model.username) {
@@ -88,20 +79,30 @@ async function handleSubmit() {
     })
     return
   }
-  const res = await login(model.username, model.password)
-  if (res.status) {
-    showSuccess({
-      msg: '登录成功'
-    })
-    user.login({
-      email: model.username,
-    }, res.data.token)
-    router.pushTab({
-      name: 'home'
-    })
+  if (loginType.value === 'account') {
+    loginLoading.value = true
+    setTimeout(() => {
+      loginLoading.value = false
+      if (model.username === 'admin' && model.password === '123456') {
+        showSuccess({
+          msg: '登录成功'
+        })
+        user.login({
+          name: model.username,
+          email: 'admin@123.com'
+        }, generateUUID())
+        router.pushTab({
+          name: 'home'
+        })
+      } else {
+        showError({
+          msg: '登录失败'
+        })
+      }
+    }, 2000)
   } else {
     showError({
-      msg: res.message || '登录失败'
+      msg: '暂未开放'
     })
   }
 }
@@ -165,7 +166,7 @@ function getCode() {
             <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">{{ loginType === 'account' ? '用户名 / 邮箱' : '手机号码' }}</view>
             <wd-input
               v-model="model.username"
-              :placeholder="loginType === 'account' ? '请输入账号' : '请输入手机号'"
+              :placeholder="loginType === 'account' ? '默认用户名：admin' : '请输入手机号'"
               no-border
               custom-class="!bg-gray-50/80 !rounded-xl !py-3 !px-4 border border-gray-100"
             >
@@ -179,8 +180,7 @@ function getCode() {
             <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">登录密码</view>
             <wd-input
               v-model="model.password"
-              placeholder="请输入密码"
-              type="password"
+              placeholder="默认密码：123456"
               no-border
               show-password
               custom-class="!bg-gray-50/80 !rounded-xl !py-3 !px-4 border border-gray-100"
@@ -247,7 +247,7 @@ function getCode() {
       <view class="p-8 pb-12">
         <view class="mb-4 text-center text-lg text-gray-900 font-bold">用户协议</view>
         <view class="text-sm text-gray-500 leading-relaxed">
-          使用本小程序功能请遵守相关法律法规。本应用作为 Lsky Pro 的移动端管理工具，所有数据存储于您的私有服务器。如您不同意本协议，请立即关闭小程序并停止使用。
+          本应用仅作为功能演示与 UI 交互展示使用，不涉及任何违法违规内容。应用内所有展示数据均为模拟 Mock 数据，不代表真实业务场景。请放心体验相关功能。
         </view>
         <view class="mt-8">
           <wd-button block @tap="handleClose">我知道了</wd-button>

@@ -10,6 +10,7 @@ definePage({
   style: {
     navigationBarTitleText: '我的',
     navigationStyle: 'custom',
+    enablePullDownRefresh: true,
   },
 })
 
@@ -34,38 +35,11 @@ const {
 const showThemeSheet = ref(false)
 const showThemeColorSheet = ref(false)
 
-const { send: getUserInfo } = useRequest(
-  (config) =>
-    Apis.lsky.profile({
-      ...config,
-      headers: {
-        ...config.headers,
-        Authorization: `Bearer ${user.token}`,
-      },
-    }),
-  {
-    immediate: false,
-  }
-)
-
-const { send: logout } = useRequest(
-  (config) =>
-    Apis.lsky.logout({
-      ...config,
-      headers: {
-        ...config.headers,
-        Authorization: `Bearer ${user.token}`,
-      },
-    }),
-  {
-    immediate: false,
-  }
-)
-
 async function doLogout() {
   loading.value = true
   try {
-    await logout({})
+    // 模拟网络延迟
+    await new Promise(resolve => setTimeout(resolve, 1500))
     toast.success('退出登录成功')
     user.logout()
   } catch (error) {
@@ -126,13 +100,17 @@ watch(
   (newVal) => {
     if (newVal) {
       setTimeout(() => {
-        getUserInfo({}).then((res) => {
-          if (res.status) {
-            user.updateUser(res.data)
-          } else {
-            toast.error(res.message || '获取用户信息失败')
-          }
-        })
+        // 模拟获取用户信息
+        const mockUserInfo = {
+          name: user.userName || 'Admin',
+          email: 'demo@lsky.pro',
+          avatar: user.userAvatar,
+          capacity: 1024 * 512, // 512MB
+          used_capacity: 1024 * 128.5, // 128.5MB
+          image_num: 1258,
+          album_num: 24,
+        }
+        user.updateUser(mockUserInfo)
       }, 100)
     }
   },
@@ -188,13 +166,13 @@ watch(
             <div class="flex flex-col">
               <span class="text-xl text-gray-900 font-bold tracking-tighter dark:text-gray-100">
                 {{ user.isLoggedIn && user.user?.used_capacity != null ? (user.user?.used_capacity / 1024).toFixed(2)
-                : '0.00' }} M
+                : '0.00' }} m
               </span>
               <span class="text-[10px] text-gray-400 tracking-widest uppercase dark:text-gray-500">USED SPACE</span>
             </div>
             <div class="flex flex-col items-end">
               <span class="text-sm text-gray-600 font-bold dark:text-gray-300">
-                {{ user.isLoggedIn && user.user?.capacity != null ? (user.user?.capacity / 1024).toFixed(0) : '0' }} M
+                {{ user.isLoggedIn && user.user?.capacity != null ? (user.user?.capacity / 1024).toFixed(0) : '0' }} m
               </span>
               <span class="text-[10px] text-gray-400 tracking-widest uppercase dark:text-gray-500">TOTAL</span>
             </div>

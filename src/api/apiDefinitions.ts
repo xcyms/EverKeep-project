@@ -42,11 +42,5 @@ export default {
   'user.logoutUser': ['GET', '/user/logout'],
   'user.getUserByName': ['GET', '/user/{username}'],
   'user.updateUser': ['PUT', '/user/{username}'],
-  'user.deleteUser': ['DELETE', '/user/{username}'],
-  'lsky.login': ['POST', '/tokens'],
-  'lsky.profile': ['GET', '/profile'],
-  'lsky.logout': ['DELETE', '/tokens'],
-  'lsky.getImages': ['GET', '/images'],
-  'lsky.albums': ['GET', '/albums'],
-  'lsky.upload': ['POST', '/upload'],
+  'user.deleteUser': ['DELETE', '/user/{username}']
 };

@@ -13,6 +13,7 @@ definePage({
   style: {
     navigationBarTitleText: '首页',
     navigationStyle: 'custom',
+    enablePullDownRefresh: true,
   },
 })
 
@@ -47,53 +48,58 @@ const {
   reset,
 } = useListPagination<ImageItem>({
   fetchFn: async (currentPage) => {
+    // 模拟网络延迟
+    await new Promise(resolve => setTimeout(resolve, 1800))
+
     // 未登录时返回模拟数据
     if (!user.isLoggedIn) {
       const mockImages: ImageItem[] = []
-      if (categoryId.value === 0) {
-        // 画廊分类：显示模拟数据
-        for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
-          mockImages.push({
-            key: `img-${categoryId.value}-${currentPage}-${i}`,
-            links: {
-              url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/200/${Math.floor(Math.random() * 100) + 200}`,
-            },
-          })
-        }
+      // 模拟所有分类都有 3 页数据
+      for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
+        const width = 200 + Math.floor(Math.random() * 100)
+        const height = 200 + Math.floor(Math.random() * 200)
+        mockImages.push({
+          key: `img-${categoryId.value}-${currentPage}-${i}`,
+          links: {
+            url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
+          },
+          width,
+          height,
+        })
       }
-      // 其他分类：未登录不显示
+
       return {
         data: mockImages,
         current_page: currentPage,
-        last_page: categoryId.value === 0 ? 1 : 0,
-        total: mockImages.length,
+        last_page: 3, // 确保有分页
+        total: 3 * PAGINATION.DEFAULT_PAGE_SIZE,
         per_page: PAGINATION.DEFAULT_PAGE_SIZE,
       }
     }
 
-    // 已登录：请求真实数据
-    const res = await Apis.lsky.getImages({
-      params: {
-        page: currentPage,
-        order: order.value,
-        permission: categoryId.value === 0 ? 'public' : 'private',
-      },
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-    })
-
-    if (res.status) {
-      return {
-        data: res.data.data || [],
-        current_page: res.data.current_page,
-        last_page: res.data.last_page,
-        total: res.data.total || 0,
-        per_page: res.data.per_page || PAGINATION.DEFAULT_PAGE_SIZE,
-      }
+    // 已登录：这里模拟数据
+    const mockImages: ImageItem[] = []
+    for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
+      const width = 200 + Math.floor(Math.random() * 100)
+      const height = 200 + Math.floor(Math.random() * 200)
+      mockImages.push({
+        key: `logged-img-${categoryId.value}-${currentPage}-${i}`,
+        name: `模拟图片 ${currentPage}-${i}`,
+        links: {
+          url: `https://picsum.photos/id/${Math.floor(Math.random() * 200)}/${width}/${height}`,
+        },
+        width,
+        height,
+      })
     }
 
-    throw new Error(res.message || '加载图片失败')
+    return {
+      data: mockImages,
+      current_page: currentPage,
+      last_page: 10,
+      total: 100,
+      per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+    }
   },
   pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
   immediate: true,
@@ -188,7 +194,7 @@ onReachBottom(() => {
       <!-- 加载状态 -->
       <wd-loadmore
         custom-class="py-8"
-        :state="loading ? 'loading' : (hasMore ? 'finished' : 'finished')"
+        :state="loading ? 'loading' : (hasMore ? 'loading' : 'finished')"
       />
     </div>
 
