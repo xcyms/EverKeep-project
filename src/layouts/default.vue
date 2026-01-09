@@ -1,42 +1,9 @@
 <script setup lang="ts">
 import { useUserStore } from '../store/user'
-
-interface MenuItem {
-  key?: string
-  label: string
-  icon?: string
-  type?: 'group'
-  children?: MenuItem[]
-}
+import { menuItems, type MenuItem } from '../router/menu'
 
 const showFooter = ref(true)
 const collapsed = ref(false)
-const headerBg = ref('#ffffff')
-
-const menuItems: MenuItem[] = [
-  {
-    label: '首页',
-    type: 'group',
-    children: [
-      { key: '/', label: '工作台', icon: 'i-ant-design:dashboard-outlined' },
-    ],
-  },
-  {
-    label: '我的应用',
-    type: 'group',
-    children: [
-      { key: '/upload', label: '上传图片', icon: 'i-ant-design:upload-outlined' },
-      { key: '/images', label: '我的图片', icon: 'i-ant-design:picture-outlined' },
-    ],
-  },
-  {
-    label: '系统配置',
-    type: 'group',
-    children: [
-      { key: '/settings', label: '设置', icon: 'i-ant-design:setting-outlined' },
-    ],
-  },
-]
 
 const router = useRouter()
 const route = useRoute()
@@ -114,7 +81,7 @@ const handleLogout = () => {
     >
       <div 
         class="h-12 m-3 rounded flex items-center justify-center overflow-hidden transition-colors">
-        <div class="i-ant-design:appstore-twotone text-xl" :class="collapsed ? '' : 'mr-2'" />
+        <div class="i-fa6-solid:gem text-xl text-blue-500" :class="collapsed ? '' : 'mr-2'" />
         <span v-if="!collapsed" class="font-bold truncate text-sm">EverKeep</span>
       </div>
       
@@ -151,38 +118,38 @@ const handleLogout = () => {
     <a-layout>
       <!-- 顶部功能栏 -->
       <a-layout-header 
-        class="h-12 px-4 flex items-center justify-between shadow-sm border-b border-gray-100 transition-all duration-300"
-        :style="{ background: headerBg, color: headerBg === '#ffffff' ? 'inherit' : '#fff' }"
+        class="h-12 px-2 flex items-center justify-between shadow-sm border-b border-gray-100 transition-all duration-300"
+        :style="{ background: '#ffffff', padding: '0 16px 0 8px' }"
       >
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-3">
           <div 
-            class="w-9 h-9 flex items-center justify-center cursor-pointer hover:bg-black/5 rounded-md transition-colors text-lg" 
+            class="w-9 h-9 flex items-center justify-center cursor-pointer hover:bg-black/5 rounded-md transition-colors text-[14px]" 
             @click="collapsed = !collapsed"
           >
-            <div :class="collapsed ? 'i-ant-design:menu-unfold-outlined' : 'i-ant-design:menu-fold-outlined'" />
+            <div :class="collapsed ? 'i-fa6-solid:bars' : 'i-fa6-solid:bars-staggered'" />
           </div>
-          <a-breadcrumb class="text-xs flex items-center">
+          <a-breadcrumb class="text-[14px] flex items-center">
             <a-breadcrumb-item v-for="bc in breadcrumbs" :key="bc.path">
               <span class="opacity-80">{{ bc.label }}</span>
             </a-breadcrumb-item>
           </a-breadcrumb>
         </div>
         
-        <div class="flex items-center gap-4">
-          <div class="i-ant-design:search-outlined text-base cursor-pointer hover:text-blue-500" />
+        <div class="flex items-center gap-6">
+          <div class="i-fa6-solid:magnifying-glass text-[14px] cursor-pointer hover:text-blue-500" />
           <a-badge :count="5" :offset="[2, 0]" size="small">
-            <div class="i-ant-design:bell-outlined text-base cursor-pointer" />
+            <div class="i-fa6-solid:bell text-[14px] cursor-pointer" />
           </a-badge>
           <a-dropdown placement="bottomRight">
             <div class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
               <a-avatar :size="24" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-              <span class="text-xs font-medium">Lewis</span>
+              <span class="text-[14px] font-medium">Lewis</span>
             </div>
             <template #overlay>
               <a-menu class="w-32" @click="({ key }) => handleUserMenuClick({ key: String(key) })">
-                <a-menu-item key="profile"><div class="flex items-center gap-2 text-xs"><div class="i-ant-design:user-outlined" /> 个人中心</div></a-menu-item>
+                <a-menu-item key="profile"><div class="flex items-center gap-2 text-sm"><div class="i-fa6-solid:user" /> 个人中心</div></a-menu-item>
                 <a-menu-divider />
-                <a-menu-item key="logout" danger><div class="flex items-center gap-2 text-xs"><div class="i-ant-design:poweroff-outlined" /> 退出</div></a-menu-item>
+                <a-menu-item key="logout" danger><div class="flex items-center gap-2 text-sm"><div class="i-fa6-solid:power-off" /> 退出</div></a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
@@ -201,7 +168,7 @@ const handleLogout = () => {
       </a-layout-content>
 
       <!-- 底部栏：高度减小 -->
-      <a-layout-footer v-if="showFooter" class="p-2 text-center text-gray-400 text-xs bg-white border-t border-gray-100">
+      <a-layout-footer v-if="showFooter" class="p-2 text-center text-gray-400 text-[14px] bg-white border-t border-gray-100">
         EverKeep ©2026 Created by Lewis
       </a-layout-footer>
     </a-layout>
@@ -225,7 +192,7 @@ const handleLogout = () => {
 }
 
 :deep(.ant-menu-item-group-title) {
-  font-size: 11px;
+  font-size: 12px;
   padding-left: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;

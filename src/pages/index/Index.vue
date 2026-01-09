@@ -15,10 +15,6 @@ const stats = [
         <h2 class="text-2xl font-bold text-gray-800">早安，Lewis！</h2>
         <p class="text-gray-400 mt-1">今天是你加入 EverKeep 的第 128 天，系统运行状况良好。</p>
       </div>
-      <a-button type="primary" size="large" class="rounded-lg shadow-md shadow-blue-100">
-        <template #icon><div class="i-ant-design:plus-outlined" /></template>
-        创建新项目
-      </a-button>
     </div>
 
     <!-- 统计卡片：PC 端四列布局 -->
@@ -26,7 +22,7 @@ const stats = [
       <div v-for="s in stats" :key="s.title" class="bg-white p-6 rounded-xl shadow-sm border border-gray-50 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-gray-400 text-sm">{{ s.title }}</div>
+            <div class="text-gray-400 text-[14px]">{{ s.title }}</div>
             <div class="text-2xl font-bold mt-1">{{ s.value }}</div>
           </div>
           <div :class="[s.icon, s.color, 'text-3xl']" />
@@ -38,7 +34,7 @@ const stats = [
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm min-h-400px">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-bold">流量趋势</h3>
+          <h3 class="text-[14px] font-bold">流量趋势</h3>
           <a-radio-group size="small" default-value="7d">
             <a-radio-button value="7d">近7天</a-radio-button>
             <a-radio-button value="30d">近30天</a-radio-button>
@@ -50,12 +46,12 @@ const stats = [
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm">
-        <h3 class="text-lg font-bold mb-6">活跃公告</h3>
+        <h3 class="text-[14px] font-bold mb-6">活跃公告</h3>
         <a-list item-layout="horizontal">
           <a-list-item v-for="i in 5" :key="i">
             <a-list-item-meta description="2026-01-08 10:00">
               <template #title>
-                <a href="#" class="text-sm font-medium hover:text-blue-500">系统维护公告 v2.0.{{ i }}</a>
+                <a href="#" class="text-[14px] font-medium hover:text-blue-500">系统维护公告 v2.0.{{ i }}</a>
               </template>
             </a-list-item-meta>
           </a-list-item>

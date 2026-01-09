@@ -1,0 +1,359 @@
+<script setup lang="ts">
+import { ref, reactive, watch, h } from 'vue'
+import { message, Modal, Select } from 'ant-design-vue'
+import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue'
+
+// --- 模拟数据 ---
+const mockImages = Array.from({ length: 48 }).map((_, i) => ({
+  id: i + 1,
+  name: `图片_${i + 1}.jpg`,
+  url: `https://picsum.photos/seed/${i + 50}/400/300`,
+  album: i % 3 === 0 ? '生活' : (i % 3 === 1 ? '工作' : '旅行'),
+  isPublic: i % 2 === 0,
+  size: Math.floor(Math.random() * 5000) + 500, // KB
+  createTime: new Date(Date.now() - i * 3600000 * 24).toLocaleString(),
+}))
+
+// --- 状态变量 ---
+const loading = ref(false)
+const loadingMore = ref(false)
+const hasMore = ref(true)
+const selectedIds = ref<number[]>([])
+const displayedImages = ref<any[]>([])
+
+const queryParams = reactive({
+  album: 'all',
+  status: 'all',
+  sort: 'time_desc',
+  current: 1,
+  pageSize: 12,
+})
+
+// --- 核心逻辑：获取并处理数据 ---
+const loadData = async (isRefresh = false) => {
+  if (isRefresh) {
+    queryParams.current = 1
+    loading.value = true
+    displayedImages.value = []
+  } else {
+    loadingMore.value = true
+  }
+
+  // 模拟 API 请求延迟
+  await new Promise(resolve => setTimeout(resolve, 800))
+
+  // 根据当前条件过滤总数据
+  let list = [...mockImages]
+  if (queryParams.album !== 'all') list = list.filter(img => img.album === queryParams.album)
+  if (queryParams.status !== 'all') {
+    const isPublic = queryParams.status === 'public'
+    list = list.filter(img => img.isPublic === isPublic)
+  }
+
+  // 排序
+  list.sort((a, b) => {
+    if (queryParams.sort === 'size_asc') return a.size - b.size
+    if (queryParams.sort === 'size_desc') return b.size - a.size
+    if (queryParams.sort === 'time_asc') return new Date(a.createTime).getTime() - new Date(b.createTime).getTime()
+    return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+  })
+
+  // 模拟分页切片
+  const start = (queryParams.current - 1) * queryParams.pageSize
+  const end = start + queryParams.pageSize
+  const pageData = list.slice(start, end)
+
+  if (isRefresh) {
+    displayedImages.value = pageData
+  } else {
+    displayedImages.value.push(...pageData)
+  }
+
+  hasMore.value = end < list.length
+  loading.value = false
+  loadingMore.value = false
+}
+
+// 监听筛选条件变化，重置并重新加载
+watch(() => [queryParams.album, queryParams.status, queryParams.sort], () => {
+  loadData(true)
+}, { immediate: true })
+
+const handleLoadMore = () => {
+  if (loadingMore.value || !hasMore.value) return
+  queryParams.current++
+  loadData()
+}
+
+// --- 操作方法 ---
+const toggleSelect = (id: number) => {
+  const index = selectedIds.value.indexOf(id)
+  if (index > -1) {
+    selectedIds.value.splice(index, 1)
+  } else {
+    selectedIds.value.push(id)
+  }
+}
+
+const handleDelete = (ids: number[]) => {
+  Modal.confirm({
+    title: `确定要删除选中的 ${ids.length} 张图片吗？`,
+    content: '删除后将无法恢复，请谨慎操作。',
+    okType: 'danger',
+    onOk() {
+      message.success('删除成功')
+      selectedIds.value = []
+    },
+  })
+}
+
+const formatSize = (kb: number) => {
+  return kb > 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb} KB`
+}
+
+// --- 右键菜单操作 ---
+const handleMenuClick = (action: string, img: any) => {
+  switch (action) {
+    case 'details':
+      showDetails(img)
+      break
+    case 'move':
+      handleMoveToAlbum(img)
+      break
+    case 'setCover':
+      handleSetCover(img)
+      break
+    case 'delete':
+      handleDelete([img.id])
+      break
+  }
+}
+
+const showDetails = (img: any) => {
+  Modal.info({
+    title: '图片详情',
+    width: 400,
+    content: h('div', { class: 'space-y-3 pt-4' }, [
+      h('div', { class: 'flex justify-between' }, [h('span', '文件名:'), h('span', { class: 'font-medium' }, img.name)]),
+      h('div', { class: 'flex justify-between' }, [h('span', '所属相册:'), h('span', img.album)]),
+      h('div', { class: 'flex justify-between' }, [h('span', '文件大小:'), h('span', formatSize(img.size))]),
+      h('div', { class: 'flex justify-between' }, [h('span', '上传时间:'), h('span', img.createTime)]),
+      h('div', { class: 'flex justify-between' }, [h('span', '状态:'), h('span', img.isPublic ? '公开' : '私有')]),
+      h('div', { class: 'mt-4 border-t pt-4' }, [
+        h('img', { src: img.url, class: 'w-full rounded-lg shadow-sm' })
+      ])
+    ]),
+    okText: '关闭',
+  })
+}
+
+const handleMoveToAlbum = (img: any) => {
+  let selectedAlbum = img.album
+  Modal.confirm({
+    title: '移动图片到相册',
+    icon: h(ExclamationCircleOutlined, { style: 'color: #1890ff' }),
+    width: 420,
+    content: h('div', { class: 'pt-4' }, [
+      h('div', { class: 'mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center gap-3' }, [
+        h('img', { src: img.url, class: 'w-12 h-12 object-cover rounded' }),
+        h('div', { class: 'flex-1 min-w-0' }, [
+          h('p', { class: 'text-xs text-gray-400 mb-0.5' }, '当前图片'),
+          h('p', { class: 'text-sm font-medium truncate mb-0' }, img.name)
+        ])
+      ]),
+      h('div', { class: 'space-y-2' }, [
+        h('p', { class: 'text-sm font-medium text-gray-700 mb-1' }, '选择目标相册'),
+        h(Select, {
+          defaultValue: img.album,
+          class: 'w-full',
+          placeholder: '请选择相册',
+          onChange: (val: any) => { selectedAlbum = val }
+        }, {
+          default: () => [
+            h(Select.Option, { value: '生活' }, { default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), '生活']) }),
+            h(Select.Option, { value: '工作' }, { default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), '工作']) }),
+            h(Select.Option, { value: '旅行' }, { default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), '旅行']) }),
+          ]
+        })
+      ])
+    ]),
+    onOk() {
+      if (selectedAlbum === img.album) {
+        message.info('图片已在当前相册中')
+        return
+      }
+      message.success(`已成功移动到 [${selectedAlbum}] 相册`)
+      loadData(true)
+    },
+    okText: '确认移动',
+    cancelText: '取消'
+  })
+}
+
+const handleSetCover = (img: any) => {
+  message.loading({ content: '设置中...', key: 'setCover' })
+  setTimeout(() => {
+    message.success({ content: '已设置为相册封面', key: 'setCover', duration: 2 })
+  }, 500)
+}
+</script>
+
+<template>
+  <div class="flex flex-col gap-4">
+    <!-- 顶部筛选栏 -->
+    <div class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <a-space>
+          <span class="text-gray-500 text-sm">相册:</span>
+          <a-select v-model:value="queryParams.album" class="w-32">
+            <a-select-option value="all">全部相册</a-select-option>
+            <a-select-option value="生活">生活</a-select-option>
+            <a-select-option value="工作">工作</a-select-option>
+            <a-select-option value="旅行">旅行</a-select-option>
+          </a-select>
+        </a-space>
+
+        <a-space>
+          <span class="text-gray-500 text-sm">状态:</span>
+          <a-select v-model:value="queryParams.status" class="w-28">
+            <a-select-option value="all">全部</a-select-option>
+            <a-select-option value="public">公开</a-select-option>
+            <a-select-option value="private">私有</a-select-option>
+          </a-select>
+        </a-space>
+
+        <a-space>
+          <span class="text-gray-500 text-sm">排序:</span>
+          <a-select v-model:value="queryParams.sort" class="w-40">
+            <a-select-option value="time_desc">时间降序 (最新)</a-select-option>
+            <a-select-option value="time_asc">时间升序</a-select-option>
+            <a-select-option value="size_desc">大小降序</a-select-option>
+            <a-select-option value="size_asc">大小升序</a-select-option>
+          </a-select>
+        </a-space>
+      </div>
+
+      <a-space>
+        <a-button 
+          v-if="selectedIds.length > 0" 
+          danger 
+          type="primary" 
+          @click="handleDelete(selectedIds)"
+        >
+          批量删除 ({{ selectedIds.length }})
+        </a-button>
+      </a-space>
+    </div>
+
+    <!-- 图片列表区 -->
+    <a-spin :spinning="loading" tip="加载中...">
+      <div v-if="displayedImages.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 min-h-[200px]">
+        <a-dropdown 
+          v-for="img in displayedImages" 
+          :key="img.id"
+          :trigger="['contextmenu']"
+        >
+          <div 
+            class="group relative bg-white rounded-lg overflow-hidden border transition-all hover:shadow-md cursor-pointer"
+            :class="selectedIds.includes(img.id) ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-100'"
+          >
+            <!-- 复选框 -->
+            <div 
+              class="absolute top-2 left-2 z-10 w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors"
+              :class="selectedIds.includes(img.id) ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white/80 border-gray-300'"
+              @click.stop="toggleSelect(img.id)"
+            >
+              <div v-if="selectedIds.includes(img.id)" class="i-fa6-solid:check text-[10px]" />
+            </div>
+
+            <!-- 图片预览 -->
+            <div class="aspect-square overflow-hidden bg-gray-50">
+              <a-image
+                :src="img.url"
+                class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                :preview="true"
+              />
+            </div>
+
+            <!-- 图片信息 -->
+            <div class="p-2 space-y-1">
+              <div class="text-sm font-medium truncate text-gray-800" :title="img.name">
+                {{ img.name }}
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-gray-400">
+                <span>{{ formatSize(img.size) }}</span>
+                <a-tag :color="img.isPublic ? 'green' : 'orange'" size="small" class="m-0 scale-90 origin-right">
+                  {{ img.isPublic ? '公开' : '私有' }}
+                </a-tag>
+              </div>
+              <div class="text-[10px] text-gray-400 truncate">
+                {{ img.createTime }}
+              </div>
+            </div>
+
+            <!-- 悬浮操作层 -->
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 pointer-events-none transition-colors" />
+          </div>
+
+          <template #overlay>
+            <a-menu @click="({ key }) => handleMenuClick(key as string, img)">
+              <a-menu-item key="details">
+                <template #icon><div class="i-fa6-solid:circle-info" /></template>
+                图片详情
+              </a-menu-item>
+              <a-menu-item key="move">
+                <template #icon><div class="i-fa6-solid:folder-open" /></template>
+                移动到相册
+              </a-menu-item>
+              <a-menu-item key="setCover">
+                <template #icon><div class="i-fa6-solid:image" /></template>
+                设置为相册封面
+              </a-menu-item>
+              <a-menu-divider />
+              <a-menu-item key="delete" danger>
+                <template #icon><div class="i-fa6-solid:trash-can" /></template>
+                删除图片
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+      </div>
+
+      <!-- 空状态 -->
+      <a-empty v-else-if="!loading" description="暂无图片" class="my-20" />
+    </a-spin>
+
+    <!-- 加载更多 / 底部状态 -->
+    <div v-if="displayedImages.length > 0" class="flex flex-col items-center py-8 gap-4">
+      <template v-if="hasMore">
+        <a-button :loading="loadingMore" @click="handleLoadMore" class="px-8 h-10 rounded-full">
+          {{ loadingMore ? '加载中...' : '加载更多' }}
+        </a-button>
+      </template>
+      <div v-else class="text-gray-400 text-xs flex items-center gap-2">
+        <div class="w-8 h-[1px] bg-gray-200"></div>
+        没有更多图片了
+        <div class="w-8 h-[1px] bg-gray-200"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+:deep(.ant-image) {
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+<style>
+/* 调整图片预览遮罩层的背景颜色，使其更暗 */
+.ant-image-preview-mask {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* 也可以调整预览容器的背景，确保完全覆盖 */
+.ant-image-preview-wrap {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+</style>
