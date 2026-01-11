@@ -1,0 +1,30 @@
+package org.xcyms.common;
+
+import lombok.Data;
+
+/**
+ * @author liu-xu
+ * @date 2026年01月11日 11:37
+ */
+@Data
+public class ApiResult<T> {
+
+    private Integer code;
+    private String message;
+    private T data;
+
+    public static <T> ApiResult<T> success(T data) {
+        ApiResult<T> r = new ApiResult<>();
+        r.setCode(200);
+        r.setMessage("操作成功");
+        r.setData(data);
+        return r;
+    }
+
+    public static <T> ApiResult<T> error(String msg) {
+        ApiResult<T> r = new ApiResult<>();
+        r.setCode(500);
+        r.setMessage(msg);
+        return r;
+    }
+}
