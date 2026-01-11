@@ -9,6 +9,18 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
+// 消息盒状态
+const messageBoxVisible = ref(false)
+const unreadCount = ref(0)
+
+const handleBellClick = () => {
+  messageBoxVisible.value = true
+}
+
+const handleUnreadChange = (count: number) => {
+  unreadCount.value = count
+}
+
 // 菜单状态
 const selectedKeys = ref<string[]>([route.path])
 const openKeys = ref<string[]>([])
@@ -59,6 +71,8 @@ const handleMenuClick = (e: any) => {
 const handleUserMenuClick = ({ key }: { key: string }) => {
   if (key === 'logout') {
     handleLogout()
+  } else if (key === 'profile') {
+    router.push('/profile')
   }
 }
 
@@ -95,22 +109,30 @@ const handleLogout = () => {
       >
         <template v-for="item in menuItems" :key="item.label">
           <!-- 分组渲染 -->
-          <a-menu-item-group v-if="item.type === 'group'" :title="item.label">
+          <a-menu-item-group v-if="item.type === 'group' && !item.hidden" :title="item.label">
             <template v-for="subItem in item.children" :key="subItem.key || subItem.label">
-              <!-- 子菜单 -->
-              <a-sub-menu v-if="subItem.children" :key="`sub-${subItem.key || subItem.label}`" :title="subItem.label">
-                <template #icon><div v-if="subItem.icon" :class="subItem.icon" /></template>
-                <a-menu-item v-for="child in subItem.children" :key="child.key!">
-                  {{ child.label }}
+              <template v-if="!subItem.hidden">
+                <!-- 子菜单 -->
+                <a-sub-menu v-if="subItem.children" :key="`sub-${subItem.key || subItem.label}`" :title="subItem.label">
+                  <template #icon><div v-if="subItem.icon" :class="[subItem.icon, 'menu-icon']" /></template>
+                  <a-menu-item v-for="child in subItem.children" :key="child.key!">
+                    {{ child.label }}
+                  </a-menu-item>
+                </a-sub-menu>
+                <!-- 普通菜单项 -->
+                <a-menu-item v-else :key="subItem.key!">
+                  <template #icon><div v-if="subItem.icon" :class="[subItem.icon, 'menu-icon']" /></template>
+                  {{ subItem.label }}
                 </a-menu-item>
-              </a-sub-menu>
-              <!-- 普通菜单项 -->
-              <a-menu-item v-else :key="subItem.key!">
-                <template #icon><div v-if="subItem.icon" :class="subItem.icon" /></template>
-                {{ subItem.label }}
-              </a-menu-item>
+              </template>
             </template>
           </a-menu-item-group>
+
+          <!-- 顶级非分组项 (非隐藏) -->
+          <a-menu-item v-else-if="!item.hidden && item.type !== 'group'" :key="item.key!">
+            <template #icon><div v-if="item.icon" :class="[item.icon, 'menu-icon']" /></template>
+            {{ item.label }}
+          </a-menu-item>
         </template>
       </a-menu>
     </a-layout-sider>
@@ -136,9 +158,8 @@ const handleLogout = () => {
         </div>
         
         <div class="flex items-center gap-6">
-          <div class="i-fa6-solid:magnifying-glass text-[14px] cursor-pointer hover:text-blue-500" />
-          <a-badge :count="5" :offset="[2, 0]" size="small">
-            <div class="i-fa6-solid:bell text-[14px] cursor-pointer" />
+          <a-badge :count="unreadCount" :offset="[2, 0]" size="small" :show-zero="false">
+            <div class="i-fa6-solid:bell text-[14px] cursor-pointer" @click="handleBellClick" />
           </a-badge>
           <a-dropdown placement="bottomRight">
             <div class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
@@ -172,6 +193,11 @@ const handleLogout = () => {
         EverKeep ©2026 Created by Lewis
       </a-layout-footer>
     </a-layout>
+
+    <MessageBox 
+      v-model:visible="messageBoxVisible" 
+      @unread-change="handleUnreadChange" 
+    />
   </a-layout>
 </template>
 

@@ -1,5 +1,6 @@
 import { message } from 'ant-design-vue'
 import axios from 'axios'
+import type { API } from '../types'
 
 import router from '../router'
 import { useUserStore } from '../store/user'
@@ -18,7 +19,15 @@ request.interceptors.request.use((config) => {
 })
 
 request.interceptors.response.use(
-  response => response.data,
+  (response) => {
+    const res: API.Response<any> = response.data
+    // 如果 code 不是 200，视为错误
+    if (res.code && res.code !== 200) {
+      message.error(res.message || '请求失败')
+      return Promise.reject(new Error(res.message || '请求失败'))
+    }
+    return res.data // 直接返回 data 部分
+  },
   (error) => {
     const userStore = useUserStore()
     

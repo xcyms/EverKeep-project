@@ -3,6 +3,7 @@ export interface MenuItem {
   label: string
   icon?: string
   type?: 'group'
+  hidden?: boolean
   children?: MenuItem[]
 }
 
@@ -31,4 +32,9 @@ export const menuItems: MenuItem[] = [
       { key: '/settings', label: '系统设置', icon: 'i-fa6-solid:wrench' },
     ],
   },
+  {
+    key: '/profile',
+    label: '个人中心',
+    hidden: true
+  }
 ]

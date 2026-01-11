@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, watch, h } from 'vue'
+import { ref, reactive, watch, h, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { ExclamationCircleOutlined, PictureOutlined, FolderOutlined, ClockCircleOutlined, NumberOutlined } from '@ant-design/icons-vue'
+import { ExclamationCircleOutlined, PictureOutlined, ClockCircleOutlined } from '@ant-design/icons-vue'
+import { getMyAlbumsApi } from '../../api/album'
 
 // --- 接口定义 ---
 interface Album {
@@ -67,40 +68,45 @@ const loadData = async (isRefresh = false) => {
     loadingMore.value = true
   }
 
-  // 模拟 API 延迟
-  await new Promise(resolve => setTimeout(resolve, 600))
+  try {
+    const list = await getMyAlbumsApi() as Album[]
+    
+    // 前端过滤和排序逻辑（如果后端没实现的话）
+    let filteredList = [...list]
+    if (queryParams.keyword) {
+      filteredList = filteredList.filter(a => a.name.toLowerCase().includes(queryParams.keyword.toLowerCase()))
+    }
 
-  let list = [...mockAlbums]
+    // 排序逻辑
+    filteredList.sort((a, b) => {
+      if (queryParams.sort === 'time_asc') return new Date(a.createTime).getTime() - new Date(b.createTime).getTime()
+      if (queryParams.sort === 'time_desc') return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+      return 0
+    })
 
-  // 1. 模糊查询
-  if (queryParams.keyword) {
-    list = list.filter(a => a.name.toLowerCase().includes(queryParams.keyword.toLowerCase()))
+    // 分页处理
+    const start = (queryParams.current - 1) * queryParams.pageSize
+    const end = start + queryParams.pageSize
+    const pageData = filteredList.slice(start, end)
+
+    if (isRefresh) {
+      displayedAlbums.value = pageData
+    } else {
+      displayedAlbums.value.push(...pageData)
+    }
+
+    hasMore.value = end < filteredList.length
+  } catch (error) {
+    console.error('加载相册失败', error)
+  } finally {
+    loading.value = false
+    loadingMore.value = false
   }
-
-  // 2. 排序
-  list.sort((a, b) => {
-    if (queryParams.sort === 'time_asc') return new Date(a.createTime).getTime() - new Date(b.createTime).getTime()
-    if (queryParams.sort === 'time_desc') return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
-    if (queryParams.sort === 'count_asc') return a.imageCount - b.imageCount
-    if (queryParams.sort === 'count_desc') return b.imageCount - a.imageCount
-    return 0
-  })
-
-  // 3. 分页
-  const start = (queryParams.current - 1) * queryParams.pageSize
-  const end = start + queryParams.pageSize
-  const pageData = list.slice(start, end)
-
-  if (isRefresh) {
-    displayedAlbums.value = pageData
-  } else {
-    displayedAlbums.value.push(...pageData)
-  }
-
-  hasMore.value = end < list.length
-  loading.value = false
-  loadingMore.value = false
 }
+
+onMounted(() => {
+  loadData(true)
+})
 
 // 监听筛选和排序变化
 watch(() => [queryParams.sort], () => loadData(true), { immediate: true })
@@ -174,7 +180,7 @@ const handleDeleteAlbum = (album: Album) => {
           class="max-w-xs"
         />
         <a-select v-model:value="queryParams.sort" class="w-44">
-          <template #prefix><div class="i-fa6-solid:sort text-gray-400 mr-1" /></template>
+          <template #suffixIcon><div class="i-fa6-solid:sort text-gray-400 mr-1" /></template>
           <a-select-option value="time_desc">按创建时间 (新→旧)</a-select-option>
           <a-select-option value="time_asc">按创建时间 (旧→新)</a-select-option>
           <a-select-option value="count_desc">按图片数量 (多→少)</a-select-option>
@@ -213,7 +219,7 @@ const handleDeleteAlbum = (album: Album) => {
                 <div class="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center cursor-pointer hover:bg-white shadow-sm" @click.stop>
                   <div class="i-fa6-solid:ellipsis-vertical text-gray-600" />
                 </div>
-                <template #content>
+                <template #overlay>
                   <a-menu>
                     <a-menu-item key="edit">
                       <template #icon><div class="i-fa6-solid:pen-to-square" /></template>
