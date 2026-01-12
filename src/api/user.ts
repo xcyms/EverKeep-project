@@ -1,3 +1,4 @@
+import type { API } from '../types'
 import request from '../utils/request'
 /**
  * 用户登录
@@ -38,5 +39,42 @@ export const getUserInfoApi = (): Promise<any> => {
   return request({
     url: '/user/info',
     method: 'get'
+  })
+}
+
+/**
+ * 更新个人资料
+ */
+export const updateProfileApi = (data: Partial<API.User>): Promise<any> => {
+  return request({
+    url: '/user/update',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 修改密码
+ */
+export const updatePasswordApi = (data: any): Promise<any> => {
+  return request({
+    url: '/user/password',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取用户列表 (管理员)
+ */
+export const getUserListApi = (
+  params: { current: number; size: number },
+  data?: { username?: string; nickname?: string }
+): Promise<API.PageResult<API.User>> => {
+  return request({
+    url: '/user/page',
+    method: 'post',
+    params,
+    data
   })
 }

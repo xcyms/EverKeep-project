@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useUserStore } from '../store/user'
 import { menuItems, type MenuItem } from '../router/menu'
+import { logoutApi, getUserInfoApi } from '../api/user'
+import { getImageUrl } from '../utils/common'
 
 const showFooter = ref(true)
 const collapsed = ref(false)
@@ -8,6 +10,27 @@ const collapsed = ref(false)
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+
+// 过滤后的菜单
+const filteredMenuItems = computed(() => {
+  const userRoles = userStore.userInfo.roles || []
+  
+  const filter = (items: MenuItem[]): MenuItem[] => {
+    return items
+      .filter(item => {
+        // 如果没有设置 roles，默认所有人可见
+        if (!item.roles || item.roles.length === 0) return true
+        // 如果设置了 roles，检查用户是否有其中之一
+        return item.roles.some(role => userRoles.includes(role))
+      })
+      .map(item => ({
+        ...item,
+        children: item.children ? filter(item.children) : undefined
+      }))
+  }
+  
+  return filter(menuItems)
+})
 
 // 消息盒状态
 const messageBoxVisible = ref(false)
@@ -43,7 +66,7 @@ const breadcrumbs = computed(() => {
     return null
   }
 
-  const label = findLabel(route.path, menuItems)
+  const label = findLabel(route.path, filteredMenuItems.value)
   if (label) {
     result.push({ path: route.path, label })
   } else {
@@ -76,10 +99,48 @@ const handleUserMenuClick = ({ key }: { key: string }) => {
   }
 }
 
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await logoutApi()
+  } catch (error) {
+    console.error('退出登录失败:', error)
+  }
   userStore.logout()
   router.replace('/login')
 }
+
+const checkUserStatus = async () => {
+  // 1. 基础校验：如果本地连 Token 都没有，直接拦截
+  if (!userStore.isLoggedIn) {
+    router.replace('/login')
+    return
+  }
+  
+  // 2. 详细信息校验：
+  // 如果当前 Store 中还没有用户 ID，说明是新打开页面或刚登录，需要拉取详细信息
+  // 如果已经有 ID 了，说明信息已同步，无需在每次内页跳转时都重复请求接口
+  if (!userStore.userInfo.id) {
+    try {
+      const res = await getUserInfoApi()
+      // 更新 Store（合并原有 Token 和新获取的用户资料）
+      userStore.login({
+        ...userStore.userInfo,
+        ...res
+      })
+    } catch (error) {
+      // 这里的错误（如 401）已经在 request.ts 拦截器中统一处理（清除状态并跳回登录页）
+      // 此处无需额外操作，只需捕获异常防止控制台报错
+    }
+  }
+}
+
+// 使用 watch 监听路由路径变化
+// immediate: true 确保了组件挂载时（刷新页面）立即执行一次
+// 之后的每次内页跳转也都会触发 checkUserStatus
+watch(() => router.currentRoute.value.path, () => {
+  checkUserStatus()
+}, { immediate: true })
+
 </script>
 
 <template>
@@ -107,7 +168,7 @@ const handleLogout = () => {
         @click="handleMenuClick"
         class="border-none"
       >
-        <template v-for="item in menuItems" :key="item.label">
+        <template v-for="item in filteredMenuItems" :key="item.label">
           <!-- 分组渲染 -->
           <a-menu-item-group v-if="item.type === 'group' && !item.hidden" :title="item.label">
             <template v-for="subItem in item.children" :key="subItem.key || subItem.label">
@@ -163,8 +224,8 @@ const handleLogout = () => {
           </a-badge>
           <a-dropdown placement="bottomRight">
             <div class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
-              <a-avatar :size="24" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-              <span class="text-[14px] font-medium">Lewis</span>
+              <a-avatar :size="24" :src="getImageUrl(userStore.avatar)" />
+              <span class="text-[14px] font-medium">{{ userStore.name }}</span>
             </div>
             <template #overlay>
               <a-menu class="w-32" @click="({ key }) => handleUserMenuClick({ key: String(key) })">

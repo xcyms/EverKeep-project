@@ -1,25 +1,32 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import defaultAvatar from '/default-avatar.png'
+
+export interface UserInfo {
+  id?: number
+  username: string
+  token: string
+  avatar?: string
+  roles?: string[]
+}
 
 export const useUserStore = defineStore('user', () => {
-  const name = ref(localStorage.getItem('username') || 'Guest')
-  const token = ref(localStorage.getItem('token') || '')
+  const userInfo = ref<UserInfo>(JSON.parse(localStorage.getItem('userInfo') || `{"username": "游客", "token": "", "avatar": "${defaultAvatar}"}`))
 
-  const isLoggedIn = computed(() => !!token.value)
+  const name = computed(() => userInfo.value.username)
+  const token = computed(() => userInfo.value.token)
+  const avatar = computed(() => userInfo.value.avatar || defaultAvatar)
+  const isLoggedIn = computed(() => !!userInfo.value.token)
 
-  function login(username: string, userToken: string) {
-    name.value = username
-    token.value = userToken
-    localStorage.setItem('username', username)
-    localStorage.setItem('token', userToken)
+  function login(data: UserInfo) {
+    userInfo.value = data
+    localStorage.setItem('userInfo', JSON.stringify(data))
   }
 
   function logout() {
-    name.value = 'Guest'
-    token.value = ''
-    localStorage.removeItem('username')
-    localStorage.removeItem('token')
+    userInfo.value = { id: undefined, username: '游客', token: '', avatar: defaultAvatar }
+    localStorage.removeItem('userInfo')
   }
 
-  return { name, token, isLoggedIn, login, logout }
+  return { userInfo, name, token, avatar, isLoggedIn, login, logout }
 })

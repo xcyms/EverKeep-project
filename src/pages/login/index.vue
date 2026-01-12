@@ -39,7 +39,10 @@ const handleSubmit = async () => {
         username: formState.username,
         password: formState.password
       })
-      userStore.login(formState.username, token)
+      userStore.login({
+        username: formState.username,
+        token: token
+      })
       message.success('登录成功')
       router.push('/')
     } else {

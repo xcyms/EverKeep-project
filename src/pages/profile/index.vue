@@ -1,15 +1,36 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useUserStore } from '../../store/user'
+import { updateProfileApi, updatePasswordApi, logoutApi } from '../../api/user'
+import { useRouter } from 'vue-router'
+import { getImageUrl } from '../../utils/common'
 
+const userStore = useUserStore()
+const router = useRouter()
 const activeKey = ref('1')
+const loading = ref(false)
+
+const uploadUrl = `${import.meta.env.VITE_API_BASE_URL}/file/upload`
 
 // 个人资料表单
 const profileForm = reactive({
-  nickname: 'Lewis',
-  email: 'lewis@example.com',
-  phone: '13800138000',
-  bio: '保持热爱，奔赴山海。'
+  nickname: '',
+  email: '',
+  phone: '',
+  avatar: ''
+})
+
+// 初始化表单
+onMounted(() => {
+  const { avatar } = userStore.userInfo
+  const nickname = (userStore.userInfo as any).nickname || ''
+  const email = (userStore.userInfo as any).email || ''
+  const phone = (userStore.userInfo as any).phone || ''
+  profileForm.nickname = nickname || ''
+  profileForm.email = email || ''
+  profileForm.phone = phone || ''
+  profileForm.avatar = avatar || ''
 })
 
 // 修改密码表单
@@ -19,23 +40,72 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
-const handleUpdateProfile = () => {
-  message.success('个人资料更新成功')
+const handleUpdateProfile = async () => {
+  loading.value = true
+  try {
+    await updateProfileApi(profileForm)
+    // 更新本地存储
+    userStore.login({
+      ...userStore.userInfo,
+      ...profileForm
+    })
+    message.success('个人资料更新成功')
+  } catch (error) {
+    // 拦截器已处理
+  } finally {
+    loading.value = false
+  }
 }
 
-const handleUpdatePassword = () => {
+const handleUpdatePassword = async () => {
+  if (!passwordForm.oldPassword) {
+    message.error('请输入当前密码')
+    return
+  }
+  if (!passwordForm.newPassword) {
+    message.error('请输入新密码')
+    return
+  }
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
     message.error('两次输入的密码不一致')
     return
   }
-  message.success('密码修改成功，请重新登录')
+  
+  loading.value = true
+  try {
+    await updatePasswordApi({
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword
+    })
+    message.success('密码修改成功，请重新登录')
+    // 退出登录
+    await logoutApi()
+    userStore.logout()
+    router.replace('/login')
+  } catch (error) {
+    // 拦截器已处理
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleAvatarChange = (info: any) => {
+  if (info.file.status === 'uploading') {
+    loading.value = true
+    return
+  }
   if (info.file.status === 'done') {
-    message.success(`${info.file.name} 上传成功`)
+    loading.value = false
+    const response = info.file.response
+    if (response.code === 200) {
+      profileForm.avatar = response.data.url
+      handleUpdateProfile() // 自动保存头像更新
+    } else {
+      message.error(response.message || '头像上传失败')
+    }
   } else if (info.file.status === 'error') {
-    message.error(`${info.file.name} 上传失败`)
+    loading.value = false
+    message.error('网络错误，头像上传失败')
   }
 }
 </script>
@@ -59,11 +129,8 @@ const handleAvatarChange = (info: any) => {
               <a-form-item label="手机号">
                 <a-input v-model:value="profileForm.phone" placeholder="请输入手机号" />
               </a-form-item>
-              <a-form-item label="个人简介">
-                <a-textarea v-model:value="profileForm.bio" :rows="4" placeholder="向大家介绍一下自己吧" />
-              </a-form-item>
               <a-form-item>
-                <a-button type="primary" @click="handleUpdateProfile">保存更改</a-button>
+                <a-button type="primary" :loading="loading" @click="handleUpdateProfile">保存更改</a-button>
               </a-form-item>
             </a-form>
           </div>
@@ -72,14 +139,15 @@ const handleAvatarChange = (info: any) => {
         <!-- 头像设置 -->
         <a-tab-pane key="2" tab="头像设置">
           <div class="flex flex-col items-center py-10">
-            <a-avatar :size="120" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="mb-6 shadow-md" />
+            <a-avatar :size="120" :src="getImageUrl(profileForm.avatar || userStore.avatar)" class="mb-6 shadow-md" />
             <a-upload
-              name="avatar"
-              action="/api/upload"
+              name="file"
+              :action="uploadUrl"
               :show-upload-list="false"
+              :headers="{ Authorization: `Bearer ${userStore.token}` }"
               @change="handleAvatarChange"
             >
-              <a-button>
+              <a-button :loading="loading">
                 <template #icon><div class="i-fa6-solid:upload mr-2 inline-block" /></template>
                 更换头像
               </a-button>
@@ -103,7 +171,7 @@ const handleAvatarChange = (info: any) => {
                 <a-input-password v-model:value="passwordForm.confirmPassword" placeholder="请再次输入新密码" />
               </a-form-item>
               <a-form-item>
-                <a-button type="primary" danger @click="handleUpdatePassword">修改密码</a-button>
+                <a-button type="primary" danger :loading="loading" @click="handleUpdatePassword">修改密码</a-button>
               </a-form-item>
             </a-form>
           </div>

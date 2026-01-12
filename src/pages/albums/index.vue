@@ -3,6 +3,7 @@ import { ref, reactive, watch, h, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { ExclamationCircleOutlined, PictureOutlined, ClockCircleOutlined } from '@ant-design/icons-vue'
 import { getMyAlbumsApi } from '../../api/album'
+import { getImageUrl } from '../../utils/common'
 
 // --- 接口定义 ---
 interface Album {
@@ -204,7 +205,7 @@ const handleDeleteAlbum = (album: Album) => {
           <!-- 相册封面 -->
           <div class="relative aspect-[4/3] overflow-hidden bg-gray-100">
             <img 
-              :src="album.cover" 
+              :src="getImageUrl(album.cover)" 
               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               alt="cover"
             />
@@ -290,7 +291,7 @@ const handleDeleteAlbum = (album: Album) => {
             :key="img.id" 
             class="group relative aspect-square rounded-lg overflow-hidden border border-gray-100"
           >
-            <a-image :src="img.url" class="w-full h-full object-cover" />
+            <a-image :src="getImageUrl(img.url)" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <a-button type="primary" size="small" @click="handleSetCover(img)">
                 设为封面

@@ -1,5 +1,4 @@
 import request from '../utils/request'
-import type { API } from '../types'
 
 /**
  * 上传图片
@@ -19,10 +18,22 @@ export const uploadImageApi = (formData: FormData): Promise<any> => {
 /**
  * 获取图片列表
  */
-export const getMyImagesApi = (params?: any): Promise<any> => {
+export const getMyImagesApi = (params: { current: number; size: number; orders?: [string, boolean][] }, data?: any): Promise<any> => {
   return request({
-    url: '/image/list',
-    method: 'get',
-    params
+    url: '/image/page',
+    method: 'post',
+    params,
+    data
+  })
+}
+
+/**
+ * 删除图片
+ */
+export const deleteImagesApi = (ids: number[]): Promise<any> => {
+  return request({
+    url: '/image/delete',
+    method: 'post',
+    data: ids
   })
 }

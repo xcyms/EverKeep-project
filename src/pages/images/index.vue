@@ -1,18 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, watch, h } from 'vue'
+import { ref, reactive, watch, h, onMounted } from 'vue'
 import { message, Modal, Select } from 'ant-design-vue'
 import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue'
-
-// --- 模拟数据 ---
-const mockImages = Array.from({ length: 48 }).map((_, i) => ({
-  id: i + 1,
-  name: `图片_${i + 1}.jpg`,
-  url: `https://picsum.photos/seed/${i + 50}/400/300`,
-  album: i % 3 === 0 ? '生活' : (i % 3 === 1 ? '工作' : '旅行'),
-  isPublic: i % 2 === 0,
-  size: Math.floor(Math.random() * 5000) + 500, // KB
-  createTime: new Date(Date.now() - i * 3600000 * 24).toLocaleString(),
-}))
+import { getMyImagesApi, deleteImagesApi } from '../../api/image'
+import { getMyAlbumsApi } from '../../api/album'
+import { getImageUrl } from '../../utils/common'
 
 // --- 状态变量 ---
 const loading = ref(false)
@@ -20,16 +12,24 @@ const loadingMore = ref(false)
 const hasMore = ref(true)
 const selectedIds = ref<number[]>([])
 const displayedImages = ref<any[]>([])
+const albumList = ref<any[]>([])
 
 const queryParams = reactive({
-  album: 'all',
+  albumId: null as number | null,
   status: 'all',
-  sort: 'time_desc',
+  orders: [{ column: 'createTime', asc: false }] as { column: string, asc: boolean }[],
   current: 1,
-  pageSize: 12,
+  size: 12,
 })
 
-// --- 核心逻辑：获取并处理数据 ---
+// --- 核心逻辑：获取数据 ---
+const loadAlbums = async () => {
+  try {
+    const res = await getMyAlbumsApi()
+    albumList.value = res
+  } catch (err) {}
+}
+
 const loadData = async (isRefresh = false) => {
   if (isRefresh) {
     queryParams.current = 1
@@ -39,43 +39,37 @@ const loadData = async (isRefresh = false) => {
     loadingMore.value = true
   }
 
-  // 模拟 API 请求延迟
-  await new Promise(resolve => setTimeout(resolve, 800))
+  try {
+    const res = await getMyImagesApi({
+      current: queryParams.current,
+      size: queryParams.size,
+    }, {
+      albumId: queryParams.albumId,
+      status: queryParams.status === 'all' ? null : queryParams.status
+    })
 
-  // 根据当前条件过滤总数据
-  let list = [...mockImages]
-  if (queryParams.album !== 'all') list = list.filter(img => img.album === queryParams.album)
-  if (queryParams.status !== 'all') {
-    const isPublic = queryParams.status === 'public'
-    list = list.filter(img => img.isPublic === isPublic)
+    const list = res.records || []
+    if (isRefresh) {
+      displayedImages.value = list
+    } else {
+      displayedImages.value.push(...list)
+    }
+
+    hasMore.value = displayedImages.value.length < res.total
+  } catch (error) {
+    console.error('加载图片失败', error)
+  } finally {
+    loading.value = false
+    loadingMore.value = false
   }
-
-  // 排序
-  list.sort((a, b) => {
-    if (queryParams.sort === 'size_asc') return a.size - b.size
-    if (queryParams.sort === 'size_desc') return b.size - a.size
-    if (queryParams.sort === 'time_asc') return new Date(a.createTime).getTime() - new Date(b.createTime).getTime()
-    return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
-  })
-
-  // 模拟分页切片
-  const start = (queryParams.current - 1) * queryParams.pageSize
-  const end = start + queryParams.pageSize
-  const pageData = list.slice(start, end)
-
-  if (isRefresh) {
-    displayedImages.value = pageData
-  } else {
-    displayedImages.value.push(...pageData)
-  }
-
-  hasMore.value = end < list.length
-  loading.value = false
-  loadingMore.value = false
 }
 
-// 监听筛选条件变化，重置并重新加载
-watch(() => [queryParams.album, queryParams.status, queryParams.sort], () => {
+onMounted(() => {
+  loadAlbums()
+})
+
+// 监听筛选条件变化
+watch(() => [queryParams.albumId, queryParams.status, queryParams.orders], () => {
   loadData(true)
 }, { immediate: true })
 
@@ -100,15 +94,20 @@ const handleDelete = (ids: number[]) => {
     title: `确定要删除选中的 ${ids.length} 张图片吗？`,
     content: '删除后将无法恢复，请谨慎操作。',
     okType: 'danger',
-    onOk() {
-      message.success('删除成功')
-      selectedIds.value = []
+    async onOk() {
+      try {
+        await deleteImagesApi(ids)
+        message.success('删除成功')
+        selectedIds.value = []
+        loadData(true)
+      } catch (err) {}
     },
   })
 }
 
-const formatSize = (kb: number) => {
-  return kb > 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb} KB`
+const formatSize = (bytes: number) => {
+  const kb = bytes / 1024
+  return kb >= 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(2)} KB`
 }
 
 // --- 右键菜单操作 ---
@@ -140,7 +139,7 @@ const showDetails = (img: any) => {
       h('div', { class: 'flex justify-between' }, [h('span', '上传时间:'), h('span', img.createTime)]),
       h('div', { class: 'flex justify-between' }, [h('span', '状态:'), h('span', img.isPublic ? '公开' : '私有')]),
       h('div', { class: 'mt-4 border-t pt-4' }, [
-        h('img', { src: img.url, class: 'w-full rounded-lg shadow-sm' })
+        h('img', { src: getImageUrl(img.url), class: 'w-full rounded-lg shadow-sm' })
       ])
     ]),
     okText: '关闭',
@@ -155,7 +154,7 @@ const handleMoveToAlbum = (img: any) => {
     width: 420,
     content: h('div', { class: 'pt-4' }, [
       h('div', { class: 'mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center gap-3' }, [
-        h('img', { src: img.url, class: 'w-12 h-12 object-cover rounded' }),
+        h('img', { src: getImageUrl(img.url), class: 'w-12 h-12 object-cover rounded' }),
         h('div', { class: 'flex-1 min-w-0' }, [
           h('p', { class: 'text-xs text-gray-400 mb-0.5' }, '当前图片'),
           h('p', { class: 'text-sm font-medium truncate mb-0' }, img.name)
@@ -205,11 +204,22 @@ const handleSetCover = (img: any) => {
       <div class="flex flex-wrap items-center gap-4">
         <a-space>
           <span class="text-gray-500 text-sm">相册:</span>
-          <a-select v-model:value="queryParams.album" class="w-32">
-            <a-select-option value="all">全部相册</a-select-option>
-            <a-select-option value="生活">生活</a-select-option>
-            <a-select-option value="工作">工作</a-select-option>
-            <a-select-option value="旅行">旅行</a-select-option>
+          <a-select 
+            v-model:value="queryParams.albumId as any"
+            class="w-48"
+            show-search
+            option-filter-prop="label"
+            placeholder="选择相册"
+          >
+            <a-select-option :value="null" label="全部相册">全部相册</a-select-option>
+            <a-select-option 
+              v-for="album in albumList" 
+              :key="album.id" 
+              :value="album.id"
+              :label="album.name"
+            >
+              {{ album.name }}
+            </a-select-option>
           </a-select>
         </a-space>
 
@@ -217,16 +227,22 @@ const handleSetCover = (img: any) => {
           <span class="text-gray-500 text-sm">状态:</span>
           <a-select v-model:value="queryParams.status" class="w-28">
             <a-select-option value="all">全部</a-select-option>
-            <a-select-option value="public">公开</a-select-option>
-            <a-select-option value="private">私有</a-select-option>
+            <a-select-option value="1">公开</a-select-option>
+            <a-select-option value="0">私有</a-select-option>
           </a-select>
         </a-space>
 
         <a-space>
           <span class="text-gray-500 text-sm">排序:</span>
-          <a-select v-model:value="queryParams.sort" class="w-40">
-            <a-select-option value="time_desc">时间降序 (最新)</a-select-option>
-            <a-select-option value="time_asc">时间升序</a-select-option>
+          <a-select :value="(queryParams.orders[0]?.column ?? '') + '_' + (queryParams.orders[0]?.asc ? 'asc' : 'desc')"
+                    @change="(val) => {
+                      const str = String(val ?? '');
+                      const [column,order]=str.split('_');
+                      queryParams.orders=[{column:column||'createTime',asc:order==='asc'}];
+                    }" 
+                    class="w-40">
+            <a-select-option value="createTime_desc">时间降序 (最新)</a-select-option>
+            <a-select-option value="createTime_asc">时间升序</a-select-option>
             <a-select-option value="size_desc">大小降序</a-select-option>
             <a-select-option value="size_asc">大小升序</a-select-option>
           </a-select>
@@ -269,7 +285,7 @@ const handleSetCover = (img: any) => {
             <!-- 图片预览 -->
             <div class="aspect-square overflow-hidden bg-gray-50">
               <a-image
-                :src="img.url"
+                :src="getImageUrl(img.url)"
                 class="w-full h-full object-cover transition-transform group-hover:scale-105"
                 :preview="true"
               />
@@ -282,8 +298,8 @@ const handleSetCover = (img: any) => {
               </div>
               <div class="flex items-center justify-between text-[10px] text-gray-400">
                 <span>{{ formatSize(img.size) }}</span>
-                <a-tag :color="img.isPublic ? 'green' : 'orange'" size="small" class="m-0 scale-90 origin-right">
-                  {{ img.isPublic ? '公开' : '私有' }}
+                <a-tag :color="img.status.code === 1 ? 'green' : 'orange'" size="small" class="m-0 scale-90 origin-right">
+                  {{ img.status.code === 1 ? '公开' : '私有' }}
                 </a-tag>
               </div>
               <div class="text-[10px] text-gray-400 truncate">

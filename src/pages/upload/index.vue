@@ -1,20 +1,57 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { getMyConfigsApi } from '../../api/config'
+import { uploadImageApi } from '../../api/image'
+import { getMyAlbumsApi } from '../../api/album'
+import type { API } from '../../types'
 
-interface UploadFile {
-  id: string
-  file: File
-  name: string
-  size: number
-  progress: number
-  status: 'pending' | 'uploading' | 'success' | 'error'
-  url?: string
+const fileList = ref<API.UploadFile[]>([])  
+const albumList = ref<any[]>([])
+const selectedAlbumId = ref<number | null>(null)
+const isUploading = ref(false)
+
+// 计算当前显示的相册名称
+const currentAlbumName = computed(() => {
+  if (!selectedAlbumId.value) return '默认相册'
+  const album = albumList.value.find(a => a.id === selectedAlbumId.value)
+  return album ? album.name : '默认相册'
+})
+
+// 配置相关
+const configs = ref<API.SysConfig[]>([])
+const maxFileSize = computed(() => {
+  const config = configs.value.find(c => c.configKey === 'max_file_size')
+  return config ? parseInt(config.configValue) : 10 * 1024 * 1024 // 默认10MB
+})
+const allowedExtensions = computed(() => {
+  const config = configs.value.find(c => c.configKey === 'allowed_extensions')
+  return config ? config.configValue.split(',').map(s => s.trim().toLowerCase()) : ['jpg', 'jpeg', 'png', 'gif', 'webp']
+})
+
+// 加载配置和相册
+const initData = async () => {
+  try {
+    const [configRes, albumRes] = await Promise.all([
+      getMyConfigsApi(),
+      getMyAlbumsApi()
+    ])
+    configs.value = configRes
+    albumList.value = albumRes
+  } catch (error) {
+    console.error('加载基础数据失败', error)
+  }
 }
 
-const fileList = ref<UploadFile[]>([])
-const defaultAlbum = ref('默认相册')
-const isUploading = ref(false)
+onMounted(() => {
+  initData()
+})
+
+onUnmounted(() => {
+  fileList.value.forEach(f => {
+    if (f.preview) URL.revokeObjectURL(f.preview)
+  })
+})
 
 // 检查是否有待上传的文件
 const hasPendingFiles = computed(() => fileList.value.some(f => f.status === 'pending' || f.status === 'error'))
@@ -32,21 +69,49 @@ const formatSize = (bytes: number) => {
 const handleFileChange = (e: Event) => {
   const input = e.target as HTMLInputElement
   if (input.files) {
-    addFiles(Array.from(input.files))
+    const newFiles = Array.from(input.files).map(f => {
+      const item: API.UploadFile = {
+        id: Math.random().toString(36).slice(2),
+        file: f,
+        name: f.name,
+        size: f.size,
+        progress: 0,
+        status: 'pending' as const
+      }
+      if (f.type.startsWith('image/')) {
+        item.preview = URL.createObjectURL(f)
+      }
+      return item
+    })
+    addFiles(newFiles)
   }
 }
 
 // 添加文件到列表
-const addFiles = (files: File[]) => {
-  const newFiles = files.map(file => ({
-    id: Math.random().toString(36).slice(2),
-    file,
-    name: file.name,
-    size: file.size,
-    progress: 0,
-    status: 'pending' as const
-  }))
-  fileList.value.push(...newFiles)
+const addFiles = (files: API.UploadFile[]) => {
+  const validFiles: API.UploadFile[] = []
+  
+  for (const file of files) {
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    
+    // 1. 校验后缀
+    if (!allowedExtensions.value.includes(ext)) {
+      message.error(`文件 [${file.name}] 后缀名不支持，允许的后缀: ${allowedExtensions.value.join(', ')}`)
+      if (file.preview) URL.revokeObjectURL(file.preview)
+      continue
+    }
+    
+    // 2. 校验大小
+    if (file.size > maxFileSize.value) {
+      message.error(`文件 [${file.name}] 超过限制大小 (${formatSize(maxFileSize.value)})`)
+      if (file.preview) URL.revokeObjectURL(file.preview)
+      continue
+    }
+
+    validFiles.push(file)
+  }
+
+  fileList.value.push(...validFiles)
 }
 
 // 执行上传逻辑
@@ -58,35 +123,39 @@ const startUpload = async () => {
   
   for (const item of pending) {
     item.status = 'uploading'
-    // 模拟上传过程
+    item.progress = 0
+    
     try {
-      await simulateUpload(item)
+      const formData = new FormData()
+      formData.append('file', item.file)
+      if (selectedAlbumId.value) {
+        formData.append('albumId', selectedAlbumId.value.toString())
+      }
+
+      const res = await uploadImageApi(formData)
+      
       item.status = 'success'
-      item.url = `https://everkeep.storage/images/${item.id}.jpg`
-    } catch (err) {
+      item.progress = 100
+      item.url = res.url
+    } catch (err: any) {
       item.status = 'error'
+      item.progress = 0
+      console.error(`文件 ${item.name} 上传失败:`, err)
     }
   }
   
   isUploading.value = false
-  message.success('全部文件处理完成')
-}
+  
+  const successCount = pending.filter(f => f.status === 'success').length
+  const failCount = pending.filter(f => f.status === 'error').length
 
-// 模拟上传进度
-const simulateUpload = (item: UploadFile) => {
-  return new Promise((resolve, reject) => {
-    let p = 0
-    const timer = setInterval(() => {
-      p += Math.random() * 30
-      if (p >= 100) {
-        item.progress = 100
-        clearInterval(timer)
-        resolve(true)
-      } else {
-        item.progress = Math.floor(p)
-      }
-    }, 300)
-  })
+  if (successCount === pending.length) {
+    message.success(`全部 ${successCount} 个文件上传成功`)
+  } else if (failCount === pending.length) {
+    message.error('文件上传失败，请检查配置或重试')
+  } else {
+    message.warning(`上传处理完成：${successCount} 个成功，${failCount} 个失败`)
+  }
 }
 
 // 处理主按钮点击
@@ -101,12 +170,20 @@ const handleMainAction = () => {
 // 清空列表
 const clearList = () => {
   if (isUploading.value) return
+  fileList.value.forEach(f => {
+    if (f.preview) URL.revokeObjectURL(f.preview)
+  })
   fileList.value = []
 }
 
 // 删除单个文件
 const removeFile = (id: string) => {
-  fileList.value = fileList.value.filter(f => f.id !== id)
+  const index = fileList.value.findIndex(f => f.id === id)
+  if (index !== -1) {
+    const file = fileList.value[index]
+    if (file && file.preview) URL.revokeObjectURL(file.preview)
+    fileList.value.splice(index, 1)
+  }
 }
 
 // 拖拽处理
@@ -114,7 +191,21 @@ const isDragOver = ref(false)
 const handleDrop = (e: DragEvent) => {
   isDragOver.value = false
   if (e.dataTransfer?.files) {
-    addFiles(Array.from(e.dataTransfer.files))
+    const newFiles = Array.from(e.dataTransfer.files).map(f => {
+      const item: API.UploadFile = {
+        id: Math.random().toString(36).slice(2),
+        file: f,
+        name: f.name,
+        size: f.size,
+        progress: 0,
+        status: 'pending' as const
+      }
+      if (f.type.startsWith('image/')) {
+        item.preview = URL.createObjectURL(f)
+      }
+      return item
+    })
+    addFiles(newFiles)
   }
 }
 </script>
@@ -125,12 +216,36 @@ const handleDrop = (e: DragEvent) => {
     <a-alert type="info" show-icon class="rounded-lg border-blue-100">
       <template #message>
         <div class="flex items-center gap-2">
-          <span>当前默认上传至相册:</span>
-          <a-tag color="blue" class="m-0 font-medium cursor-pointer hover:opacity-80">
-            {{ defaultAlbum }}
-            <template #icon><div class="i-ant-design:edit-outlined" /></template>
-          </a-tag>
-          <span class="text-xs text-gray-400 ml-auto">支持 JPG, PNG, GIF, 最大 20MB</span>
+          <span>当前上传至:</span>
+          <a-dropdown :trigger="['click']" :disabled="isUploading">
+            <a-tag color="blue" class="m-0 font-medium cursor-pointer hover:opacity-80 flex items-center gap-1.5 px-2.5 py-1 border-blue-200 transition-all active:scale-95">
+              <div class="i-ant-design:folder-open-outlined text-sm" />
+              <span>{{ currentAlbumName }}</span>
+              <div class="i-ant-design:down-outlined text-[10px] opacity-60" />
+            </a-tag>
+            <template #overlay>
+              <a-menu @click="({ key }) => selectedAlbumId = (key === 'default' ? null : key) as number | null" class="min-w-[140px] shadow-xl border border-gray-100">
+                <a-menu-item key="default">
+                  <div class="flex items-center gap-2 py-0.5">
+                    <div class="i-ant-design:folder-outlined text-gray-400" />
+                    <span>默认相册</span>
+                    <div v-if="selectedAlbumId === null" class="i-ant-design:check-outlined ml-auto text-blue-500" />
+                  </div>
+                </a-menu-item>
+                <a-menu-divider v-if="albumList.length > 0" />
+                <a-menu-item v-for="album in albumList" :key="album.id">
+                  <div class="flex items-center gap-2 py-0.5">
+                    <div class="i-ant-design:folder-outlined text-gray-400" />
+                    <span>{{ album.name }}</span>
+                    <div v-if="selectedAlbumId === album.id" class="i-ant-design:check-outlined ml-auto text-blue-500" />
+                  </div>
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+          <span class="text-xs text-gray-400 ml-auto">
+            支持 {{ allowedExtensions.join(', ').toUpperCase() }}, 最大 {{ formatSize(maxFileSize) }}
+          </span>
         </div>
       </template>
     </a-alert>
@@ -200,7 +315,8 @@ const handleDrop = (e: DragEvent) => {
         <div v-for="item in fileList" :key="item.id" class="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
           <!-- 缩略图预览 (本地) -->
           <div class="w-12 h-12 rounded bg-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
-            <div class="i-ant-design:picture-outlined text-gray-300 text-xl" />
+            <img v-if="item.preview" :src="item.preview" class="w-full h-full object-cover" />
+            <div v-else class="i-ant-design:picture-outlined text-gray-300 text-xl" />
           </div>
 
           <!-- 文件信息与进度 -->

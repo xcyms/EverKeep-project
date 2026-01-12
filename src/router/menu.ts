@@ -4,6 +4,7 @@ export interface MenuItem {
   icon?: string
   type?: 'group'
   hidden?: boolean
+  roles?: string[]
   children?: MenuItem[]
 }
 
@@ -27,8 +28,9 @@ export const menuItems: MenuItem[] = [
   {
     label: '配置',
     type: 'group',
+    roles: ['ADMIN'],
     children: [
-      { key: '/strategy', label: '策略设置', icon: 'i-fa6-solid:shield-halved' },
+      { key: '/users', label: '用户管理', icon: 'i-fa6-solid:users' },
       { key: '/settings', label: '系统设置', icon: 'i-fa6-solid:wrench' },
     ],
   },

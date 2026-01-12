@@ -30,6 +30,7 @@ export default defineConfig({
     'i-fa6-solid:bell',
     'i-fa6-solid:user',
     'i-fa6-solid:power-off',
+    'i-fa6-solid:users',
   ],
   transformers: [
     transformerDirectives(), // 支持 @apply 等指令
