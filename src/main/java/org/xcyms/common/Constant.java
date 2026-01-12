@@ -10,4 +10,19 @@ import lombok.Getter;
 public class Constant {
 
     public static final String SALT = "everKeep_salt";
+
+    /**
+     * 缓存常量
+     */
+    public interface Cache {
+        String CONFIG = "config";
+    }
+
+    /**
+     * 角色常量
+     */
+    public interface Role {
+        Long ADMIN = 1L;
+        Long USER = 2L;
+    }
 }

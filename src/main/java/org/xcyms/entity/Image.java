@@ -44,6 +44,9 @@ public class Image implements Serializable {
     @TableField("type")
     private String type;
 
+    @TableField("status")
+    private YesNoEnum status;
+
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

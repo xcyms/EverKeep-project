@@ -25,6 +25,8 @@
         <druid.version>1.2.20</druid.version>
         <Knife4j.version>4.5.0</Knife4j.version>
         <hutool.version>5.8.43</hutool.version>
+        <common-lang3.version>3.20.0</common-lang3.version>
+        <model-mapper.version>3.2.6</model-mapper.version>
     </properties>
 
     <dependencies>
@@ -96,6 +98,25 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-core</artifactId>
             <version>${hutool.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${common-lang3.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+            <version>${model-mapper.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
     </dependencies>

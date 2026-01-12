@@ -1,7 +1,9 @@
 package org.xcyms.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.xcyms.common.ApiResult;
 import org.xcyms.entity.Album;
+import org.xcyms.entity.dto.AlbumDTO;
 
 import java.util.List;
 
@@ -15,7 +17,9 @@ import java.util.List;
  */
 public interface IAlbumService extends IService<Album> {
 
-    List<Album> getMyAlbums();
+    ApiResult<List<AlbumDTO>> getMyAlbums();
 
-    boolean createAlbum(Album album);
+    boolean createAlbum(AlbumDTO albumDTO);
+
+    ApiResult<List<AlbumDTO>> getMyAlbums(String name, Long userId);
 }

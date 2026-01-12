@@ -1,14 +1,17 @@
 package org.xcyms.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.xcyms.common.ApiResult;
 import org.xcyms.entity.User;
 import org.xcyms.entity.dto.LoginDTO;
+import org.xcyms.entity.dto.UserDTO;
 import org.xcyms.service.IUserService;
+
+import java.util.Map;
 
 /**
  * <p>
@@ -33,5 +36,32 @@ public class UserController {
     @PostMapping("/login")
     public ApiResult<?> login(@RequestBody LoginDTO loginDto) {
         return userService.login(loginDto);
+    }
+
+    @PostMapping("/logout")
+    public ApiResult<?> logout() {
+        StpUtil.logout();
+        return ApiResult.success();
+    }
+
+    @GetMapping("/info")
+    public ApiResult<?> getUserInfo() {
+        return userService.getUserInfo(StpUtil.getLoginIdAsLong());
+    }
+
+    @SaCheckRole("ADMIN")
+    @PostMapping("/page")
+    public ApiResult<?> getPage(Page<User> page, @RequestBody UserDTO userDTO) {
+        return userService.getPage(page, userDTO);
+    }
+
+    @PostMapping("/update")
+    public ApiResult<?> updateProfile(@RequestBody UserDTO userDTO) {
+        return userService.updateProfile(userDTO);
+    }
+
+    @PostMapping("/password")
+    public ApiResult<?> updatePassword(@RequestBody Map<String, String> params) {
+        return userService.updatePassword(params.get("oldPassword"), params.get("newPassword"));
     }
 }

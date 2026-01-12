@@ -1,7 +1,10 @@
 package org.xcyms.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.xcyms.common.ApiResult;
 import org.xcyms.entity.Image;
+import org.xcyms.entity.dto.ImageDTO;
 
 /**
  * <p>
@@ -13,4 +16,5 @@ import org.xcyms.entity.Image;
  */
 public interface IImageService extends IService<Image> {
 
+    ApiResult<?> getPage(Page<Image> page, ImageDTO imageDTO);
 }

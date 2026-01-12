@@ -22,7 +22,6 @@ public class CodeGenerator {
         FastAutoGenerator.create(URL, USERNAME, PASSWORD)
                 .globalConfig(builder -> {
                     builder.author("liu-xu") // 设置作者
-                            .enableSpringdoc()
                             .outputDir(OutPutDir + "/src/main/java"); // 指定输出目录
                 })
                 .packageConfig(builder -> {
@@ -30,7 +29,7 @@ public class CodeGenerator {
                             .moduleName("") // 设置父包模块名
                             .pathInfo(Collections.singletonMap(OutputFile.xml, OutPutDir + "/src/main/resources/mapper")); // 设置mapperXml生成路径
                 })
-                .strategyConfig(builder -> builder.addInclude("sys_user", "biz_album", "biz_image") // 设置需要生成的表名
+                .strategyConfig(builder -> builder.addInclude("sys_role", "sys_user_role") // 设置需要生成的表名
                         .addTablePrefix("sys_", "biz_") // 设置过滤表前缀
                         .entityBuilder()
                         .enableFileOverride()
@@ -41,6 +40,9 @@ public class CodeGenerator {
                         .addTableFills(new com.baomidou.mybatisplus.generator.fill.Column("update_time", com.baomidou.mybatisplus.annotation.FieldFill.INSERT_UPDATE))
                         .controllerBuilder()
                         .enableRestStyle() // 开启 restview 控制器
+                        .enableFileOverride()
+                        .mapperBuilder()
+                        .mapperAnnotation(org.apache.ibatis.annotations.Mapper.class)
                         .enableFileOverride())
                 .templateEngine(new FreemarkerTemplateEngine()) // 使用Freemarker引擎模板
                 .execute();

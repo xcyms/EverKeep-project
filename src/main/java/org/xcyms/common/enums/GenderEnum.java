@@ -4,19 +4,20 @@ import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.Getter;
 
 /**
- * 启用禁用枚举
+ * 性别枚举
  */
 @Getter
-public enum EnableDisenableEnum implements BaseEnum {
+public enum GenderEnum implements BaseEnum {
 
-    ENABLE(1, "可用"),
-    DISABLE(0, "不可用");
+    UNKNOWN(0, "未知"),
+    MALE(1, "男"),
+    FEMALE(2, "女");
 
     @EnumValue
     private final Integer code;
     private final String desc;
 
-    EnableDisenableEnum(Integer code, String desc) {
+    GenderEnum(Integer code, String desc) {
         this.code = code;
         this.desc = desc;
     }

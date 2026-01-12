@@ -17,13 +17,13 @@ public class GlobalExceptionHandler {
     // 处理未登录异常
     @ExceptionHandler(NotLoginException.class)
     public ApiResult<?> handleNotLoginException(NotLoginException nle) {
-        return ApiResult.error("未登录或会话已过期，请重新登录");
+        return ApiResult.error(401, "未登录或会话已过期，请重新登录");
     }
 
     // 处理权限不足异常
     @ExceptionHandler(NotPermissionException.class)
     public ApiResult<?> handleNotPermissionException(NotPermissionException npe) {
-        return ApiResult.error("您没有访问该功能的权限");
+        return ApiResult.error(403, "您没有访问该功能的权限");
     }
 
     // 处理普通业务异常
