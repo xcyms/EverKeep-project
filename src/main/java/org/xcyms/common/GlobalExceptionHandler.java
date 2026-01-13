@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
+ * <p>
+ *     全局异常处理
+ * </p>
  * @author liu-xu
  * @date 2026年01月11日 11:46
  */

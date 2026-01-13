@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * <p>
- * Mapper 接口
+ * 角色表Mapper 接口
  * </p>
  *
  * @author liu-xu

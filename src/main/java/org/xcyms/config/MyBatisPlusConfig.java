@@ -10,6 +10,9 @@ import org.springframework.context.annotation.Configuration;
 import java.time.LocalDateTime;
 
 /**
+ * <p>
+ *     mybatis-plus 配置类
+ * </p>
  * @author liu-xu
  * @date 2026年01月11日 11:43
  */

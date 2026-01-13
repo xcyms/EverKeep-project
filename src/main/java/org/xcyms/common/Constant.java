@@ -3,6 +3,9 @@ package org.xcyms.common;
 import lombok.Getter;
 
 /**
+ * <p>
+ *     公共常量类
+ * </p>
  * @author liu-xu
  * @date 2026年01月11日 15:31
  */

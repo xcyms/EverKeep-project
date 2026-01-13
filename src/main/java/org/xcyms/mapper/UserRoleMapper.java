@@ -6,7 +6,7 @@ import org.xcyms.entity.UserRole;
 
 /**
  * <p>
- * Mapper 接口
+ * 用户角色Mapper 接口
  * </p>
  *
  * @author liu-xu

@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
+ * <p>
+ *     web 配置类
+ * </p>
  * @author 刘旭
  * @date 2026年01月11日 11:38
  */

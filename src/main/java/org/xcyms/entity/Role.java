@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 /**
  * <p>
- *
+ * 角色表
  * </p>
  *
  * @author liu-xu

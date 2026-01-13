@@ -6,6 +6,9 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
+ * <p>
+ *     系统配置DTO
+ * </p>
  * @author liu-xu
  * @date 2026年01月12日 11:06
  */

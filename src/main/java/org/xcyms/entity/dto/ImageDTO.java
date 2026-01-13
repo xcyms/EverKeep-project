@@ -6,6 +6,9 @@ import org.xcyms.common.enums.YesNoEnum;
 import java.time.LocalDateTime;
 
 /**
+ * <p>
+ *     图片DTO
+ * </p>
  * @author liu-xu
  * @date 2026年01月12日 9:22
  */

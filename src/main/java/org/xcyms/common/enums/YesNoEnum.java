@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.Getter;
 
 /**
- * 启用禁用枚举
+ * 是否枚举
  */
 @Getter
 public enum YesNoEnum implements BaseEnum {

@@ -7,6 +7,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
+ * <p>
+ *     用户DTO
+ * </p>
  * @author liu-xu
  * @date 2026年01月12日 9:55
  */

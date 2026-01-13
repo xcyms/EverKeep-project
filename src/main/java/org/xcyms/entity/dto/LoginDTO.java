@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
+ * <p>
+ *     登录DTO
+ * </p>
  * @author liu-xu
  * @date 2026年01月11日 15:33
  */

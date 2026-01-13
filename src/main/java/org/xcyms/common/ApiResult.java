@@ -3,6 +3,9 @@ package org.xcyms.common;
 import lombok.Data;
 
 /**
+ * <p>
+ *     公共返回结果类
+ * </p>
  * @author liu-xu
  * @date 2026年01月11日 11:37
  */
