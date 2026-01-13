@@ -37,7 +37,7 @@ const initData = async () => {
       getMyAlbumsApi()
     ])
     configs.value = configRes
-    albumList.value = albumRes.data || []
+    albumList.value = albumRes || []
   } catch (error) {
     console.error('加载基础数据失败', error)
   }

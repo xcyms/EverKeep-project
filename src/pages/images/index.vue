@@ -2,7 +2,7 @@
 import { ref, reactive, watch, h, onMounted } from 'vue'
 import { message, Modal, Select } from 'ant-design-vue'
 import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue'
-import { getMyImagesApi, deleteImagesApi } from '../../api/image'
+import { getMyImagesApi, deleteImagesApi, updateImagesStatusApi, moveImageToAlbumApi, setAlbumCoverApi } from '../../api/image'
 import { getMyAlbumsApi } from '../../api/album'
 import { getImageUrl } from '../../utils/common'
 import type { API } from '../../types'
@@ -27,7 +27,7 @@ const queryParams = reactive({
 const loadAlbums = async () => {
   try {
     const res = await getMyAlbumsApi()
-    albumList.value = res.data || []
+    albumList.value = res || []
   } catch (err) {}
 }
 
@@ -107,6 +107,21 @@ const handleDelete = (ids: number[]) => {
   })
 }
 
+const handleBatchStatusUpdate = (status: number) => {
+  const statusName = status === 1 ? '公开' : '私有'
+  Modal.confirm({
+    title: `确定要将选中的 ${selectedIds.value.length} 张图片设为${statusName}吗？`,
+    async onOk() {
+      try {
+        await updateImagesStatusApi(selectedIds.value, status)
+        message.success(`已成功设为${statusName}`)
+        selectedIds.value = []
+        loadData(true)
+      } catch (err) {}
+    },
+  })
+}
+
 const formatSize = (bytes: number) => {
   const kb = bytes / 1024
   return kb >= 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(2)} KB`
@@ -170,32 +185,37 @@ const handleMoveToAlbum = (img: API.Image) => {
           placeholder: '请选择相册',
           onChange: (val: any) => { selectedAlbum = val }
         }, {
-          default: () => [
-            h(Select.Option, { value: '生活' }, { default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), '生活']) }),
-            h(Select.Option, { value: '工作' }, { default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), '工作']) }),
-            h(Select.Option, { value: '旅行' }, { default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), '旅行']) }),
-          ]
+          default: () => albumList.value.map(album => 
+            h(Select.Option, { value: album.id }, { 
+              default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), album.name]) 
+            })
+          )
         })
       ])
     ]),
-    onOk() {
+    async onOk() {
       if (selectedAlbum === img.albumId) {
         message.info('图片已在当前相册中')
         return
       }
-      message.success(`已成功移动到 [${selectedAlbum}] 相册`)
-      loadData(true)
+      try {
+        await moveImageToAlbumApi(img.id, selectedAlbum)
+        const albumName = albumList.value.find(a => a.id === selectedAlbum)?.name || selectedAlbum
+        message.success(`已成功移动到 [${albumName}] 相册`)
+        loadData(true)
+      } catch (err) {}
     },
     okText: '确认移动',
     cancelText: '取消'
   })
 }
 
-const handleSetCover = (img: API.Image) => {
+const handleSetCover = async (img: API.Image) => {
   message.loading({ content: '设置中...', key: 'setCover' })
-  setTimeout(() => {
+  try {
+    await setAlbumCoverApi(img.id)
     message.success({ content: '已设置为相册封面', key: 'setCover', duration: 2 })
-  }, 500)
+  } catch (err) {}
 }
 </script>
 
@@ -246,14 +266,31 @@ const handleSetCover = (img: API.Image) => {
         </a-space>
       </div>
 
-      <a-space>
+      <a-space v-if="selectedIds.length > 0">
+        <a-dropdown>
+          <a-button type="primary" ghost>
+            权限设置 ({{ selectedIds.length }})
+            <template #icon><div class="i-fa6-solid:shield-halved mr-1" /></template>
+          </a-button>
+          <template #overlay>
+            <a-menu @click="({ key }) => handleBatchStatusUpdate(Number(key))">
+              <a-menu-item key="1">
+                <template #icon><div class="i-fa6-solid:eye text-green-500" /></template>
+                设为公开
+              </a-menu-item>
+              <a-menu-item key="0">
+                <template #icon><div class="i-fa6-solid:eye-slash text-orange-500" /></template>
+                设为私有
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
         <a-button 
-          v-if="selectedIds.length > 0" 
           danger 
           type="primary" 
           @click="handleDelete(selectedIds)"
         >
-          批量删除 ({{ selectedIds.length }})
+          批量删除
         </a-button>
       </a-space>
     </div>

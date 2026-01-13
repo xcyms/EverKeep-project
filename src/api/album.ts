@@ -4,7 +4,7 @@ import request from '../utils/request'
 /**
  * 获取我的相册列表
  */
-export const getMyAlbumsApi = (): Promise<API.Response<API.Album[]>> => {
+export const getMyAlbumsApi = (): Promise<API.Album[]> => {
   return request({
     url: '/album/list',
     method: 'get'

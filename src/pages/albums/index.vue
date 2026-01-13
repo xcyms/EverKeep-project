@@ -60,15 +60,14 @@ const handleUploadChange = (info: any) => {
   if (info.file.status === 'done') {
     modalLoading.value = false
     const res = info.file.response
+    // 注意：如果是通过 a-upload 内部处理的，响应已经脱壳或者拦截器已处理
+    // 但通常 a-upload 会收到原始响应，这里假设拦截器处理了全局错误，但手动判断下业务 code 也是安全的
     if (res.code === 200) {
       albumForm.cover = res.data.url
       message.success('封面上传成功')
-    } else {
-      message.error(res.message || '上传失败')
     }
   } else if (info.file.status === 'error') {
     modalLoading.value = false
-    message.error('网络错误，上传失败')
   }
 }
 
@@ -177,7 +176,7 @@ const handlePreview = async (album: API.Album) => {
 }
 
 // --- 设置封面 ---
-const handleSetCover = (img: API.Image) => {
+const handleSetCover = async (img: API.Image) => {
   Modal.confirm({
     title: '设为封面',
     icon: h(ExclamationCircleOutlined),
@@ -205,9 +204,7 @@ const handleDeleteAlbum = (album: API.Album) => {
         await deleteAlbumApi(album.id)
         message.success('相册已成功删除')
         loadData(true)
-      } catch (error) {
-        console.error('删除相册失败', error)
-      }
+      } catch (error) {}
     }
   })
 }
