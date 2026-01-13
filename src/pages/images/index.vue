@@ -5,19 +5,20 @@ import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue
 import { getMyImagesApi, deleteImagesApi } from '../../api/image'
 import { getMyAlbumsApi } from '../../api/album'
 import { getImageUrl } from '../../utils/common'
+import type { API } from '../../types'
 
 // --- 状态变量 ---
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
 const selectedIds = ref<number[]>([])
-const displayedImages = ref<any[]>([])
-const albumList = ref<any[]>([])
+const displayedImages = ref<API.Image[]>([])
+const albumList = ref<API.Album[]>([])
 
 const queryParams = reactive({
   albumId: null as number | null,
   status: 'all',
-  orders: [{ column: 'createTime', asc: false }] as { column: string, asc: boolean }[],
+  sort: 'createTime_desc',
   current: 1,
   size: 12,
 })
@@ -26,7 +27,7 @@ const queryParams = reactive({
 const loadAlbums = async () => {
   try {
     const res = await getMyAlbumsApi()
-    albumList.value = res
+    albumList.value = res.data || []
   } catch (err) {}
 }
 
@@ -43,11 +44,12 @@ const loadData = async (isRefresh = false) => {
     const res = await getMyImagesApi({
       current: queryParams.current,
       size: queryParams.size,
+      column: queryParams.sort.split('_')[0],
+      asc: queryParams.sort.split('_')[1] === 'asc'
     }, {
       albumId: queryParams.albumId,
       status: queryParams.status === 'all' ? null : queryParams.status
     })
-
     const list = res.records || []
     if (isRefresh) {
       displayedImages.value = list
@@ -55,7 +57,7 @@ const loadData = async (isRefresh = false) => {
       displayedImages.value.push(...list)
     }
 
-    hasMore.value = displayedImages.value.length < res.total
+    hasMore.value = displayedImages.value.length < (res.total || 0)
   } catch (error) {
     console.error('加载图片失败', error)
   } finally {
@@ -69,7 +71,7 @@ onMounted(() => {
 })
 
 // 监听筛选条件变化
-watch(() => [queryParams.albumId, queryParams.status, queryParams.orders], () => {
+watch(() => [queryParams.albumId, queryParams.status, queryParams.sort], () => {
   loadData(true)
 }, { immediate: true })
 
@@ -111,7 +113,7 @@ const formatSize = (bytes: number) => {
 }
 
 // --- 右键菜单操作 ---
-const handleMenuClick = (action: string, img: any) => {
+const handleMenuClick = (action: string, img: API.Image) => {
   switch (action) {
     case 'details':
       showDetails(img)
@@ -128,16 +130,16 @@ const handleMenuClick = (action: string, img: any) => {
   }
 }
 
-const showDetails = (img: any) => {
+const showDetails = (img: API.Image) => {
   Modal.info({
     title: '图片详情',
     width: 400,
     content: h('div', { class: 'space-y-3 pt-4' }, [
       h('div', { class: 'flex justify-between' }, [h('span', '文件名:'), h('span', { class: 'font-medium' }, img.name)]),
-      h('div', { class: 'flex justify-between' }, [h('span', '所属相册:'), h('span', img.album)]),
+      h('div', { class: 'flex justify-between' }, [h('span', '所属相册:'), h('span', albumList.value.find(a => a.id === img.albumId)?.name || '无')]),
       h('div', { class: 'flex justify-between' }, [h('span', '文件大小:'), h('span', formatSize(img.size))]),
       h('div', { class: 'flex justify-between' }, [h('span', '上传时间:'), h('span', img.createTime)]),
-      h('div', { class: 'flex justify-between' }, [h('span', '状态:'), h('span', img.isPublic ? '公开' : '私有')]),
+      h('div', { class: 'flex justify-between' }, [h('span', '状态:'), h('span', img.status.code === 1 ? '公开' : '私有')]),
       h('div', { class: 'mt-4 border-t pt-4' }, [
         h('img', { src: getImageUrl(img.url), class: 'w-full rounded-lg shadow-sm' })
       ])
@@ -146,8 +148,8 @@ const showDetails = (img: any) => {
   })
 }
 
-const handleMoveToAlbum = (img: any) => {
-  let selectedAlbum = img.album
+const handleMoveToAlbum = (img: API.Image) => {
+  let selectedAlbum = img.albumId
   Modal.confirm({
     title: '移动图片到相册',
     icon: h(ExclamationCircleOutlined, { style: 'color: #1890ff' }),
@@ -163,7 +165,7 @@ const handleMoveToAlbum = (img: any) => {
       h('div', { class: 'space-y-2' }, [
         h('p', { class: 'text-sm font-medium text-gray-700 mb-1' }, '选择目标相册'),
         h(Select, {
-          defaultValue: img.album,
+          defaultValue: img.albumId,
           class: 'w-full',
           placeholder: '请选择相册',
           onChange: (val: any) => { selectedAlbum = val }
@@ -177,7 +179,7 @@ const handleMoveToAlbum = (img: any) => {
       ])
     ]),
     onOk() {
-      if (selectedAlbum === img.album) {
+      if (selectedAlbum === img.albumId) {
         message.info('图片已在当前相册中')
         return
       }
@@ -189,7 +191,7 @@ const handleMoveToAlbum = (img: any) => {
   })
 }
 
-const handleSetCover = (img: any) => {
+const handleSetCover = (img: API.Image) => {
   message.loading({ content: '设置中...', key: 'setCover' })
   setTimeout(() => {
     message.success({ content: '已设置为相册封面', key: 'setCover', duration: 2 })
@@ -234,13 +236,8 @@ const handleSetCover = (img: any) => {
 
         <a-space>
           <span class="text-gray-500 text-sm">排序:</span>
-          <a-select :value="(queryParams.orders[0]?.column ?? '') + '_' + (queryParams.orders[0]?.asc ? 'asc' : 'desc')"
-                    @change="(val) => {
-                      const str = String(val ?? '');
-                      const [column,order]=str.split('_');
-                      queryParams.orders=[{column:column||'createTime',asc:order==='asc'}];
-                    }" 
-                    class="w-40">
+          <a-select v-model:value="queryParams.sort"
+            class="w-40">
             <a-select-option value="createTime_desc">时间降序 (最新)</a-select-option>
             <a-select-option value="createTime_asc">时间升序</a-select-option>
             <a-select-option value="size_desc">大小降序</a-select-option>

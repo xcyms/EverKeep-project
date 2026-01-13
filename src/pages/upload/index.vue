@@ -7,7 +7,7 @@ import { getMyAlbumsApi } from '../../api/album'
 import type { API } from '../../types'
 
 const fileList = ref<API.UploadFile[]>([])  
-const albumList = ref<any[]>([])
+const albumList = ref<API.Album[]>([])
 const selectedAlbumId = ref<number | null>(null)
 const isUploading = ref(false)
 
@@ -37,7 +37,7 @@ const initData = async () => {
       getMyAlbumsApi()
     ])
     configs.value = configRes
-    albumList.value = albumRes
+    albumList.value = albumRes.data || []
   } catch (error) {
     console.error('加载基础数据失败', error)
   }
@@ -136,7 +136,7 @@ const startUpload = async () => {
       
       item.status = 'success'
       item.progress = 100
-      item.url = res.url
+      item.url = res.data?.url || ''
     } catch (err: any) {
       item.status = 'error'
       item.progress = 0

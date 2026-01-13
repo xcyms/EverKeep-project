@@ -5,6 +5,17 @@ namespace API {
     data: T
   }
 
+  export interface LoginRequest {
+    username: string
+    password: string
+  }
+
+  export interface RegisterRequest {
+    username: string
+    password: string
+    confirmPassword: string
+  }
+
   export interface SysConfig {
     userId: number | undefined
     id?: number
@@ -40,6 +51,30 @@ namespace API {
     total: number
     size: number
     current: number
+  }
+
+  export interface Album {
+    id: number
+    name: string
+    cover: string
+    imageCount: number
+    createTime: string
+    description: string
+  }
+
+  export interface Image {
+    id: number
+    userId: number
+    albumId: number
+    url: string
+    name: string
+    size: number
+    type: string
+    status: {
+      code: number
+      name: string
+    }
+    createTime: string
   }
 }
 
