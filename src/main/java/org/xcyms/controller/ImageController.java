@@ -10,6 +10,8 @@ import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.ImageDTO;
 import org.xcyms.service.IImageService;
 
+import java.util.List;
+
 /**
  * <p>
  * 图片表 前端控制器
@@ -44,5 +46,25 @@ public class ImageController {
             page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
         }
         return imageService.getPage(page, imageDTO);
+    }
+
+    @DeleteMapping("/delete")
+    public ApiResult<?> delete(@RequestBody List<Long> idList) {
+        return imageService.removeByIds(idList) ? ApiResult.success() : ApiResult.error("删除失败");
+    }
+
+    @PostMapping("/updateStatus")
+    public ApiResult<?> updateStatus(@RequestBody ImageDTO imageDTO) {
+        return imageService.updateStatus(imageDTO);
+    }
+
+    @PostMapping("/move")
+    public ApiResult<?> move(Long imageId, Long albumId) {
+        return imageService.move(imageId, albumId);
+    }
+
+    @PostMapping("/setCover")
+    public ApiResult<?> setCover(Long imageId) {
+        return imageService.setCover(imageId);
     }
 }

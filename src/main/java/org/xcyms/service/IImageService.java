@@ -17,4 +17,10 @@ import org.xcyms.entity.dto.ImageDTO;
 public interface IImageService extends IService<Image> {
 
     ApiResult<?> getPage(Page<Image> page, ImageDTO imageDTO);
+
+    ApiResult<?> updateStatus(ImageDTO imageDTO);
+
+    ApiResult<?> move(Long imageId, Long albumId);
+
+    ApiResult<?> setCover(Long imageId);
 }

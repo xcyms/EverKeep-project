@@ -4,6 +4,7 @@ import lombok.Data;
 import org.xcyms.common.enums.YesNoEnum;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * <p>
@@ -32,4 +33,6 @@ public class ImageDTO {
     private YesNoEnum status;
 
     private LocalDateTime createTime;
+
+    private List<Long> ids;
 }
