@@ -48,7 +48,8 @@ const handleSubmit = async () => {
     } else {
       await registerApi({
         username: formState.username,
-        password: formState.password
+        password: formState.password,
+        confirmPassword: formState.confirmPassword
       })
       message.success('注册成功，请登录')
       isLogin.value = true

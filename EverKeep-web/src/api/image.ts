@@ -5,7 +5,7 @@ import request from '../utils/request'
  * 上传图片
  * @param formData 包含 file 和 albumId 的表单数据
  */
-export const uploadImageApi = (formData: FormData): Promise<API.Response<API.Image>> => {
+export const uploadImageApi = (formData: FormData): Promise<API.Image> => {
   return request({
     url: '/file/upload',
     method: 'post',
@@ -31,7 +31,7 @@ export const getMyImagesApi = (params: { current: number; size: number; column?:
 /**
  * 删除图片
  */
-export const deleteImagesApi = (ids: number[]): Promise<API.Response<string>> => {
+export const deleteImagesApi = (ids: number[]): Promise<string> => {
   return request({
     url: '/image/delete',
     method: 'delete',
@@ -42,7 +42,7 @@ export const deleteImagesApi = (ids: number[]): Promise<API.Response<string>> =>
 /**
  * 批量更新图片状态
  */
-export const updateImagesStatusApi = (ids: number[], status: number): Promise<API.Response<string>> => {
+export const updateImagesStatusApi = (ids: number[], status: number): Promise<string> => {
   return request({
     url: '/image/updateStatus',
     method: 'post',
@@ -56,7 +56,7 @@ export const updateImagesStatusApi = (ids: number[], status: number): Promise<AP
 /**
  * 移动图片到指定相册
  */
-export const moveImageToAlbumApi = (imageId: number, albumId: number): Promise<API.Response<string>> => {
+export const moveImageToAlbumApi = (imageId: number, albumId: number): Promise<string> => {
   return request({
     url: '/image/move',
     method: 'post',
@@ -67,7 +67,7 @@ export const moveImageToAlbumApi = (imageId: number, albumId: number): Promise<A
 /**
  * 设置图片为所属相册封面
  */
-export const setAlbumCoverApi = (imageId: number): Promise<API.Response<string>> => {
+export const setAlbumCoverApi = (imageId: number): Promise<string> => {
   return request({
     url: '/image/setCover',
     method: 'post',

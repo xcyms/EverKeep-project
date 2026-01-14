@@ -26,7 +26,7 @@ export const getMyAlbumsPageApi = (params: { current: number; size: number; colu
 /**
  * 创建相册
  */
-export const createAlbumApi = (data: API.Album): Promise<API.Response<string>> => {
+export const createAlbumApi = (data: API.Album): Promise<string> => {
   return request({
     url: '/album/create',
     method: 'post',
@@ -37,7 +37,7 @@ export const createAlbumApi = (data: API.Album): Promise<API.Response<string>> =
 /**
  * 修改相册
  */
-export const updateAlbumApi = (data: API.Album): Promise<API.Response<string>> => {
+export const updateAlbumApi = (data: API.Album): Promise<string> => {
   return request({
     url: '/album/update',
     method: 'post',
@@ -48,7 +48,7 @@ export const updateAlbumApi = (data: API.Album): Promise<API.Response<string>> =
 /**
  * 删除相册
  */
-export const deleteAlbumApi = (id: number): Promise<API.Response<string>> => {
+export const deleteAlbumApi = (id: number): Promise<string> => {
   return request({
     url: '/album/delete',
     method: 'delete',

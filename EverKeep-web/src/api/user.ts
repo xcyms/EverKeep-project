@@ -3,7 +3,7 @@ import request from '../utils/request'
 /**
  * 用户登录
  */
-export const loginApi = (data: API.LoginRequest): Promise<API.Response<{ token: string }>> => {
+export const loginApi = (data: API.LoginRequest): Promise<string> => {
   return request({
     url: '/user/login',
     method: 'post',
@@ -14,7 +14,7 @@ export const loginApi = (data: API.LoginRequest): Promise<API.Response<{ token: 
 /**
  * 用户注册
  */
-export const registerApi = (data: API.RegisterRequest): Promise<API.Response<string>> => {
+export const registerApi = (data: API.RegisterRequest): Promise<string> => {
   return request({
     url: '/user/register',
     method: 'post',
@@ -25,7 +25,7 @@ export const registerApi = (data: API.RegisterRequest): Promise<API.Response<str
 /**
  * 退出登录
  */
-export const logoutApi = (): Promise<API.Response<string>> => {
+export const logoutApi = (): Promise<string> => {
   return request({
     url: '/user/logout',
     method: 'post'
@@ -35,7 +35,7 @@ export const logoutApi = (): Promise<API.Response<string>> => {
 /**
  * 获取用户信息
  */
-export const getUserInfoApi = (): Promise<API.Response<API.User>> => {
+export const getUserInfoApi = (): Promise<API.User> => {
   return request({
     url: '/user/info',
     method: 'get'
@@ -45,7 +45,7 @@ export const getUserInfoApi = (): Promise<API.Response<API.User>> => {
 /**
  * 更新个人资料
  */
-export const updateProfileApi = (data: Partial<API.User>): Promise<API.Response<API.User>> => {
+export const updateProfileApi = (data: Partial<API.User>): Promise<API.User> => {
   return request({
     url: '/user/update',
     method: 'post',
@@ -56,7 +56,7 @@ export const updateProfileApi = (data: Partial<API.User>): Promise<API.Response<
 /**
  * 修改密码
  */
-export const updatePasswordApi = (data: { oldPassword: string; newPassword: string }): Promise<API.Response<string>> => {
+export const updatePasswordApi = (data: { oldPassword: string; newPassword: string }): Promise<string> => {
   return request({
     url: '/user/password',
     method: 'post',
@@ -70,7 +70,7 @@ export const updatePasswordApi = (data: { oldPassword: string; newPassword: stri
 export const getUserListApi = (
   params: { current: number; size: number },
   data?: { username?: string; nickname?: string }
-): Promise<API.Response<API.PageResult<API.User>>> => {
+): Promise<API.PageResult<API.User>> => {
   return request({
     url: '/user/page',
     method: 'post',
