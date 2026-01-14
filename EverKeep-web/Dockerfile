@@ -1,8 +1,7 @@
 FROM docker.m.daocloud.io/library/node:20-alpine AS build-stage
 WORKDIR /app
 COPY package*.json ./
-# 使用淘宝镜像源
-RUN npm install --registry=https://registry.npmmirror.com
+RUN npm install --force
 COPY . .
 RUN npm run build
 

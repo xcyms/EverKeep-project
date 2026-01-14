@@ -136,7 +136,7 @@ const startUpload = async () => {
       
       item.status = 'success'
       item.progress = 100
-      item.url = res.data?.url || ''
+      item.url = res.url || ''
     } catch (err: any) {
       item.status = 'error'
       item.progress = 0
