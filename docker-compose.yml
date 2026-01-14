@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: everkeep-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: everKeep
+      MYSQL_ROOT_PASSWORD: your_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+      - ./init-sql:/docker-entrypoint-initdb.d
+
+  # Redis 缓存
+  redis:
+    image: redis:alpine
+    container_name: everkeep-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 后端服务
+  everkeep-server:
+    build: ./EverKeep-server
+    container_name: everkeep-server
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - spring.datasource.druid.password=your_password
+    ports:
+      - "8070:8070"
+
+  # 前端服务
+  everkeep-web:
+    build: ./EverKeep-web
+    container_name: everkeep-web
+    restart: always
+    depends_on:
+      - everkeep-server
+    ports:
+      - "80:80"
