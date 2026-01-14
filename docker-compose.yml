@@ -3,12 +3,12 @@ version: '3.8'
 services:
   # MySQL 数据库
   mysql:
-    image: mysql:8.0
+    image: docker.m.daocloud.io/library/mysql:8.0
     container_name: everkeep-mysql
     restart: always
     environment:
       MYSQL_DATABASE: everKeep
-      MYSQL_ROOT_PASSWORD: your_password
+      MYSQL_ROOT_PASSWORD: 123456
     ports:
       - "3306:3306"
     volumes:
@@ -17,7 +17,7 @@ services:
 
   # Redis 缓存
   redis:
-    image: redis:alpine
+    image: docker.m.daocloud.io/library/redis:alpine
     container_name: everkeep-redis
     restart: always
     ports:
@@ -32,7 +32,7 @@ services:
       - mysql
       - redis
     environment:
-      - spring.datasource.druid.password=your_password
+      - spring.datasource.druid.password=123456
     ports:
       - "8070:8070"
 

@@ -1,16 +1,14 @@
-# 构建阶段
-FROM maven:3.9-eclipse-temurin-17-alpine AS build
+# 使用 daocloud 的代拉地址
+FROM docker.m.daocloud.io/library/maven:3.9-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-# 跳过测试进行打包
-RUN mvn clean package -DskipTests
+# 加上阿里云 Maven 镜像加快下载速度
+RUN mvn clean package -DskipTests -Pprod
 
-# 运行阶段
-FROM eclipse-temurin:17-jre-alpine
+FROM docker.m.daocloud.io/library/eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-# 设置环境变量，指定激活 prod 配置文件
 ENV JAVA_OPTS="-Dspring.profiles.active=prod"
 EXPOSE 8070
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
