@@ -116,12 +116,14 @@ const addFiles = (files: API.UploadFile[]) => {
 
 // 执行上传逻辑
 const startUpload = async () => {
+  if (isUploading.value) return
   const pending = fileList.value.filter(f => f.status === 'pending' || f.status === 'error')
   if (pending.length === 0) return
 
   isUploading.value = true
   
-  for (const item of pending) {
+  // 使用 Promise.allSettled 并发上传，提高效率并确保每个文件状态都被处理
+  const uploadPromises = pending.map(async (item) => {
     item.status = 'uploading'
     item.progress = 0
     
@@ -137,24 +139,28 @@ const startUpload = async () => {
       item.status = 'success'
       item.progress = 100
       item.url = res.url || ''
+      return true
     } catch (err: any) {
       item.status = 'error'
       item.progress = 0
       console.error(`文件 ${item.name} 上传失败:`, err)
+      return false
     }
-  }
+  })
+
+  await Promise.allSettled(uploadPromises)
   
   isUploading.value = false
   
-  const successCount = pending.filter(f => f.status === 'success').length
-  const failCount = pending.filter(f => f.status === 'error').length
+  const successCount = fileList.value.filter(f => f.status === 'success' && pending.includes(f)).length
+  const failCount = fileList.value.filter(f => f.status === 'error' && pending.includes(f)).length
 
   if (successCount === pending.length) {
     message.success(`全部 ${successCount} 个文件上传成功`)
-  } else if (failCount === pending.length) {
-    message.error('文件上传失败，请检查配置或重试')
-  } else {
+  } else if (successCount > 0) {
     message.warning(`上传处理完成：${successCount} 个成功，${failCount} 个失败`)
+  } else {
+    message.error(`${failCount} 个文件上传失败，请检查网络或重试`)
   }
 }
 
