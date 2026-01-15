@@ -35,6 +35,9 @@ services:
       - spring.datasource.druid.password=123456
     ports:
       - "8070:8070"
+    # 图片保存目录  对应数据库  
+    volumes:
+      - ./uploads:/data/uploads
 
   # 前端服务
   everkeep-web:
@@ -45,3 +48,6 @@ services:
       - everkeep-server
     ports:
       - "80:80"
+  # 图片保存目录  对应数据库  
+    volumes:
+      - ./uploads:/data/uploads
