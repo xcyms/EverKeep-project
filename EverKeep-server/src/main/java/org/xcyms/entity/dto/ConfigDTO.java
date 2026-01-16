@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Data
 public class ConfigDTO {
 
-    @NotNull(message = "id不能为空")
     private Long id;
 
     /**

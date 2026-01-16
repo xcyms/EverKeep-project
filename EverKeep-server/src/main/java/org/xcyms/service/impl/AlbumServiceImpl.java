@@ -1,6 +1,5 @@
 package org.xcyms.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,10 +10,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.xcyms.common.ApiResult;
 import org.xcyms.entity.Album;
-import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.AlbumDTO;
 import org.xcyms.mapper.AlbumMapper;
-import org.xcyms.mapper.ImageMapper;
 import org.xcyms.service.IAlbumService;
 
 import java.util.List;
@@ -34,7 +31,6 @@ import java.util.stream.Collectors;
 public class AlbumServiceImpl extends ServiceImpl<AlbumMapper, Album> implements IAlbumService {
 
     private final ModelMapper modelMapper;
-    private final ImageMapper imageMapper;
 
     @Override
     public ApiResult<List<AlbumDTO>> getMyAlbums() {
@@ -63,23 +59,21 @@ public class AlbumServiceImpl extends ServiceImpl<AlbumMapper, Album> implements
 
     @Override
     public ApiResult<?> getPage(Page<Album> page, AlbumDTO albumDTO) {
-        LambdaQueryWrapper<Album> wrapper = new LambdaQueryWrapper<>();
+        QueryWrapper<Album> wrapper = new QueryWrapper<>();
+        wrapper.eq("a.deleted", 0);
+        wrapper.eq("i.deleted", 0);
         if (albumDTO != null) {
-            wrapper.like(StringUtils.isNotBlank(albumDTO.getName()), Album::getName, albumDTO.getName());
-            wrapper.eq(null != albumDTO.getUserId(), Album::getUserId, albumDTO.getUserId());
+            if (StringUtils.isNotBlank(albumDTO.getName())) {
+                wrapper.like("a.name", albumDTO.getName());
+            }
+            if (albumDTO.getUserId() != null) {
+                wrapper.eq("a.user_id", albumDTO.getUserId());
+            }
         }
-        Page<Album> userPage = this.page(page, wrapper);
 
-        List<AlbumDTO> dtos = userPage.getRecords().stream().map(album -> {
-            AlbumDTO dto = modelMapper.map(album, AlbumDTO.class);
-            dto.setImageCount(imageMapper.selectCount(new QueryWrapper<Image>()
-                    .lambda().eq(Image::getAlbumId, album.getId())));
-            return dto;
-        }).collect(Collectors.toList());
+        // 处理排序逻辑：如果是 imageCount 排序，由于是自定义 SQL，需要特殊处理
+        // MyBatis Plus 的 OrderItem 会自动拼接到 customSqlSegment 中
 
-        Page<AlbumDTO> resultPage = new Page<>(page.getCurrent(), page.getSize(), userPage.getTotal());
-        resultPage.setRecords(dtos);
-
-        return ApiResult.success(resultPage);
+        return ApiResult.success(baseMapper.selectAlbumPageWithImageCount(page, wrapper));
     }
 }

@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.xcyms.common.ApiResult;
@@ -11,6 +12,7 @@ import org.xcyms.entity.Album;
 import org.xcyms.entity.dto.AlbumDTO;
 import org.xcyms.service.IAlbumService;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,6 +23,7 @@ import java.util.List;
  * @author liu-xu
  * @since 2026-01-11
  */
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/album")
@@ -38,10 +41,17 @@ public class AlbumController {
                              @RequestParam(required = false, defaultValue = "true") boolean asc,
                              Page<Album> page,
                              @RequestBody AlbumDTO albumDTO) {
-
         // 处理排序字段
         if (StringUtils.isNotBlank(column)) {
-            page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
+            // 如果前端传入的是 imageCount，则直接使用该别名排序
+            // 定义允许排序的白名单
+            List<String> allowColumns = Arrays.asList("a.create_time", "imageCount");
+            if (allowColumns.contains(column)) {
+                page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
+            } else {
+                // 如果传入非法字段，可以记录日志或默认不排序/抛出异常
+                log.warn("检测到非法的排序字段请求: {}", column);
+            }
         }
         albumDTO.setUserId(StpUtil.getLoginIdAsLong());
         // 业务层根据 albumDTO.getName() 进行模糊查询

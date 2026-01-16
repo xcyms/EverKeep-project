@@ -128,7 +128,7 @@ const formatTime = (time: string) => {
   </a-drawer>
 
   <a-modal
-    v-model:visible="detailVisible"
+    v-model:open="detailVisible"
     :title="currentMessage?.title || '消息详情'"
     :footer="null"
     destroyOnClose

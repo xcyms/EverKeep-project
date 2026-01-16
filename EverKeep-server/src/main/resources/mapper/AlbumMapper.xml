@@ -2,4 +2,23 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.xcyms.mapper.AlbumMapper">
 
+    <select id="selectAlbumPageWithImageCount"
+            parameterType="com.baomidou.mybatisplus.extension.plugins.pagination.Page"
+            resultType="org.xcyms.entity.dto.AlbumDTO">
+        SELECT
+            a.id as 'id',
+            a.user_id as 'userId',
+            a.name as 'name',
+            a.description as 'description',
+            a.cover as 'cover',
+            a.create_time as 'createTime',
+            a.update_time as 'updateTime',
+            a.deleted as 'deleted',
+            COUNT(i.id) AS imageCount
+        FROM biz_album a
+                 LEFT JOIN biz_image i ON a.id = i.album_id
+            ${ew.customSqlSegment}
+        GROUP BY a.id
+    </select>
+
 </mapper>

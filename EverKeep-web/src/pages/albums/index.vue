@@ -4,6 +4,7 @@ import { message, Modal } from 'ant-design-vue'
 import type { Rule } from 'ant-design-vue/es/form'
 import { ExclamationCircleOutlined, PictureOutlined, ClockCircleOutlined, LoadingOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { getMyAlbumsPageApi, createAlbumApi, updateAlbumApi, deleteAlbumApi } from '../../api/album'
+import { getMyImagesApi, setAlbumCoverApi } from '../../api/image'
 import { getImageUrl } from '../../utils/common'
 import type { API } from '../../types'
 import { useUserStore } from '../../store/user'
@@ -95,7 +96,7 @@ const handleSubmit = async () => {
 
 const queryParams = reactive({
   keyword: '',
-  sort: 'createTime_desc',
+  sort: 'a.create_time-desc',
   current: 1,
   size: 8,
 })
@@ -105,6 +106,11 @@ const previewVisible = ref(false)
 const currentAlbum = ref<API.Album | null>(null)
 const albumImages = ref<API.Image[]>([])
 const loadingImages = ref(false)
+const imagePagination = reactive({
+  current: 1,
+  size: 12,
+  total: 0
+})
 
 // --- 核心逻辑：获取数据 ---
 const loadData = async (isRefresh = false) => {
@@ -117,7 +123,7 @@ const loadData = async (isRefresh = false) => {
   }
 
   try {
-    const [column, order] = queryParams.sort.split('_')
+    const [column, order] = queryParams.sort.split('-')
     const res = await getMyAlbumsPageApi({
       current: queryParams.current,
       size: queryParams.size,
@@ -165,14 +171,62 @@ const handleLoadMore = () => {
 }
 
 // --- 预览功能 ---
-const handlePreview = async (album: API.Album) => {
+const loadAlbumImages = async (page = 1) => {
+  if (!currentAlbum.value) return
+  
+  loadingImages.value = true
+  imagePagination.current = page
+  try {
+    const res = await getMyImagesApi({
+      current: imagePagination.current,
+      size: imagePagination.size,
+      column: 'createTime',
+      asc: false
+    }, {
+      albumId: currentAlbum.value.id
+    })
+    albumImages.value = res.records || []
+    imagePagination.total = Number(res.total || 0)
+  } catch (error) {
+    console.error('加载相册图片失败', error)
+    message.error('加载图片失败')
+  } finally {
+    loadingImages.value = false
+  }
+}
+
+const handlePreview = (album: API.Album) => {
   currentAlbum.value = album
   previewVisible.value = true
-  loadingImages.value = true
-  // 模拟加载相册内图片
-  await new Promise(resolve => setTimeout(resolve, 500))
-  // albumImages.value = mockImagesByAlbum(album.id)
-  loadingImages.value = false
+  loadAlbumImages(1)
+}
+
+const handleImagePageChange = (page: number) => {
+  loadAlbumImages(page)
+}
+
+// --- 查看详情 ---
+const showDetails = (album: API.Album) => {
+  Modal.info({
+    title: '相册详情',
+    width: 450,
+    icon: h(PictureOutlined, { style: 'color: #1890ff' }),
+    content: h('div', { class: 'space-y-4 pt-4' }, [
+      h('div', { class: 'flex justify-between' }, [h('span', { class: 'text-gray-500' }, '相册名称:'), h('span', { class: 'font-medium' }, album.name)]),
+      h('div', { class: 'flex justify-between' }, [h('span', { class: 'text-gray-500' }, '图片数量:'), h('span', { class: 'font-medium' }, `${album.imageCount} 张`)]),
+      h('div', { class: 'flex justify-between' }, [h('span', { class: 'text-gray-500' }, '创建时间:'), h('span', { class: 'font-medium' }, album.createTime)]),
+      h('div', { class: 'space-y-1.5' }, [
+        h('span', { class: 'text-gray-500 block' }, '相册描述:'),
+        h('div', { class: 'p-3 bg-gray-50 rounded-lg text-sm text-gray-600 italic' }, album.description || '暂无描述')
+      ]),
+      h('div', { class: 'space-y-1.5' }, [
+        h('span', { class: 'text-gray-500 block' }, '相册封面:'),
+        h('img', { src: getImageUrl(album.cover), class: 'w-full h-40 object-cover rounded-xl border border-gray-100 shadow-sm' })
+      ])
+    ]),
+    okText: '知道了',
+    centered: true
+  })
 }
 
 // --- 设置封面 ---
@@ -181,10 +235,17 @@ const handleSetCover = async (img: API.Image) => {
     title: '设为封面',
     icon: h(ExclamationCircleOutlined),
     content: '确定要将这张图片设为相册封面吗？',
-    onOk() {
-      if (currentAlbum.value) {
-        currentAlbum.value.cover = img.url
-        message.success('封面设置成功')
+    async onOk() {
+      try {
+        message.loading({ content: '设置中...', key: 'setCover' })
+        await setAlbumCoverApi(img.id)
+        if (currentAlbum.value) {
+          currentAlbum.value.cover = img.url
+        }
+        message.success({ content: '封面设置成功', key: 'setCover' })
+        loadData(true) // 刷新列表以显示新封面
+      } catch (error) {
+        message.error({ content: '设置失败', key: 'setCover' })
       }
     }
   })
@@ -224,10 +285,10 @@ const handleDeleteAlbum = (album: API.Album) => {
         />
         <a-select v-model:value="queryParams.sort" class="w-44">
           <template #suffixIcon><div class="i-fa6-solid:sort text-gray-400 mr-1" /></template>
-          <a-select-option value="createTime_desc">按创建时间 (新→旧)</a-select-option>
-          <a-select-option value="createTime_asc">按创建时间 (旧→新)</a-select-option>
-          <a-select-option value="imageCount_desc">按图片数量 (多→少)</a-select-option>
-          <a-select-option value="imageCount_asc">按图片数量 (少→多)</a-select-option>
+          <a-select-option value="a.create_time-desc">按创建时间 (新→旧)</a-select-option>
+          <a-select-option value="a.create_time-asc">按创建时间 (旧→新)</a-select-option>
+          <a-select-option value="imageCount-desc">按图片数量 (多→少)</a-select-option>
+          <a-select-option value="imageCount-asc">按图片数量 (少→多)</a-select-option>
         </a-select>
       </div>
       <a-button type="primary" class="toolbar-btn flex items-center gap-2" @click="openModal()">
@@ -289,7 +350,7 @@ const handleDeleteAlbum = (album: API.Album) => {
             </p>
             <div class="flex items-center justify-between text-xs text-gray-400">
               <span class="flex items-center gap-1"><ClockCircleOutlined /> {{ album.createTime.split(' ')[0] }}</span>
-              <span class="hover:text-blue-500 cursor-pointer transition-colors">查看详情</span>
+              <span class="hover:text-blue-500 cursor-pointer transition-colors" @click="showDetails(album)">查看详情</span>
             </div>
           </div>
         </div>
@@ -386,6 +447,17 @@ const handleDeleteAlbum = (album: API.Album) => {
               </a-button>
             </div>
           </div>
+        </div>
+        
+        <!-- 图片分页 -->
+        <div v-if="imagePagination.total > imagePagination.size" class="flex justify-center mt-6 pb-2">
+          <a-pagination
+            v-model:current="imagePagination.current"
+            :total="imagePagination.total"
+            :page-size="imagePagination.size"
+            show-less-items
+            @change="handleImagePageChange"
+          />
         </div>
       </div>
     </a-modal>

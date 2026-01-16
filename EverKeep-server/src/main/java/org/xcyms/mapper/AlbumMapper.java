@@ -1,8 +1,13 @@
 package org.xcyms.mapper;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Constants;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.xcyms.entity.Album;
+import org.xcyms.entity.dto.AlbumDTO;
 
 /**
  * <p>
@@ -14,5 +19,7 @@ import org.xcyms.entity.Album;
  */
 @Mapper
 public interface AlbumMapper extends BaseMapper<Album> {
+
+    IPage<AlbumDTO> selectAlbumPageWithImageCount(IPage<Album> page, @Param(Constants.WRAPPER) Wrapper<Album> queryWrapper);
 
 }
