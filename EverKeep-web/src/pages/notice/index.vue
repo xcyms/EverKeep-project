@@ -183,7 +183,7 @@ onMounted(() => {
 
     <!-- 新增/编辑弹窗 -->
     <a-modal
-      v-model:visible="modalVisible"
+      v-model:open="modalVisible"
       :title="modalTitle"
       :confirm-loading="confirmLoading"
       @ok="handleModalOk"
@@ -227,7 +227,7 @@ onMounted(() => {
 
     <!-- 公告详情弹窗 -->
     <a-modal
-      v-model:visible="detailVisible"
+      v-model:open="detailVisible"
       :title="currentNotice.title"
       :footer="null"
       width="600px"
