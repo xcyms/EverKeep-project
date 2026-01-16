@@ -11,6 +11,10 @@ import org.xcyms.service.IImageService;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,12 +35,20 @@ public class FileController {
 
     // 图片上传接口
     @PostMapping("/upload")
-    public ApiResult<?> upload(@RequestPart("file") MultipartFile file, @RequestParam(value = "albumId", required = false) Long albumId) {
+    public ApiResult<?> upload(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "albumId", required = false) Long albumId,
+            @RequestParam(value = "category", required = false, defaultValue = "image") String category) {
         if (file.isEmpty()) {
             return ApiResult.error("文件不能为空");
         }
 
         Long userId = StpUtil.getLoginIdAsLong();
+
+        // 验证 category 合法性，防止路径穿越
+        if (category.contains("..") || category.contains("/") || category.contains("\\")) {
+            return ApiResult.error("非法的文件类型参数");
+        }
 
         // 验证文件大小 (从配置读取)
         String maxSizeStr = configService.getConfigValue(userId, "max_file_size");
@@ -80,21 +92,30 @@ public class FileController {
             return ApiResult.error("不支持的文件格式，仅支持: " + String.join(", ", allowedExtensions).toUpperCase());
         }
 
-        // 1. 定义存储路径 (建议从配置中读取)
-        String filePath = configService.getConfigValue(userId, "upload_path");
-        if (filePath == null || filePath.isEmpty()) {
+        // 1. 定义存储路径 (从配置读取根路径)
+        String rootPath = configService.getConfigValue(userId, "upload_path");
+        if (rootPath == null || rootPath.isEmpty()) {
             return ApiResult.error("未配置上传路径，请联系管理员");
         }
 
-        // 确保路径以分隔符结尾
-        if (!filePath.endsWith(File.separator)) {
-            filePath += File.separator;
+        // 确保根路径以分隔符结尾
+        if (!rootPath.endsWith(File.separator)) {
+            rootPath += File.separator;
         }
 
-        // 2. 生成新文件名
+        // 2. 构建年月日路径 (如: 2024/01/16)
+        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+
+        // 构建分类和日期文件夹路径 (如: avatar/2024/01/16/)
+        // 注意：Web 访问路径统一用 /，物理路径用 File.separator
+        String subPath = category + "/" + datePath + "/";
+        String physicalSubPath = subPath.replace("/", File.separator);
+        String fullPath = rootPath + physicalSubPath;
+
+        // 3. 生成新文件名
         String newFileName = UUID.randomUUID() + suffix;
 
-        File destFile = new File(filePath + newFileName);
+        File destFile = new File(fullPath + newFileName);
         File destDir = destFile.getParentFile();
         if (destDir != null && !destDir.exists()) {
             if (!destDir.mkdirs()) {
@@ -103,21 +124,31 @@ public class FileController {
         }
 
         try {
-            // 3. 保存文件到本地
+            // 4. 保存文件到本地
             file.transferTo(destFile);
 
-            // 4. 将图片元数据存入数据库
-            Image image = new Image();
-            image.setUserId(userId);
-            image.setAlbumId(albumId);
-            image.setName(originalFilename);
-            image.setUrl("/uploads/" + newFileName); // 返回 Web 访问路径，而非磁盘物理路径
-            image.setSize(file.getSize());
-            image.setType(ext);
+            // 5. 返回 Web 访问路径
+            String webUrl = "/uploads/" + subPath + newFileName;
 
-            imageService.save(image);
+            // 6. 如果是普通图片，则存入数据库 biz_image 表
+            // 头像和封面通常由具体业务接口保存 URL，不作为“相册图片”管理
+            if ("image".equals(category)) {
+                Image image = new Image();
+                image.setUserId(userId);
+                image.setAlbumId(albumId);
+                image.setName(originalFilename);
+                image.setUrl(webUrl);
+                image.setSize(file.getSize());
+                image.setType(ext);
+                imageService.save(image);
+                return ApiResult.success(image);
+            }
 
-            return ApiResult.success(image);
+            // 其他类型（头像、封面等）直接返回 URL 供前端调用业务接口保存
+            Map<String, String> result = new HashMap<>();
+            result.put("url", webUrl);
+            result.put("name", originalFilename);
+            return ApiResult.success(result);
         } catch (IOException e) {
             return ApiResult.error("文件上传失败: " + e.getMessage());
         }

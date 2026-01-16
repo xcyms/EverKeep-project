@@ -3,7 +3,7 @@ import request from '../utils/request'
 
 /**
  * 上传图片
- * @param formData 包含 file 和 albumId 的表单数据
+ * @param formData 包含 file、albumId、category 的表单数据
  */
 export const uploadImageApi = (formData: FormData): Promise<API.Image> => {
   return request({
@@ -61,6 +61,20 @@ export const moveImageToAlbumApi = (imageId: number, albumId: number): Promise<s
     url: '/image/move',
     method: 'post',
     params: { imageId, albumId }
+  })
+}
+
+/**
+ * 批量移动图片到指定相册
+ */
+export const batchMoveImagesApi = (ids: number[], albumId: number): Promise<string> => {
+  return request({
+    url: '/image/batchMove',
+    method: 'post',
+    data: {
+      ids,
+      albumId
+    }
   })
 }
 

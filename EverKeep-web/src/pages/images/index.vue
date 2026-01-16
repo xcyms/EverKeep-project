@@ -2,7 +2,7 @@
 import { ref, reactive, watch, h, onMounted } from 'vue'
 import { message, Modal, Select } from 'ant-design-vue'
 import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue'
-import { getMyImagesApi, deleteImagesApi, updateImagesStatusApi, moveImageToAlbumApi, setAlbumCoverApi } from '../../api/image'
+import { getMyImagesApi, deleteImagesApi, updateImagesStatusApi, moveImageToAlbumApi, setAlbumCoverApi, batchMoveImagesApi } from '../../api/image'
 import { getMyAlbumsApi } from '../../api/album'
 import { getImageUrl } from '../../utils/common'
 import type { API } from '../../types'
@@ -122,6 +122,45 @@ const handleBatchStatusUpdate = (status: number) => {
   })
 }
 
+const handleBatchMove = () => {
+  let selectedAlbumId: number | null = null
+  Modal.confirm({
+    title: '批量移动到相册',
+    icon: h(FolderOutlined, { style: 'color: #1890ff' }),
+    width: 420,
+    content: h('div', { class: 'pt-4' }, [
+      h('div', { class: 'mb-4 p-3 bg-blue-50 rounded-lg text-blue-700 text-sm' }, 
+        `已选中 ${selectedIds.value.length} 张图片，请选择目标相册：`
+      ),
+      h(Select, {
+        class: 'w-full',
+        placeholder: '请选择相册',
+        onChange: (val: any) => { selectedAlbumId = val }
+      }, {
+        default: () => albumList.value.map(album => 
+          h(Select.Option, { value: album.id }, { 
+            default: () => h('div', { class: 'flex items-center gap-2' }, [h(FolderOutlined), album.name]) 
+          })
+        )
+      })
+    ]),
+    async onOk() {
+      if (!selectedAlbumId) {
+        message.warning('请选择目标相册')
+        return Promise.reject()
+      }
+      try {
+        await batchMoveImagesApi(selectedIds.value, selectedAlbumId)
+        message.success('批量移动成功')
+        selectedIds.value = []
+        loadData(true)
+      } catch (err) {
+        return Promise.reject()
+      }
+    },
+  })
+}
+
 const formatSize = (bytes: number) => {
   const kb = bytes / 1024
   return kb >= 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(2)} KB`
@@ -132,6 +171,9 @@ const handleMenuClick = (action: string, img: API.Image) => {
   switch (action) {
     case 'details':
       showDetails(img)
+      break
+    case 'copyUrl':
+      handleCopyUrl(img)
       break
     case 'move':
       handleMoveToAlbum(img)
@@ -161,6 +203,37 @@ const showDetails = (img: API.Image) => {
     ]),
     okText: '关闭',
   })
+}
+
+const handleCopyUrl = (img: API.Image) => {
+  const url = getImageUrl(img.url)
+  if (!url) {
+    message.warning('图片地址无效')
+    return
+  }
+  
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url)
+      .then(() => message.success('图片链接已复制到剪贴板'))
+      .catch(() => message.error('复制失败，请手动复制'))
+  } else {
+    // 兼容方案
+    const textArea = document.createElement("textarea")
+    textArea.value = url
+    textArea.style.position = "fixed"
+    textArea.style.left = "-9999px"
+    textArea.style.top = "0"
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    try {
+      document.execCommand('copy')
+      message.success('图片链接已复制到剪贴板')
+    } catch (err) {
+      message.error('复制失败')
+    }
+    document.body.removeChild(textArea)
+  }
 }
 
 const handleMoveToAlbum = (img: API.Image) => {
@@ -211,6 +284,11 @@ const handleMoveToAlbum = (img: API.Image) => {
 }
 
 const handleSetCover = async (img: API.Image) => {
+  if (!img.albumId) {
+    message.warning('该图片未归属于任何相册，无法设置为封面')
+    return
+  }
+
   message.loading({ content: '设置中...', key: 'setCover' })
   try {
     await setAlbumCoverApi(img.id)
@@ -285,6 +363,10 @@ const handleSetCover = async (img: API.Image) => {
             </a-menu>
           </template>
         </a-dropdown>
+        <a-button type="primary" ghost @click="handleBatchMove">
+          批量移动
+          <template #icon><div class="i-fa6-solid:folder-open mr-1" /></template>
+        </a-button>
         <a-button 
           danger 
           type="primary" 
@@ -351,11 +433,15 @@ const handleSetCover = async (img: API.Image) => {
                 <template #icon><div class="i-fa6-solid:circle-info" /></template>
                 图片详情
               </a-menu-item>
+              <a-menu-item key="copyUrl">
+                <template #icon><div class="i-fa6-solid:copy" /></template>
+                复制图片链接
+              </a-menu-item>
               <a-menu-item key="move">
                 <template #icon><div class="i-fa6-solid:folder-open" /></template>
                 移动到相册
               </a-menu-item>
-              <a-menu-item key="setCover">
+              <a-menu-item key="setCover" :disabled="!img.albumId">
                 <template #icon><div class="i-fa6-solid:image" /></template>
                 设置为相册封面
               </a-menu-item>

@@ -143,6 +143,7 @@ const handleAvatarChange = (info: any) => {
             <a-upload
               name="file"
               :action="uploadUrl"
+              :data="{ category: 'avatar' }"
               :show-upload-list="false"
               :headers="{ Authorization: `Bearer ${userStore.token}` }"
               @change="handleAvatarChange"

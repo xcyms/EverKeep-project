@@ -66,6 +66,7 @@ public class AlbumServiceImpl extends ServiceImpl<AlbumMapper, Album> implements
         LambdaQueryWrapper<Album> wrapper = new LambdaQueryWrapper<>();
         if (albumDTO != null) {
             wrapper.like(StringUtils.isNotBlank(albumDTO.getName()), Album::getName, albumDTO.getName());
+            wrapper.eq(null != albumDTO.getUserId(), Album::getUserId, albumDTO.getUserId());
         }
         Page<Album> userPage = this.page(page, wrapper);
 

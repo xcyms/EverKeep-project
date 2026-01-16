@@ -76,6 +76,51 @@ namespace API {
     }
     createTime: string
   }
+
+  export interface StatsSummary {
+    uploadTrend: {
+      date: string
+      count: number
+    }[]
+    imageCount: number
+    albumCount: number
+    userCount: number
+    storageUsage: number
+  }
+
+  export interface Notice {
+    id: number
+    title: string
+    content: string
+    tag: string
+    color: string
+    sort: number
+    createTime: string
+  }
+
+  export interface GetNoticePageRequest {
+    current: number
+    size: number
+    title?: string
+  }
+
+  export interface Message {
+    id: number
+    title: string
+    content: string
+    type: 'info' | 'success' | 'warning' | 'error'
+    readFlag: {
+      code: 0 | 1
+      desc: string
+    }
+    createTime: string
+  }
+
+  export interface GetMessagePageRequest {
+    current: number
+    size: number
+    title?: string
+  }
 }
 
 export type { API }

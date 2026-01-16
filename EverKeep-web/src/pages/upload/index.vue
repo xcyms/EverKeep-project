@@ -130,6 +130,7 @@ const startUpload = async () => {
     try {
       const formData = new FormData()
       formData.append('file', item.file)
+      formData.append('category', 'image')
       if (selectedAlbumId.value) {
         formData.append('albumId', selectedAlbumId.value.toString())
       }
@@ -190,6 +191,16 @@ const removeFile = (id: string) => {
     if (file && file.preview) URL.revokeObjectURL(file.preview)
     fileList.value.splice(index, 1)
   }
+}
+
+// 复制链接
+const copyToClipboard = (text: string | undefined) => {
+  if (!text) return
+  navigator.clipboard.writeText(text).then(() => {
+    message.success('链接已复制到剪切板')
+  }).catch(() => {
+    message.error('复制失败，请手动复制')
+  })
 }
 
 // 拖拽处理
@@ -347,7 +358,13 @@ const handleDrop = (e: DragEvent) => {
             <!-- 成功后的 URL -->
             <div v-if="item.status === 'success'" class="flex items-center gap-2 bg-green-50 px-2 py-0.5 rounded border border-green-100 mt-1">
               <span class="text-[10px] text-green-600 truncate flex-1 font-mono">{{ item.url }}</span>
-              <div class="i-ant-design:copy-outlined text-green-500 cursor-pointer hover:text-green-700 text-xs" @click="message.success('链接已复制')" />
+              <div class="i-ant-design:copy-outlined text-green-500 cursor-pointer hover:text-green-700 text-xs" @click="copyToClipboard(item.url)" />
+            </div>
+
+            <!-- 失败后的提示 -->
+            <div v-if="item.status === 'error'" class="flex items-center gap-2 bg-red-50 px-2 py-0.5 rounded border border-red-100 mt-1">
+              <span class="text-[10px] text-red-600 truncate flex-1 font-medium">上传失败，请重试</span>
+              <div class="i-ant-design:reload-outlined text-red-500 cursor-pointer hover:text-red-700 text-xs" title="重新上传" @click="startUpload" />
             </div>
           </div>
 

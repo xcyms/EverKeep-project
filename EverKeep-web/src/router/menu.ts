@@ -30,13 +30,19 @@ export const menuItems: MenuItem[] = [
     type: 'group',
     roles: ['ADMIN'],
     children: [
-      { key: '/users', label: '用户管理', icon: 'i-fa6-solid:users' },
+      { key: '/users', label: '用户管理', icon: 'i-fa6-solid:user' },
+      { key: '/messages', label: '消息管理', icon: 'i-fa6-solid:message' },
       { key: '/settings', label: '系统设置', icon: 'i-fa6-solid:wrench' },
     ],
   },
   {
     key: '/profile',
     label: '个人中心',
+    hidden: true
+  },
+  {
+    key: '/notice',
+    label: '系统公告',
     hidden: true
   }
 ]

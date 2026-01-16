@@ -1,5 +1,6 @@
 package org.xcyms.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class ImageController {
         if (StringUtils.isNotBlank(column)) {
             page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
         }
+        imageDTO.setUserId(StpUtil.getLoginIdAsLong());
         return imageService.getPage(page, imageDTO);
     }
 
@@ -66,5 +68,10 @@ public class ImageController {
     @PostMapping("/setCover")
     public ApiResult<?> setCover(Long imageId) {
         return imageService.setCover(imageId);
+    }
+
+    @PostMapping("/batchMove")
+    public ApiResult<?> batchMove(@RequestBody ImageDTO imageDTO) {
+        return imageService.batchMove(imageDTO);
     }
 }

@@ -43,7 +43,7 @@ public class AlbumController {
         if (StringUtils.isNotBlank(column)) {
             page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
         }
-
+        albumDTO.setUserId(StpUtil.getLoginIdAsLong());
         // 业务层根据 albumDTO.getName() 进行模糊查询
         return albumService.getPage(page, albumDTO);
     }

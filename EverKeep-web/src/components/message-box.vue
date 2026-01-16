@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { getMyMessagesPageApi, readMessageApi, readAllMessagesApi } from '../api/message'
+import type { API } from '../types'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/zh-cn'
+
+dayjs.extend(relativeTime)
+dayjs.locale('zh-cn')
 
 const props = defineProps<{
   visible: boolean
@@ -10,26 +18,64 @@ const emit = defineEmits<{
   (e: 'unread-change', count: number): void
 }>()
 
-const messages = ref([
-  { id: 1, title: '系统通知', content: '您的账号于 2026-01-11 10:00:00 登录成功。', time: '10分钟前', read: false },
-  { id: 2, title: '任务提醒', content: '您有一个待处理的上传任务。', time: '1小时前', read: false },
-  { id: 3, title: '新消息', content: '欢迎使用 EverKeep！', time: '1天前', read: false },
-  { id: 4, title: '版本更新', content: '系统已更新至 v1.2.0。', time: '2天前', read: true },
-])
+const messages = ref<API.Message[]>([])
+const loading = ref(false)
+const detailVisible = ref(false)
+const currentMessage = ref<API.Message | null>(null)
 
-const unreadCount = computed(() => messages.value.filter(m => !m.read).length)
+const unreadCount = computed(() => messages.value.filter(m => m.readFlag.code === 0).length)
 
 // 监听未读数量变化并通知父组件
 watch(unreadCount, (newCount) => {
   emit('unread-change', newCount)
 }, { immediate: true })
 
+const loadMessages = async () => {
+  loading.value = true
+  try {
+    const res = await getMyMessagesPageApi({ current: 1, size: 50 })
+    messages.value = res.records
+  } catch (err) {
+    console.error('加载消息失败', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(() => props.visible, (val) => {
+  if (val) {
+    loadMessages()
+  }
+})
+
+onMounted(() => {
+  loadMessages()
+})
+
 const handleClose = () => {
   emit('update:visible', false)
 }
 
-const handleMarkAllRead = () => {
-  messages.value.forEach(m => m.read = true)
+const handleMarkAllRead = async () => {
+  try {
+    await readAllMessagesApi()
+    messages.value.forEach(m => m.readFlag = { code: 1, desc: '已读' })
+  } catch (err) {}
+}
+
+const handleRead = async (item: API.Message) => {
+  currentMessage.value = item
+  detailVisible.value = true
+  
+  if (item.readFlag.code === 1) return
+  try {
+    await readMessageApi(item.id)
+    item.readFlag = { code: 1, desc: '已读' }
+  } catch (err) {}
+}
+
+const formatTime = (time: string) => {
+  return dayjs(time).fromNow()
 }
 </script>
 
@@ -47,34 +93,58 @@ const handleMarkAllRead = () => {
       </a-button>
     </template>
 
-    <a-list item-layout="horizontal" :data-source="messages">
-      <template #renderItem="{ item }">
-        <a-list-item :class="{ 'opacity-60': item.read }">
-          <a-list-item-meta :description="item.content">
-            <template #title>
-              <div class="flex justify-between items-center">
-                <span :class="{ 'font-bold': !item.read }">{{ item.title }}</span>
-                <span class="text-xs text-gray-400">{{ item.time }}</span>
-              </div>
-            </template>
-            <template #avatar>
-              <a-badge :dot="!item.read">
-                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
-                  <div v-if="item.id === 1" class="i-fa6-solid:circle-info" />
-                  <div v-else-if="item.id === 2" class="i-fa6-solid:list-check" />
-                  <div v-else-if="item.id === 3" class="i-fa6-solid:message" />
-                  <div v-else class="i-fa6-solid:bell" />
+    <a-spin :spinning="loading">
+      <a-list item-layout="horizontal" :data-source="messages">
+        <template #renderItem="{ item }">
+          <a-list-item 
+            :class="['cursor-pointer hover:bg-gray-50 transition-colors px-4', { 'opacity-60': item.readFlag.code === 1 }]"
+            @click="handleRead(item)"
+          >
+            <a-list-item-meta :description="item.content">
+              <template #title>
+                <div class="flex justify-between items-center">
+                  <span :class="{ 'font-bold': item.readFlag.code === 0 }">{{ item.title }}</span>
+                  <span class="text-xs text-gray-400">{{ formatTime(item.createTime) }}</span>
                 </div>
-              </a-badge>
-            </template>
-          </a-list-item-meta>
-        </a-list-item>
-      </template>
-      <template v-if="messages.length === 0">
-        <a-empty description="暂无消息" />
-      </template>
-    </a-list>
+              </template>
+              <template #avatar>
+                <a-badge :dot="item.readFlag.code === 0">
+                  <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                    <div v-if="item.type === 'success'" class="i-fa6-solid:circle-check" />
+                    <div v-else-if="item.type === 'warning'" class="i-fa6-solid:triangle-exclamation" />
+                    <div v-else-if="item.type === 'error'" class="i-fa6-solid:circle-xmark" />
+                    <div v-else class="i-fa6-solid:bell" />
+                  </div>
+                </a-badge>
+              </template>
+            </a-list-item-meta>
+          </a-list-item>
+        </template>
+        <template v-if="messages.length === 0">
+          <a-empty description="暂无消息" class="mt-20" />
+        </template>
+      </a-list>
+    </a-spin>
   </a-drawer>
+
+  <a-modal
+    v-model:visible="detailVisible"
+    :title="currentMessage?.title || '消息详情'"
+    :footer="null"
+    destroyOnClose
+  >
+    <div class="py-2">
+      <div class="flex items-center gap-2 mb-4 text-xs text-gray-400">
+        <a-tag :color="currentMessage?.type === 'info' ? 'blue' : currentMessage?.type === 'success' ? 'green' : currentMessage?.type === 'warning' ? 'orange' : 'red'">
+          {{ currentMessage?.type.toUpperCase() }}
+        </a-tag>
+        <span>{{ currentMessage?.createTime }}</span>
+      </div>
+      <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">
+        {{ currentMessage?.content }}
+      </div>
+    </div>
+  </a-modal>
 </template>
 
 <style scoped>

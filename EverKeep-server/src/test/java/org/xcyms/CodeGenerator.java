@@ -29,7 +29,7 @@ public class CodeGenerator {
                             .moduleName("") // 设置父包模块名
                             .pathInfo(Collections.singletonMap(OutputFile.xml, OutPutDir + "/src/main/resources/mapper")); // 设置mapperXml生成路径
                 })
-                .strategyConfig(builder -> builder.addInclude("sys_role", "sys_user_role") // 设置需要生成的表名
+                .strategyConfig(builder -> builder.addInclude("sys_message") // 设置需要生成的表名
                         .addTablePrefix("sys_", "biz_") // 设置过滤表前缀
                         .entityBuilder()
                         .enableFileOverride()

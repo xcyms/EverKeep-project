@@ -23,4 +23,6 @@ public interface IImageService extends IService<Image> {
     ApiResult<?> move(Long imageId, Long albumId);
 
     ApiResult<?> setCover(Long imageId);
+
+    ApiResult<?> batchMove(ImageDTO imageDTO);
 }

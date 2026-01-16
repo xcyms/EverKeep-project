@@ -123,4 +123,18 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         return ApiResult.success();
     }
 
+    @Override
+    public ApiResult<?> batchMove(ImageDTO imageDTO) {
+        if (imageDTO.getIds() == null || imageDTO.getIds().isEmpty()) {
+            return ApiResult.error("未选择图片");
+        }
+        if (imageDTO.getAlbumId() == null) {
+            return ApiResult.error("未选择目标相册");
+        }
+
+        Image image = new Image();
+        image.setAlbumId(imageDTO.getAlbumId());
+        this.update(image, new LambdaQueryWrapper<Image>().in(Image::getId, imageDTO.getIds()));
+        return ApiResult.success();
+    }
 }

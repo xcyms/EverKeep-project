@@ -338,6 +338,7 @@ const handleDeleteAlbum = (album: API.Album) => {
             class="cover-uploader"
             :show-upload-list="false"
             :action="uploadUrl"
+            :data="{ category: 'album_cover' }"
             :headers="{ Authorization: `Bearer ${userStore.token}` }"
             @change="handleUploadChange"
           >
