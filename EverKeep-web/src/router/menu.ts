@@ -14,6 +14,7 @@ export const menuItems: MenuItem[] = [
     type: 'group',
     children: [
       { key: '/', label: '工作台', icon: 'i-fa6-solid:house' },
+      { key: '/gallery', label: '画廊', icon: 'i-fa6-solid:images' },
     ],
   },
   {

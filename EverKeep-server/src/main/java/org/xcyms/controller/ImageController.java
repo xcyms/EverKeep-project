@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.xcyms.common.ApiResult;
+import org.xcyms.common.enums.YesNoEnum;
 import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.ImageDTO;
 import org.xcyms.service.IImageService;
@@ -46,7 +47,28 @@ public class ImageController {
         if (StringUtils.isNotBlank(column)) {
             page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
         }
+        // 只能查看自己的图片
         imageDTO.setUserId(StpUtil.getLoginIdAsLong());
+        return imageService.getPage(page, imageDTO);
+    }
+
+    /**
+     * 获取公开图片列表 (画廊)
+     */
+    @PostMapping("/public/page")
+    public ApiResult<?> publicPage(@RequestParam(required = false) String column,
+                                   @RequestParam(required = false, defaultValue = "false") boolean asc,
+                                   Page<Image> page,
+                                   @RequestBody ImageDTO imageDTO) {
+        if (StringUtils.isNotBlank(column)) {
+            page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
+        } else {
+            // 默认按时间倒序
+            page.addOrder(OrderItem.desc("create_time"));
+        }
+        // 强制查询公开状态的图片
+        imageDTO.setStatus(YesNoEnum.YES);
+        imageDTO.setUserId(null); // 查询所有用户的
         return imageService.getPage(page, imageDTO);
     }
 
