@@ -34,6 +34,7 @@ export const menuItems: MenuItem[] = [
       { key: '/users', label: '用户管理', icon: 'i-fa6-solid:user' },
       { key: '/messages', label: '消息管理', icon: 'i-fa6-solid:message' },
       { key: '/settings', label: '系统设置', icon: 'i-fa6-solid:wrench' },
+      { key: '/endpoints', label: '接口列表', icon: 'i-fa6-solid:list-check' },
     ],
   },
   {
