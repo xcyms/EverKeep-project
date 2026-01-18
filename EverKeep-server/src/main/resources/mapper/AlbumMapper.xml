@@ -17,6 +17,7 @@
             COUNT(i.id) AS imageCount
         FROM biz_album a
                  LEFT JOIN biz_image i ON a.id = i.album_id
+            AND i.deleted = 0
             ${ew.customSqlSegment}
         GROUP BY a.id
     </select>

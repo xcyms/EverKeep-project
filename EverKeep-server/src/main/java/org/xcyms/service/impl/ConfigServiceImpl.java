@@ -33,7 +33,7 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
     private final ModelMapper modelMapper;
 
     @Override
-    @Cacheable(value = Constant.Cache.CONFIG, key = "'val:' + (#userId == null || #userId == 0 ? 'sys' : #userId) + ':' + #key")
+    @Cacheable(value = Constant.Cache.CONFIG, key = "'val:' + (#userId == null || #userId == 0 ? 'sys' : #userId) + ':' + #key", unless = "#result == null")
     public String getConfigValue(Long userId, String key) {
         // 归一化 userId: 0 视为 null (系统配置)
         final Long finalUserId = (userId != null && userId == 0) ? null : userId;
@@ -57,7 +57,7 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
     }
 
     @Override
-    @Cacheable(value = Constant.Cache.CONFIG, key = "'list:' + (#userId == null ? 'sys' : #userId)")
+    @Cacheable(value = Constant.Cache.CONFIG, key = "'list:' + (#userId == null ? 'sys' : #userId)", unless = "#result == null")
     public List<ConfigDTO> getUserConfigs(Long userId) {
         // 1. 获取所有系统默认配置
         List<Config> defaultConfigs = this.list(new LambdaQueryWrapper<Config>().isNull(Config::getUserId));

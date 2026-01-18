@@ -1,5 +1,6 @@
 package org.xcyms.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -10,13 +11,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.xcyms.common.ApiResult;
 import org.xcyms.entity.Album;
 import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.ImageDTO;
 import org.xcyms.mapper.AlbumMapper;
 import org.xcyms.mapper.ImageMapper;
+import org.xcyms.service.IConfigService;
 import org.xcyms.service.IImageService;
+import org.xcyms.utils.IdGenerator;
+
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>
@@ -33,6 +45,100 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
 
     private final ModelMapper mapper;
     private final AlbumMapper albumMapper;
+    private final IConfigService configService;
+
+    @Override
+    public ApiResult<?> uploadImage(MultipartFile file, Long albumId, String category) {
+        if (file == null || file.isEmpty()) {
+            return ApiResult.error("文件不能为空");
+        }
+
+        Long userId = StpUtil.getLoginIdAsLong();
+        String originalFilename = file.getOriginalFilename();
+        if (StringUtils.isBlank(originalFilename)) {
+            return ApiResult.error("文件名不能为空");
+        }
+
+        // 1. 验证 (大小、格式)
+        ApiResult<?> validateResult = validateFile(file, userId);
+        if (validateResult.getCode() != 200) {
+            return validateResult;
+        }
+
+        // 2. 路径处理
+        String suffix = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        String relativePath = getRelativePath(userId, category);
+        String rootPath = configService.getConfigValue(null, "upload_path");
+        if (StringUtils.isBlank(rootPath)) {
+            return ApiResult.error("未配置系统上传根路径");
+        }
+
+        String fullDirPath = rootPath.endsWith(File.separator) ? rootPath + relativePath : rootPath + File.separator + relativePath;
+        String newFileName = IdGenerator.nextIdStr() + suffix;
+        File destFile = new File(fullDirPath.replace("/", File.separator), newFileName);
+
+        // 3. 保存文件
+        try {
+            if (!destFile.getParentFile().exists() && !destFile.getParentFile().mkdirs()) {
+                return ApiResult.error("目录创建失败");
+            }
+            file.transferTo(destFile);
+        } catch (IOException e) {
+            log.error("文件保存失败", e);
+            return ApiResult.error("文件保存失败");
+        }
+
+        // 4. 数据入库
+        String webUrl = "/uploads/" + relativePath + newFileName;
+        if ("image".equals(category)) {
+            Image image = new Image();
+            image.setUserId(userId);
+            image.setAlbumId(albumId);
+            image.setName(originalFilename);
+            image.setUrl(webUrl);
+            image.setSize(file.getSize());
+            image.setType(suffix.substring(1));
+            this.save(image);
+            return ApiResult.success(image);
+        }
+
+        Map<String, String> result = new HashMap<>();
+        result.put("url", webUrl);
+        result.put("name", originalFilename);
+        return ApiResult.success(result);
+    }
+
+    private ApiResult<?> validateFile(MultipartFile file, Long userId) {
+        // 大小校验
+        String maxSizeStr = configService.getConfigValue(userId, "max_file_size");
+        long maxSize = StringUtils.isNotBlank(maxSizeStr) ? Long.parseLong(maxSizeStr) : 10 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            return ApiResult.error("文件大小超限");
+        }
+        // 格式校验
+        String originalFilename = file.getOriginalFilename();
+        String suffix = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        String allowedExtStr = configService.getConfigValue(userId, "allowed_extensions");
+        Set<String> allowedExtensions = StringUtils.isNotBlank(allowedExtStr)
+                ? Set.of(allowedExtStr.toLowerCase().split(","))
+                : Set.of("jpg", "jpeg", "png", "gif", "webp");
+        String ext = suffix.startsWith(".") ? suffix.substring(1) : suffix;
+        if (!allowedExtensions.contains(ext)) {
+            return ApiResult.error("不支持的文件格式");
+        }
+        return ApiResult.success();
+    }
+
+    private String getRelativePath(Long userId, String category) {
+        String userSubDir = configService.getConfigValue(userId, "user_upload_dir");
+        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        StringBuilder sb = new StringBuilder();
+        if (StringUtils.isNotBlank(userSubDir)) {
+            sb.append(userSubDir).append("/");
+        }
+        sb.append(category).append("/").append(datePath).append("/");
+        return sb.toString();
+    }
 
     /**
      * 获取图片列表

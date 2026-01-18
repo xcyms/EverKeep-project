@@ -61,7 +61,6 @@ public class AlbumServiceImpl extends ServiceImpl<AlbumMapper, Album> implements
     public ApiResult<?> getPage(Page<Album> page, AlbumDTO albumDTO) {
         QueryWrapper<Album> wrapper = new QueryWrapper<>();
         wrapper.eq("a.deleted", 0);
-        wrapper.eq("i.deleted", 0);
         if (albumDTO != null) {
             if (StringUtils.isNotBlank(albumDTO.getName())) {
                 wrapper.like("a.name", albumDTO.getName());

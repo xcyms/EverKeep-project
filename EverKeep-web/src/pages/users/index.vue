@@ -72,7 +72,11 @@ const handleOpenConfigs = async (user: API.User) => {
   drawerVisible.value = true
   drawerLoading.value = true
   try {
-    userConfigs.value = await getUserConfigsApi(user.id)
+    const configs = await getUserConfigsApi(user.id)
+    // 过滤掉只能由管理员在系统设置中配置的全局参数
+    // 比如 upload_path (默认上传路径) 不允许在用户层级修改
+    const systemOnlyKeys = ['upload_path']
+    userConfigs.value = configs.filter(item => !systemOnlyKeys.includes(item.configKey))
   } catch (error) {
     console.error('加载用户配置失败:', error)
   } finally {
@@ -199,19 +203,38 @@ onMounted(loadUsers)
         <a-spin tip="正在拉取用户个性化配置..." />
       </div>
       <div v-else class="space-y-6">
-        <a-alert type="info" show-icon class="mb-4 text-xs">
-          <template #message>在此修改的配置将仅对该用户生效，并覆盖系统默认配置。</template>
+        <a-alert type="info" show-icon class="mb-4">
+          <template #message>
+            <div class="text-xs">
+              在此修改的配置将仅对该用户生效。例如设置 <b>用户上传子目录</b> (<code>user_upload_dir</code>) 后，该用户的文件将存储在独立文件夹下。
+            </div>
+          </template>
         </a-alert>
         
-        <div v-for="item in userConfigs" :key="item.configKey" class="space-y-2 pb-4 border-b border-gray-50">
+        <div v-for="item in userConfigs" :key="item.configKey" class="p-4 rounded-lg border border-gray-100 bg-gray-50/30 space-y-3">
           <div class="flex items-center justify-between">
-            <span class="font-medium text-gray-700">{{ item.configName }}</span>
-            <code class="text-[10px] text-gray-300">{{ item.configKey }}</code>
+            <div class="flex flex-col">
+              <span class="font-bold text-gray-700">{{ item.configName }}</span>
+              <code class="text-[10px] text-blue-500">{{ item.configKey }}</code>
+            </div>
+            <a-button type="primary" size="small" @click="handleSaveConfig(item)">
+              应用设置
+            </a-button>
           </div>
-          <div class="flex gap-2">
-            <a-input v-model:value="item.configValue" size="small" class="font-mono" />
-            <a-button type="primary" size="small" @click="handleSaveConfig(item)">应用</a-button>
-          </div>
+          
+          <a-input 
+            v-model:value="item.configValue" 
+            placeholder="请输入配置值"
+            class="font-mono"
+          >
+            <template #prefix v-if="item.configKey === 'user_upload_dir'">
+              <span class="i-fa6-solid:folder-open text-gray-400 mr-1" />
+            </template>
+          </a-input>
+          
+          <p class="text-[11px] text-gray-400 mb-0" v-if="item.remark">
+            {{ item.remark }}
+          </p>
         </div>
       </div>
     </a-drawer>

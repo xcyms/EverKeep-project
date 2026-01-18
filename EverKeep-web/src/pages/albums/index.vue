@@ -150,10 +150,6 @@ const loadData = async (isRefresh = false) => {
   }
 }
 
-onMounted(() => {
-  loadData(true)
-})
-
 // 监听筛选和排序变化
 watch(() => [queryParams.sort], () => loadData(true), { immediate: true })
 
