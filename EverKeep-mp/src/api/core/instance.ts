@@ -11,6 +11,7 @@ export const alovaInstance = createAlova({
   }),
   statesHook: vueHook,
   beforeRequest: (method) => {
+    method.config.headers.Authorization = `Bearer ${  getToken()}`
     // Add content type for POST/PUT/PATCH requests
     if (['POST', 'PUT', 'PATCH'].includes(method.type)) {
       method.config.headers['Content-Type'] = 'application/json'
@@ -51,5 +52,9 @@ export const alovaInstance = createAlova({
   // 设置为null即可全局关闭全部请求缓存
   cacheFor: null,
 })
+
+function getToken () {
+  return uni.getStorageSync('auth')?.token || ''
+}
 
 export default alovaInstance

@@ -42,5 +42,11 @@ export default {
   'user.logoutUser': ['GET', '/user/logout'],
   'user.getUserByName': ['GET', '/user/{username}'],
   'user.updateUser': ['PUT', '/user/{username}'],
-  'user.deleteUser': ['DELETE', '/user/{username}']
+  'user.deleteUser': ['DELETE', '/user/{username}'],
+  // 正式业务接口
+  'everkeep.login': ['POST', '/user/login'],
+  'everkeep.register': ['POST', '/user/register'],
+  'everkeep.getUserInfo': ['GET', '/user/info'],
+  'everkeep.logout': ['GET', '/user/logout'],
+  'everkeep.getSummary': ['GET', '/stats/summary'],
 };

@@ -1052,6 +1052,32 @@ declare global {
         config: Config
       ): Alova2Method<null, 'user.deleteUser', Config>;
     };
+    // 正式业务接口
+    everkeep: {
+      // 登录
+      login<
+        Config extends Alova2MethodConfig<ApiResult<string>> & {
+          data: {
+            username?: string;
+            password?: string;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<string>, 'everkeep.login', Config>;
+      // 获取用户信息
+      getUserInfo<Config extends Alova2MethodConfig<null>>(
+        config: Config
+      ): Alova2Method<ApiResult<UserDTO>, 'everkeep.getUserInfo', Config>;
+      // 注销登录
+      logout<Config extends Alova2MethodConfig<null>>(
+        config: Config
+      ): Alova2Method<ApiResult<string>, 'everkeep.logout', Config>;
+      // 获取用户统计信息
+      getSummary<Config extends Alova2MethodConfig<null>>(
+        config: Config
+      ): Alova2Method<ApiResult<SummaryDTO>, 'everkeep.summary', Config>;
+    }
   }
 
   var Apis: Apis;

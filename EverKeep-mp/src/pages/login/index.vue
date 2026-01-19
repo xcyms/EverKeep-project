@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import { uuid } from '@alova/shared'
-
 definePage({
   name: 'login',
   style: {
@@ -39,6 +37,14 @@ onMounted(() => {
     },
   })
 })
+
+const { send: login } = useRequest(
+  (username: string, password: string) => Apis.everkeep.login({
+  data: {
+    username,
+    password,
+  },
+}), {immediate: false})
 
 function handleProtocolClick() {
   protocolShow.value = true
@@ -81,25 +87,23 @@ async function handleSubmit() {
   }
   if (loginType.value === 'account') {
     loginLoading.value = true
-    setTimeout(() => {
-      loginLoading.value = false
-      if (model.username === 'admin' && model.password === '123456') {
-        showSuccess({
-          msg: '登录成功'
-        })
-        user.login({
-          name: model.username,
-          email: 'admin@123.com'
-        }, generateUUID())
-        router.pushTab({
-          name: 'home'
-        })
-      } else {
-        showError({
-          msg: '登录失败'
-        })
-      }
-    }, 2000)
+    const res = await login(model.username, model.password);
+    loginLoading.value = false
+    if (res.code === 200) {
+      showSuccess({
+        msg: '登录成功'
+      })
+      user.login({
+        username: model.username,
+      }, res.data || '')
+      router.pushTab({
+        name: 'home'
+      })
+    } else {
+      showError({
+        msg: res.message || '登录失败'
+      })
+    }
   } else {
     showError({
       msg: '暂未开放'
@@ -166,7 +170,7 @@ function getCode() {
             <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">{{ loginType === 'account' ? '用户名 / 邮箱' : '手机号码' }}</view>
             <wd-input
               v-model="model.username"
-              :placeholder="loginType === 'account' ? '默认用户名：admin' : '请输入手机号'"
+              :placeholder="loginType === 'account' ? '请输入用户名' : '请输入手机号'"
               no-border
               custom-class="!bg-gray-50/80 !rounded-xl !py-3 !px-4 border border-gray-100"
             >
@@ -180,7 +184,7 @@ function getCode() {
             <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">登录密码</view>
             <wd-input
               v-model="model.password"
-              placeholder="默认密码：123456"
+              placeholder="请输入登录密码"
               no-border
               show-password
               custom-class="!bg-gray-50/80 !rounded-xl !py-3 !px-4 border border-gray-100"

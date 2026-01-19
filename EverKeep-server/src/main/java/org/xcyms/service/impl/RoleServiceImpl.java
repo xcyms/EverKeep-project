@@ -8,7 +8,7 @@ import org.xcyms.service.IRoleService;
 
 /**
  * <p>
- * 服务实现类
+ * 角色服务实现类
  * </p>
  *
  * @author liu-xu

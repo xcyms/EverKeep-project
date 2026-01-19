@@ -33,8 +33,8 @@ export interface PaginationResponse<T> {
 /**
  * API 响应基础结构
  */
-export interface ApiResponse<T = any> {
-  status: boolean
+export interface ApiResult<T = any> {
+  code: number
   message: string
   data: T
 }

@@ -41,7 +41,7 @@ public class UserController {
     }
 
     @ApiDoc(value = "退出登录", order = 3)
-    @PostMapping("/logout")
+    @GetMapping("/logout")
     public ApiResult<String> logout() {
         StpUtil.logout();
         return ApiResult.success("退出成功");

@@ -29,6 +29,9 @@ public class StatsSummaryDTO {
     @ApiDocProperty("已用存储空间(Byte)")
     private Long storageUsage;
 
+    @ApiDocProperty("总存储空间(Byte)")
+    private Long totalSize;
+
     @ApiDocProperty("上传趋势数据列表")
     private List<Map<String, Object>> uploadTrend;
 }

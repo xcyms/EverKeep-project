@@ -1,10 +1,10 @@
-import type { User } from '@/types/type'
+import type { UserDTO } from '@/types/type'
 import { defineStore } from 'pinia'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     isLoggedIn: false,
-    user: null as User | null,
+    user: null as UserDTO | null,
     token: null as string | null,
     loginTime: null as number | null,
   }),
@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
      * 获取用户名称
      */
     userName: (state) => {
-      return state.user?.name || '未登录用户'
+      return state.user?.nickname || '未登录用户'
     },
   },
 
@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * 登录
      */
-    login(user: User, token: string) {
+    login(user: UserDTO, token: string) {
       this.isLoggedIn = true
       this.user = user
       this.token = token
@@ -78,7 +78,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * 更新用户信息
      */
-    updateUser(user: Partial<User>) {
+    updateUser(user: Partial<UserDTO>) {
       if (this.user) {
         this.user = { ...this.user, ...user }
       }

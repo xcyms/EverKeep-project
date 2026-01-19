@@ -1,16 +1,25 @@
 // src/types/index.d.ts
 
-/**
- * @description 用户信息接口
- */
-export interface User {
-  name?: string;
-  avatar?: string;
-  email?: string;
-  capacity?: number;
-  used_capacity?: number;
-  url?: string;
-  image_num?: number;
-  album_num?: number;
-  registered_ip?: string;
+export interface UserDTO {
+  id?: number
+  username?: string
+  password?: string
+  nickname?: string
+  avatar?: string
+  email?: string
+  phone?: string
+  status?: {
+    code: number
+    desc: string
+  }
+  createTime?: string
+  updateTime?: string
+  roles?: string[]
+}
+
+export interface SummaryDTO {
+  imageCount?: number
+  albumCount?: number
+  storageUsage?: number
+  totalSize?: number
 }

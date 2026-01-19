@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type {ThemeColorOption} from '@/composables/useManualTheme';
-import { ref, watch } from 'vue'
+import type { SummaryDTO } from '@/types/type';
+import { computed, ref, watch } from 'vue'
 import { themeColorOptions, useManualTheme  } from '@/composables/useManualTheme'
 import { DEFAULT_AVATAR } from '@/utils/constants'
 
@@ -20,6 +21,33 @@ const toast = useToast()
 const loading = ref(false)
 const showContactPopup = ref(false)
 const { statusBarHeight } = useSystemInfo()
+const summary = ref<SummaryDTO>()
+
+// 格式化文件大小
+function formatSize (bytes: number) {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${Number.parseFloat((bytes / (k ** i)).toFixed(2))} ${sizes[i]}`
+}
+
+// 计算存储百分比
+const storagePercentage = computed(() => {
+  if (!user.isLoggedIn || !summary.value?.totalSize) return 0
+  const percentage = (summary.value.storageUsage || 0) / summary.value.totalSize * 100
+  return Math.min(100, Number.parseFloat(percentage.toFixed(1)))
+})
+
+// 格式化已用空间
+const usedSpaceFormatted = computed(() => {
+  return user.isLoggedIn ? formatSize(summary.value?.storageUsage || 0) : '0 B'
+})
+
+// 格式化总空间
+const totalSpaceFormatted = computed(() => {
+  return user.isLoggedIn ? formatSize(summary.value?.totalSize || 0) : '0 B'
+})
 
 // 主题管理
 const {
@@ -35,11 +63,25 @@ const {
 const showThemeSheet = ref(false)
 const showThemeColorSheet = ref(false)
 
+const { send: getUserInfo } = useRequest(() => Apis.everkeep.getUserInfo({}), {
+  immediate: false,
+})
+
+const { send: logout } = useRequest(() => Apis.everkeep.logout({}), {
+  immediate: false,
+})
+
+const { send: getSummary } = useRequest(() => Apis.everkeep.getSummary({}), {
+  immediate: false,
+})
+
 async function doLogout() {
   loading.value = true
   try {
-    // 模拟网络延迟
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const res = await logout()
+    if (res.code !== 200) {
+      throw new Error(res.msg || '退出登录失败')
+    }
     toast.success('退出登录成功')
     user.logout()
   } catch (error) {
@@ -97,21 +139,30 @@ function copyEmail() {
 // 监听登录状态变化，重新加载数据
 watch(
   () => user.isLoggedIn,
-  (newVal) => {
+  async (newVal) => {
     if (newVal) {
-      setTimeout(() => {
-        // 模拟获取用户信息
-        const mockUserInfo = {
-          name: user.userName || 'Admin',
-          email: 'demo@lsky.pro',
-          avatar: user.userAvatar,
-          capacity: 1024 * 512, // 512MB
-          used_capacity: 1024 * 128.5, // 128.5MB
-          image_num: 1258,
-          album_num: 24,
+      loading.value = true
+      try {
+        // 并行获取用户信息和统计数据
+        const [userRes, summaryRes] = await Promise.all([
+          getUserInfo(),
+          getSummary(),
+        ])
+
+        if (userRes.code === 200 && userRes.data) {
+          // 适配 UserDTO 到 Store 中的 User 类型
+          user.updateUser(userRes.data)
         }
-        user.updateUser(mockUserInfo)
-      }, 100)
+
+        if (summaryRes.code === 200 && summaryRes.data) {
+          summary.value = summaryRes.data
+          // 同步统计数据到 user store 以供全局使用
+        }
+      } catch (error) {
+        console.error('获取个人统计信息失败:', error)
+      } finally {
+        loading.value = false
+      }
     }
   },
   { immediate: true }
@@ -131,7 +182,7 @@ watch(
         <div class="relative mb-4">
           <div class="absolute inset-0 scale-110 rounded-full bg-blue-100/50 blur-md dark:bg-blue-900/30" />
           <image
-            :src="user.isLoggedIn ? user.userAvatar : DEFAULT_AVATAR" mode="aspectFill"
+            :src="user.isLoggedIn ? getImageUrl(user.userAvatar) : DEFAULT_AVATAR" mode="aspectFill"
             class="relative h-24 w-24 border-4 border-white rounded-full shadow-blue-100/50 shadow-xl dark:border-gray-800 dark:shadow-none" />
         </div>
         <div class="flex flex-col items-center" @click="goLogin">
@@ -154,25 +205,23 @@ watch(
         <div class="col-span-2 overflow-hidden rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-gray-900 dark:shadow-none">
           <div class="mb-4 flex items-center justify-between">
             <span class="text-sm text-gray-400 font-medium dark:text-gray-500">存储空间</span>
-            <span class="text-xs text-blue-600 font-bold dark:text-blue-400">{{ user.isLoggedIn && user.user?.used_capacity != null
-              && user.user?.capacity ? (user.user.used_capacity / user.user.capacity * 100).toFixed(1) : 0 }}% 已用</span>
+            <span class="text-xs text-blue-600 font-bold dark:text-blue-400">{{ storagePercentage }}% 已用</span>
           </div>
           <div class="mb-3 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
             <div
               class="h-full from-blue-500 to-indigo-500 bg-gradient-to-r transition-all duration-1000"
-              :style="{ width: user.isLoggedIn && user.user?.used_capacity != null && user.user?.capacity ? `${(user.user.used_capacity / user.user.capacity * 100).toFixed(1)}%` : '0%' }" />
+              :style="{ width: `${storagePercentage}%` }" />
           </div>
           <div class="flex items-end justify-between">
             <div class="flex flex-col">
               <span class="text-xl text-gray-900 font-bold tracking-tighter dark:text-gray-100">
-                {{ user.isLoggedIn && user.user?.used_capacity != null ? (user.user?.used_capacity / 1024).toFixed(2)
-                : '0.00' }} m
+                {{ usedSpaceFormatted }}
               </span>
               <span class="text-[10px] text-gray-400 tracking-widest uppercase dark:text-gray-500">USED SPACE</span>
             </div>
             <div class="flex flex-col items-end">
               <span class="text-sm text-gray-600 font-bold dark:text-gray-300">
-                {{ user.isLoggedIn && user.user?.capacity != null ? (user.user?.capacity / 1024).toFixed(0) : '0' }} m
+                {{ totalSpaceFormatted }}
               </span>
               <span class="text-[10px] text-gray-400 tracking-widest uppercase dark:text-gray-500">TOTAL</span>
             </div>
@@ -183,14 +232,14 @@ watch(
         <div
           class="flex flex-col items-center justify-center rounded-3xl bg-white py-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-gray-900 dark:shadow-none">
           <div class="mb-1 text-2xl text-gray-900 font-bold tracking-tighter dark:text-gray-100">
-            {{ user.isLoggedIn ? (user.user?.image_num || 0) : '--' }}
+            {{ user.isLoggedIn ? (summary?.imageCount || 0) : '--' }}
           </div>
           <div class="text-[10px] text-gray-400 font-bold tracking-widest uppercase dark:text-gray-500">Images</div>
         </div>
         <div
           class="flex flex-col items-center justify-center rounded-3xl bg-white py-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-gray-900 dark:shadow-none">
           <div class="mb-1 text-2xl text-gray-900 font-bold tracking-tighter dark:text-gray-100">
-            {{ user.isLoggedIn ? (user.user?.album_num || 0) : '--' }}
+            {{ user.isLoggedIn ? (summary?.albumCount || 0) : '--' }}
           </div>
           <div class="text-[10px] text-gray-400 font-bold tracking-widest uppercase dark:text-gray-500">Albums</div>
         </div>
