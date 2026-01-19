@@ -3,6 +3,7 @@ package org.xcyms.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.xcyms.common.annotation.ApiDocProperty;
 import org.xcyms.common.enums.YesNoEnum;
 
 import java.io.Serializable;
@@ -23,45 +24,31 @@ public class Notice implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * ID
-     */
+    @ApiDocProperty("公告ID")
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 标题
-     */
+    @ApiDocProperty("公告标题")
     @TableField("title")
     private String title;
 
-    /**
-     * 内容
-     */
+    @ApiDocProperty("公告内容")
     @TableField("content")
     private String content;
 
-    /**
-     * 标签
-     */
+    @ApiDocProperty("标签文本")
     @TableField("tag")
     private String tag;
 
-    /**
-     * 颜色
-     */
+    @ApiDocProperty("标签颜色")
     @TableField("color")
     private String color;
 
-    /**
-     * 排序
-     */
+    @ApiDocProperty("显示排序")
     @TableField("sort")
     private Integer sort;
 
-    /**
-     * 创建时间
-     */
+    @ApiDocProperty("发布时间")
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

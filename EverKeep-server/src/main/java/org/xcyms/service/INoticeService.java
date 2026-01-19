@@ -1,5 +1,6 @@
 package org.xcyms.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.xcyms.common.ApiResult;
@@ -23,5 +24,5 @@ public interface INoticeService extends IService<Notice> {
     /**
      * 分页查询公告
      */
-    ApiResult<?> getPage(Page<Notice> page, String title);
+    ApiResult<IPage<NoticeDTO>> getPage(Page<Notice> page, String title);
 }

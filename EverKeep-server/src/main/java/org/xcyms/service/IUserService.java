@@ -17,15 +17,15 @@ import org.xcyms.entity.dto.UserDTO;
  */
 public interface IUserService extends IService<User> {
 
-    ApiResult<?> register(User user);
+    ApiResult<String> register(User user);
 
-    ApiResult<?> login(LoginDTO loginDto);
+    ApiResult<String> login(LoginDTO loginDto);
 
-    ApiResult<?> getUserInfo(Long loginId);
+    ApiResult<UserDTO> getUserInfo(Long loginId);
 
-    ApiResult<?> getPage(Page<User> page, UserDTO userDTO);
+    ApiResult<Page<UserDTO>> getPage(Page<User> page, UserDTO userDTO);
 
-    ApiResult<?> updateProfile(UserDTO userDTO);
+    ApiResult<String> updateProfile(UserDTO userDTO);
 
-    ApiResult<?> updatePassword(String oldPassword, String newPassword);
+    ApiResult<String> updatePassword(UserDTO userDTO);
 }

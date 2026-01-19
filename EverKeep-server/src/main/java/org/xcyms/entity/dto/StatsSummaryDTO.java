@@ -1,6 +1,7 @@
 package org.xcyms.entity.dto;
 
 import lombok.Data;
+import org.xcyms.common.annotation.ApiDocProperty;
 
 import java.util.List;
 import java.util.Map;
@@ -16,14 +17,18 @@ import java.util.Map;
 @Data
 public class StatsSummaryDTO {
 
-    /** 图片总数 */
+    @ApiDocProperty("图片总数")
     private Long imageCount;
-    /** 相册总数 */
+
+    @ApiDocProperty("相册总数")
     private Long albumCount;
-    /** 系统用户数 (管理员可见总数，用户可见1) */
+
+    @ApiDocProperty("系统用户数")
     private Long userCount;
-    /** 已用存储空间 (字节) */
+
+    @ApiDocProperty("已用存储空间(Byte)")
     private Long storageUsage;
-    /** 最近7天上传趋势数据 (key: 日期, value: 数量) */
+
+    @ApiDocProperty("上传趋势数据列表")
     private List<Map<String, Object>> uploadTrend;
 }

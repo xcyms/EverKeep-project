@@ -56,7 +56,7 @@ export const updateProfileApi = (data: Partial<API.User>): Promise<API.User> => 
 /**
  * 修改密码
  */
-export const updatePasswordApi = (data: { oldPassword: string; newPassword: string }): Promise<string> => {
+export const updatePasswordApi = (data: { oldPassword: string; password: string }): Promise<string> => {
   return request({
     url: '/user/password',
     method: 'post',

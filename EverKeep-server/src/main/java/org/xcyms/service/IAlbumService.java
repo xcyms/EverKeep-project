@@ -1,5 +1,6 @@
 package org.xcyms.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.xcyms.common.ApiResult;
@@ -24,5 +25,5 @@ public interface IAlbumService extends IService<Album> {
 
     ApiResult<List<AlbumDTO>> getMyAlbums(String name, Long userId);
 
-    ApiResult<?> getPage(Page<Album> page, AlbumDTO albumDTO);
+    ApiResult<IPage<AlbumDTO>> getPage(Page<Album> page, AlbumDTO albumDTO);
 }

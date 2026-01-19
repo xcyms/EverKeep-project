@@ -26,8 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,7 +46,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
     private final IConfigService configService;
 
     @Override
-    public ApiResult<?> uploadImage(MultipartFile file, Long albumId, String category) {
+    public ApiResult<ImageDTO> uploadImage(MultipartFile file, Long albumId, String category) {
         if (file == null || file.isEmpty()) {
             return ApiResult.error("文件不能为空");
         }
@@ -60,7 +58,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         }
 
         // 1. 验证 (大小、格式)
-        ApiResult<?> validateResult = validateFile(file, userId);
+        ApiResult<ImageDTO> validateResult = validateFile(file, userId);
         if (validateResult.getCode() != 200) {
             return validateResult;
         }
@@ -99,16 +97,16 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             image.setSize(file.getSize());
             image.setType(suffix.substring(1));
             this.save(image);
-            return ApiResult.success(image);
+            return ApiResult.success(mapper.map(image, ImageDTO.class));
         }
 
-        Map<String, String> result = new HashMap<>();
-        result.put("url", webUrl);
-        result.put("name", originalFilename);
-        return ApiResult.success(result);
+        ImageDTO imageDTO = new ImageDTO();
+        imageDTO.setName(originalFilename);
+        imageDTO.setUrl(webUrl);
+        return ApiResult.success(imageDTO);
     }
 
-    private ApiResult<?> validateFile(MultipartFile file, Long userId) {
+    private ApiResult<ImageDTO> validateFile(MultipartFile file, Long userId) {
         // 大小校验
         String maxSizeStr = configService.getConfigValue(userId, "max_file_size");
         long maxSize = StringUtils.isNotBlank(maxSizeStr) ? Long.parseLong(maxSizeStr) : 10 * 1024 * 1024;
@@ -150,7 +148,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
      * @date 2026/1/12 9:24
      */
     @Override
-    public ApiResult<?> getPage(Page<Image> page, ImageDTO imageDTO) {
+    public ApiResult<IPage<ImageDTO>> getPage(Page<Image> page, ImageDTO imageDTO) {
         IPage<Image> iPage = this.page(page, new QueryWrapper<Image>()
                 .lambda()
                 .like(StringUtils.isNotBlank(imageDTO.getName()), Image::getName, imageDTO.getName())
@@ -170,13 +168,13 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
      * @date 2026/1/12 9:24
      */
     @Override
-    public ApiResult<?> updateStatus(ImageDTO imageDTO) {
+    public ApiResult<String> updateStatus(ImageDTO imageDTO) {
         LambdaQueryWrapper<Image> queryWrapper = new LambdaQueryWrapper<Image>()
                 .in(Image::getId, imageDTO.getIds());
         Image image = new Image();
         image.setStatus(imageDTO.getStatus());
         this.update(image, queryWrapper);
-        return ApiResult.success();
+        return ApiResult.success("状态更新成功");
     }
 
     /**
@@ -189,15 +187,15 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
      * @date 2026/1/12 9:24
      */
     @Override
-    public ApiResult<?> move(Long imageId, Long albumId) {
+    public ApiResult<String> move(Long imageId, Long albumId) {
         Image image = new Image();
         image.setAlbumId(albumId);
         this.update(image, new LambdaQueryWrapper<Image>().eq(Image::getId, imageId));
-        return ApiResult.success();
+        return ApiResult.success("移动成功");
     }
 
     @Override
-    public ApiResult<?> setCover(Long imageId) {
+    public ApiResult<String> setCover(Long imageId) {
         if (imageId == null || imageId <= 0) {
             return ApiResult.error("图片ID不能为空");
         }
@@ -226,11 +224,11 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         updateAlbum.setCover(image.getUrl());
         albumMapper.update(updateAlbum, new LambdaQueryWrapper<Album>().eq(Album::getId, album.getId()));
 
-        return ApiResult.success();
+        return ApiResult.success("封面设置成功");
     }
 
     @Override
-    public ApiResult<?> batchMove(ImageDTO imageDTO) {
+    public ApiResult<String> batchMove(ImageDTO imageDTO) {
         if (imageDTO.getIds() == null || imageDTO.getIds().isEmpty()) {
             return ApiResult.error("未选择图片");
         }
@@ -241,6 +239,6 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         Image image = new Image();
         image.setAlbumId(imageDTO.getAlbumId());
         this.update(image, new LambdaQueryWrapper<Image>().in(Image::getId, imageDTO.getIds()));
-        return ApiResult.success();
+        return ApiResult.success("批量移动成功");
     }
 }

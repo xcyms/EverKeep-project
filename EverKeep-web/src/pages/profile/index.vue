@@ -75,7 +75,7 @@ const handleUpdatePassword = async () => {
   try {
     await updatePasswordApi({
       oldPassword: passwordForm.oldPassword,
-      newPassword: passwordForm.newPassword
+      password: passwordForm.newPassword
     })
     message.success('密码修改成功，请重新登录')
     // 退出登录

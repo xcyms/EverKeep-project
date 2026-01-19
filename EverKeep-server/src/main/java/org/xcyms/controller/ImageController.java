@@ -1,12 +1,14 @@
 package org.xcyms.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.xcyms.common.ApiResult;
+import org.xcyms.common.annotation.ApiDoc;
 import org.xcyms.common.enums.YesNoEnum;
 import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.ImageDTO;
@@ -22,6 +24,7 @@ import java.util.List;
  * @author liu-xu
  * @since 2026-01-11
  */
+@ApiDoc("图片管理")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/image")
@@ -38,11 +41,12 @@ public class ImageController {
      * @author liu-xu
      * @date 2026/1/12 9:24
      */
+    @ApiDoc("获取我的图片分页列表")
     @PostMapping("/page")
-    public ApiResult<?> page(@RequestParam(required = false) String column,
-                             @RequestParam(required = false, defaultValue = "true") boolean asc,
-                             Page<Image> page,
-                             @RequestBody ImageDTO imageDTO) {
+    public ApiResult<IPage<ImageDTO>> page(@RequestParam(required = false) String column,
+                                           @RequestParam(required = false, defaultValue = "true") boolean asc,
+                                           Page<Image> page,
+                                           @RequestBody ImageDTO imageDTO) {
         // 处理排序字段
         if (StringUtils.isNotBlank(column)) {
             page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
@@ -55,11 +59,12 @@ public class ImageController {
     /**
      * 获取公开图片列表 (画廊)
      */
+    @ApiDoc("获取公开图片分页列表")
     @PostMapping("/public/page")
-    public ApiResult<?> publicPage(@RequestParam(required = false) String column,
-                                   @RequestParam(required = false, defaultValue = "false") boolean asc,
-                                   Page<Image> page,
-                                   @RequestBody ImageDTO imageDTO) {
+    public ApiResult<IPage<ImageDTO>> publicPage(@RequestParam(required = false) String column,
+                                                 @RequestParam(required = false, defaultValue = "false") boolean asc,
+                                                 Page<Image> page,
+                                                 @RequestBody ImageDTO imageDTO) {
         if (StringUtils.isNotBlank(column)) {
             page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
         } else {
@@ -72,28 +77,33 @@ public class ImageController {
         return imageService.getPage(page, imageDTO);
     }
 
+    @ApiDoc("批量删除图片")
     @DeleteMapping("/delete")
-    public ApiResult<?> delete(@RequestBody List<Long> idList) {
-        return imageService.removeByIds(idList) ? ApiResult.success() : ApiResult.error("删除失败");
+    public ApiResult<String> delete(@RequestBody List<Long> idList) {
+        return imageService.removeByIds(idList) ? ApiResult.success("删除成功") : ApiResult.error("删除失败");
     }
 
+    @ApiDoc("更新图片公开状态")
     @PostMapping("/updateStatus")
-    public ApiResult<?> updateStatus(@RequestBody ImageDTO imageDTO) {
+    public ApiResult<String> updateStatus(@RequestBody ImageDTO imageDTO) {
         return imageService.updateStatus(imageDTO);
     }
 
+    @ApiDoc("移动图片到相册")
     @PostMapping("/move")
-    public ApiResult<?> move(Long imageId, Long albumId) {
+    public ApiResult<String> move(Long imageId, Long albumId) {
         return imageService.move(imageId, albumId);
     }
 
+    @ApiDoc("设置图片为相册封面")
     @PostMapping("/setCover")
-    public ApiResult<?> setCover(Long imageId) {
+    public ApiResult<String> setCover(Long imageId) {
         return imageService.setCover(imageId);
     }
 
+    @ApiDoc("批量移动图片到相册")
     @PostMapping("/batchMove")
-    public ApiResult<?> batchMove(@RequestBody ImageDTO imageDTO) {
+    public ApiResult<String> batchMove(@RequestBody ImageDTO imageDTO) {
         return imageService.batchMove(imageDTO);
     }
 }

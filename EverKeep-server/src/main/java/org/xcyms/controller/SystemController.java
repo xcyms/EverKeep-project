@@ -4,13 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.xcyms.common.ApiResult;
+import org.xcyms.service.ISystemService;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 系统控制器
@@ -20,48 +18,23 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SystemController {
 
-    private final RequestMappingHandlerMapping requestMappingHandlerMapping;
+    private final ISystemService systemService;
 
     /**
      * 获取所有接口列表
      */
     @GetMapping("/endpoints")
-    public ApiResult<?> getEndpoints() {
-        Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
-        List<Map<String, Object>> endpoints = new ArrayList<>();
-
-        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
-            RequestMappingInfo info = entry.getKey();
-            HandlerMethod method = entry.getValue();
-
-            // 排除 Spring Boot 默认接口和本接口
-            String className = method.getBeanType().getName();
-            if (className.startsWith("org.springframework") || className.contains("SystemController")) {
-                continue;
-            }
-
-            Map<String, Object> map = new HashMap<>();
-            map.put("name", method.getMethod().getName());
-            map.put("controller", method.getBeanType().getSimpleName());
-
-            // 获取路径
-            Set<String> patterns = info.getDirectPaths();
-            if (patterns.isEmpty()) {
-                patterns = info.getPatternValues();
-            }
-            map.put("path", patterns);
-
-            // 获取请求方法
-            map.put("methods", info.getMethodsCondition().getMethods().stream()
-                    .map(Enum::name)
-                    .collect(Collectors.toSet()));
-
-            endpoints.add(map);
-        }
-
-        // 按控制器名称排序
-        endpoints.sort(Comparator.comparing(m -> (String) m.get("controller")));
-
-        return ApiResult.success(endpoints);
+    public ApiResult<List<Map<String, Object>>> getEndpoints() {
+        return systemService.getEndpoints();
     }
+
+    /**
+     * 刷新接口列表缓存
+     */
+    @GetMapping("/endpoints/refresh")
+    public ApiResult<String> refreshEndpoints() {
+        systemService.refreshEndpoints();
+        return ApiResult.success("刷新成功");
+    }
+
 }

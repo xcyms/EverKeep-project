@@ -2,6 +2,7 @@ package org.xcyms.entity.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.xcyms.common.annotation.ApiDocProperty;
 
 import java.time.LocalDateTime;
 
@@ -15,43 +16,30 @@ import java.time.LocalDateTime;
 @Data
 public class ConfigDTO {
 
+    @ApiDocProperty("配置ID")
     private Long id;
 
-    /**
-     * 关联用户ID (NULL表示系统默认配置)
-     */
+    @ApiDocProperty("用户ID (NULL为系统默认)")
     private Long userId;
 
-    /**
-     * 配置键 (如: max_file_size, upload_path, allowed_extensions)
-     */
+    @ApiDocProperty("配置键 (如: max_file_size)")
     @NotNull(message = "配置键不能为空")
     private String configKey;
 
-    /**
-     * 配置值
-     */
+    @ApiDocProperty("配置值")
     @NotNull(message = "配置值不能为空")
     private String configValue;
 
-    /**
-     * 配置名称
-     */
+    @ApiDocProperty("配置名称")
     @NotNull(message = "配置名称不能为空")
     private String configName;
 
-    /**
-     * 备注
-     */
+    @ApiDocProperty("备注")
     private String remark;
 
-    /**
-     * 创建时间
-     */
+    @ApiDocProperty("创建时间")
     private LocalDateTime createTime;
 
-    /**
-     * 更新时间
-     */
+    @ApiDocProperty("更新时间")
     private LocalDateTime updateTime;
 }

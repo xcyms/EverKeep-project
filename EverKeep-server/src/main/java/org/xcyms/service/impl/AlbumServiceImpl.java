@@ -1,6 +1,7 @@
 package org.xcyms.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +59,7 @@ public class AlbumServiceImpl extends ServiceImpl<AlbumMapper, Album> implements
     }
 
     @Override
-    public ApiResult<?> getPage(Page<Album> page, AlbumDTO albumDTO) {
+    public ApiResult<IPage<AlbumDTO>> getPage(Page<Album> page, AlbumDTO albumDTO) {
         QueryWrapper<Album> wrapper = new QueryWrapper<>();
         wrapper.eq("a.deleted", 0);
         if (albumDTO != null) {

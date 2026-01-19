@@ -29,18 +29,6 @@ export const getMyImagesApi = (params: { current: number; size: number; column?:
 }
 
 /**
- * 获取公开图片列表 (画廊)
- */
-export const getPublicImagesApi = (params: { current: number; size: number; column?: string; asc?: boolean }, data?: any): Promise<API.PageResult<API.Image>> => {
-  return request({
-    url: '/image/public/page',
-    method: 'post',
-    params,
-    data
-  })
-}
-
-/**
  * 删除图片
  */
 export const deleteImagesApi = (ids: number[]): Promise<string> => {

@@ -1,6 +1,7 @@
 package org.xcyms.entity.dto;
 
 import lombok.Data;
+import org.xcyms.common.annotation.ApiDocProperty;
 
 import java.time.LocalDateTime;
 
@@ -15,38 +16,24 @@ import java.time.LocalDateTime;
 @Data
 public class NoticeDTO {
 
-    /**
-     * ID
-     */
+    @ApiDocProperty("公告ID")
     private Long id;
 
-    /**
-     * 标题
-     */
+    @ApiDocProperty("公告标题")
     private String title;
 
-    /**
-     * 内容
-     */
+    @ApiDocProperty("公告内容")
     private String content;
 
-    /**
-     * 标签
-     */
+    @ApiDocProperty("标签文本")
     private String tag;
 
-    /**
-     * 颜色
-     */
+    @ApiDocProperty("标签颜色")
     private String color;
 
-    /**
-     * 排序
-     */
+    @ApiDocProperty("显示排序")
     private Integer sort;
 
-    /**
-     * 创建时间
-     */
+    @ApiDocProperty("发布时间")
     private LocalDateTime createTime;
 }

@@ -1,5 +1,6 @@
 package org.xcyms.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,15 +18,15 @@ import org.xcyms.entity.dto.ImageDTO;
  */
 public interface IImageService extends IService<Image> {
 
-    ApiResult<?> uploadImage(MultipartFile file, Long albumId, String category);
+    ApiResult<ImageDTO> uploadImage(MultipartFile file, Long albumId, String category);
 
-    ApiResult<?> getPage(Page<Image> page, ImageDTO imageDTO);
+    ApiResult<IPage<ImageDTO>> getPage(Page<Image> page, ImageDTO imageDTO);
 
-    ApiResult<?> updateStatus(ImageDTO imageDTO);
+    ApiResult<String> updateStatus(ImageDTO imageDTO);
 
-    ApiResult<?> move(Long imageId, Long albumId);
+    ApiResult<String> move(Long imageId, Long albumId);
 
-    ApiResult<?> setCover(Long imageId);
+    ApiResult<String> setCover(Long imageId);
 
-    ApiResult<?> batchMove(ImageDTO imageDTO);
+    ApiResult<String> batchMove(ImageDTO imageDTO);
 }

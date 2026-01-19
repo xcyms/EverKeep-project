@@ -48,7 +48,7 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     }
 
     @Override
-    public ApiResult<?> getPage(Page<Notice> page, String title) {
+    public ApiResult<IPage<NoticeDTO>> getPage(Page<Notice> page, String title) {
         IPage<Notice> result = this.page(page, new QueryWrapper<Notice>()
                 .lambda()
                 .like(StringUtils.isNotBlank(title), Notice::getTitle, title)

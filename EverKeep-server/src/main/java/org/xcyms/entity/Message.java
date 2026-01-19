@@ -3,6 +3,7 @@ package org.xcyms.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.xcyms.common.annotation.ApiDocProperty;
 import org.xcyms.common.enums.YesNoEnum;
 
 import java.io.Serializable;
@@ -23,42 +24,31 @@ public class Message implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiDocProperty("消息ID")
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 标题
-     */
+    @ApiDocProperty("消息标题")
     @TableField("title")
     private String title;
 
-    /**
-     * 内容
-     */
+    @ApiDocProperty("消息内容")
     @TableField("content")
     private String content;
 
-    /**
-     * 类型: info, success, warning, error
-     */
+    @ApiDocProperty("消息类型 (info, success, warning, error)")
     @TableField("type")
     private String type;
 
-    /**
-     * 是否已读
-     */
+    @ApiDocProperty("已读标志 (YES-已读, NO-未读)")
     @TableField("read_flag")
     private YesNoEnum readFlag;
 
-    /**
-     * 所属用户ID (NULL表示全体消息)
-     */
+    @ApiDocProperty("目标用户ID (NULL为全体)")
     @TableField("user_id")
     private Long userId;
 
-    /**
-     * 创建时间
-     */
+    @ApiDocProperty("创建时间")
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

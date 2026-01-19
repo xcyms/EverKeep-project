@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.xcyms.common.ApiResult;
+import org.xcyms.common.annotation.ApiDoc;
 import org.xcyms.entity.Message;
 import org.xcyms.entity.dto.MessageDTO;
 import org.xcyms.service.IMessageService;
@@ -18,6 +19,7 @@ import org.xcyms.service.IMessageService;
  * @author liu-xu
  * @since 2026-01-16
  */
+@ApiDoc("消息管理")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/message")
@@ -25,71 +27,55 @@ public class MessageController {
 
     private final IMessageService messageService;
 
-    /**
-     * 分页查询我的消息
-     */
+    @ApiDoc("获取我的消息分页列表")
     @GetMapping("/my/page")
     public ApiResult<Page<MessageDTO>> getMyPage(Page<Message> page) {
         return messageService.getMyPage(page, StpUtil.getLoginIdAsLong());
     }
 
-    /**
-     * 标记消息已读
-     */
+    @ApiDoc("标记单条消息为已读")
     @PostMapping("/read")
-    public ApiResult<?> read(Long id) {
+    public ApiResult<String> read(Long id) {
         return messageService.readMessage(id, StpUtil.getLoginIdAsLong());
     }
 
-    /**
-     * 全部标记为已读
-     */
+    @ApiDoc("标记所有消息为已读")
     @PostMapping("/readAll")
-    public ApiResult<?> readAll() {
+    public ApiResult<String> readAll() {
         return messageService.readAllMessages(StpUtil.getLoginIdAsLong());
     }
 
-    /**
-     * 获取未读消息数量
-     */
+    @ApiDoc("获取未读消息总数")
     @GetMapping("/unread/count")
     public ApiResult<Long> getUnreadCount() {
         return messageService.getUnreadCount(StpUtil.getLoginIdAsLong());
     }
 
-    /**
-     * 分页查询所有消息 (管理员)
-     */
+    @ApiDoc("分页查询所有系统消息 (管理员)")
     @SaCheckRole("ADMIN")
     @GetMapping("/page")
     public ApiResult<Page<MessageDTO>> getAllPage(Page<Message> page, String title) {
         return messageService.getAllPage(page, title);
     }
 
-    /**
-     * 新增消息 (管理员)
-     */
+    @ApiDoc("发布新系统消息 (管理员)")
     @SaCheckRole("ADMIN")
     @PostMapping("/save")
-    public ApiResult<?> save(@RequestBody Message message) {
-        return messageService.save(message) ? ApiResult.success() : ApiResult.error("保存失败");
+    public ApiResult<String> save(@RequestBody Message message) {
+        return messageService.save(message) ? ApiResult.success("发布成功") : ApiResult.error("发布失败");
     }
 
-    /**
-     * 修改消息 (管理员)
-     */
+    @ApiDoc("更新系统消息 (管理员)")
     @SaCheckRole("ADMIN")
     @PostMapping("/update")
-    public ApiResult<?> update(@RequestBody Message message) {
-        return messageService.updateById(message) ? ApiResult.success() : ApiResult.error("更新失败");
+    public ApiResult<String> update(@RequestBody Message message) {
+        return messageService.updateById(message) ? ApiResult.success("更新成功") : ApiResult.error("更新失败");
     }
 
-    /**
-     * 删除消息 (管理员)
-     */
+    @ApiDoc("删除系统消息 (管理员)")
     @SaCheckRole("ADMIN")
     @DeleteMapping("/delete")
-    public ApiResult<?> delete(Long id) {
-        return messageService.removeById(id) ? ApiResult.success() : ApiResult.error("删除失败");
+    public ApiResult<String> delete(Long id) {
+        return messageService.removeById(id) ? ApiResult.success("删除成功") : ApiResult.error("删除失败");
     }
 }

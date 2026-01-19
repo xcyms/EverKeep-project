@@ -69,7 +69,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
     }
 
     @Override
-    public ApiResult<?> readMessage(Long id, Long userId) {
+    public ApiResult<String> readMessage(Long id, Long userId) {
         Message message = this.getById(id);
         if (message == null) {
             return ApiResult.error("消息不存在");
@@ -80,11 +80,11 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
         }
 
         message.setReadFlag(YesNoEnum.YES);
-        return this.updateById(message) ? ApiResult.success() : ApiResult.error("操作失败");
+        return this.updateById(message) ? ApiResult.success("标记成功") : ApiResult.error("操作失败");
     }
 
     @Override
-    public ApiResult<?> readAllMessages(Long userId) {
+    public ApiResult<String> readAllMessages(Long userId) {
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.and(w -> w.eq(Message::getUserId, userId).or().isNull(Message::getUserId));
         wrapper.eq(Message::getReadFlag, YesNoEnum.NO);
@@ -92,7 +92,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
         Message update = new Message();
         update.setReadFlag(YesNoEnum.YES);
 
-        return this.update(update, wrapper) ? ApiResult.success() : ApiResult.error("操作失败");
+        return this.update(update, wrapper) ? ApiResult.success("全部标记成功") : ApiResult.error("操作失败");
     }
 
     @Override

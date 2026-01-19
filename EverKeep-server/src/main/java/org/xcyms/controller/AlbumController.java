@@ -1,6 +1,7 @@
 package org.xcyms.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.xcyms.common.ApiResult;
+import org.xcyms.common.annotation.ApiDoc;
 import org.xcyms.entity.Album;
 import org.xcyms.entity.dto.AlbumDTO;
 import org.xcyms.service.IAlbumService;
@@ -24,6 +26,7 @@ import java.util.List;
  * @since 2026-01-11
  */
 @Slf4j
+@ApiDoc("相册管理")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/album")
@@ -31,16 +34,18 @@ public class AlbumController {
 
     private final IAlbumService albumService;
 
+    @ApiDoc("获取我的相册列表")
     @GetMapping("/list")
     public ApiResult<List<AlbumDTO>> getMyAlbums(String name) {
         return albumService.getMyAlbums(name, StpUtil.getLoginIdAsLong());
     }
 
+    @ApiDoc("分页获取相册列表")
     @PostMapping("/page")
-    public ApiResult<?> page(@RequestParam(required = false) String column,
-                             @RequestParam(required = false, defaultValue = "true") boolean asc,
-                             Page<Album> page,
-                             @RequestBody AlbumDTO albumDTO) {
+    public ApiResult<IPage<AlbumDTO>> page(@RequestParam(required = false) String column,
+                                           @RequestParam(required = false, defaultValue = "true") boolean asc,
+                                           Page<Album> page,
+                                           @RequestBody AlbumDTO albumDTO) {
         // 处理排序字段
         if (StringUtils.isNotBlank(column)) {
             // 如果前端传入的是 imageCount，则直接使用该别名排序
@@ -58,43 +63,22 @@ public class AlbumController {
         return albumService.getPage(page, albumDTO);
     }
 
-    /**
-     * 新增相册
-     *
-     * @param album 相册参数
-     * @return org.xcyms.common.ApiResult<?>
-     * @author liu-xu
-     * @date 2026/1/13 11:57
-     */
+    @ApiDoc("创建相册")
     @PostMapping("/create")
-    public ApiResult<?> create(@RequestBody Album album) {
+    public ApiResult<String> create(@RequestBody Album album) {
         album.setUserId(StpUtil.getLoginIdAsLong());
-        return albumService.save(album) ? ApiResult.success() : ApiResult.error("创建失败");
+        return albumService.save(album) ? ApiResult.success("创建成功") : ApiResult.error("创建失败");
     }
 
-    /**
-     * 修改相册
-     *
-     * @param album 相册参数
-     * @return org.xcyms.common.ApiResult<?>
-     * @author liu-xu
-     * @date 2026/1/13 11:57
-     */
+    @ApiDoc("更新相册")
     @PostMapping("/update")
-    public ApiResult<?> update(@RequestBody Album album) {
-        return albumService.updateById(album) ? ApiResult.success() : ApiResult.error("更新失败");
+    public ApiResult<String> update(@RequestBody Album album) {
+        return albumService.updateById(album) ? ApiResult.success("更新成功") : ApiResult.error("更新失败");
     }
 
-    /**
-     * 删除相册
-     *
-     * @param id 相册ID
-     * @return org.xcyms.common.ApiResult<?>
-     * @author liu-xu
-     * @date 2026/1/13 11:57
-     */
+    @ApiDoc("删除相册")
     @DeleteMapping("/delete")
-    public ApiResult<?> delete(Long id) {
-        return albumService.removeById(id) ? ApiResult.success() : ApiResult.error("删除失败");
+    public ApiResult<String> delete(Long id) {
+        return albumService.removeById(id) ? ApiResult.success("删除成功") : ApiResult.error("删除失败");
     }
 }

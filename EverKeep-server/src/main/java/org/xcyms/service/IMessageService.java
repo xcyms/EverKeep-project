@@ -38,14 +38,14 @@ public interface IMessageService extends IService<Message> {
      * @param userId 用户ID
      * @return 结果
      */
-    ApiResult<?> readMessage(Long id, Long userId);
+    ApiResult<String> readMessage(Long id, Long userId);
 
     /**
      * 全部标记为已读
      * @param userId 用户ID
      * @return 结果
      */
-    ApiResult<?> readAllMessages(Long userId);
+    ApiResult<String> readAllMessages(Long userId);
 
     /**
      * 获取未读消息数量

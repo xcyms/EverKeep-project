@@ -23,13 +23,28 @@ const toggleMode = () => {
   formState.confirmPassword = ''
 }
 
+const validatePassword = (password: string) => {
+  if (password.length < 8) return '密码长度至少为 8 位'
+  if (!/[a-z]/.test(password)) return '需包含至少一个小写字母'
+  if (!/[A-Z]/.test(password)) return '需包含至少一个大写字母'
+  if (!/[0-9]/.test(password)) return '需包含至少一个数字'
+  if (!/[@$!%*?&._-]/.test(password)) return '需包含至少一个特殊字符(@$!%*?&._-)'
+  return null
+}
+
 const handleSubmit = async () => {
   if (!formState.username || !formState.password) {
     return message.warning('请输入用户名和密码')
   }
 
-  if (!isLogin.value && formState.password !== formState.confirmPassword) {
-    return message.warning('两次输入的密码不一致')
+  if (!isLogin.value) {
+    const errorMsg = validatePassword(formState.password)
+    if (errorMsg) {
+      return message.warning(errorMsg)
+    }
+    if (formState.password !== formState.confirmPassword) {
+      return message.warning('两次输入的密码不一致')
+    }
   }
 
   loading.value = true
@@ -82,6 +97,9 @@ const handleSubmit = async () => {
           <a-input-password v-model:value="formState.password" placeholder="请输入密码">
             <template #prefix><div class="i-ant-design:lock-outlined text-gray-400" /></template>
           </a-input-password>
+          <div v-if="!isLogin" class="text-[11px] text-gray-400 mt-1">
+            至少 8 位，包含大小写字母、数字和特殊字符
+          </div>
         </a-form-item>
 
         <a-form-item v-if="!isLogin" label="确认密码" name="confirmPassword">

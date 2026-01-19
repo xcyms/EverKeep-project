@@ -2,7 +2,6 @@ package org.xcyms.service.impl;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -21,6 +20,7 @@ import org.xcyms.mapper.RoleMapper;
 import org.xcyms.mapper.UserMapper;
 import org.xcyms.mapper.UserRoleMapper;
 import org.xcyms.service.IUserService;
+import org.xcyms.utils.PasswordUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,16 +43,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     private final UserRoleMapper userRoleMapper;
 
     @Override
-    public ApiResult<?> register(User user) {
+    public ApiResult<String> register(User user) {
         // 1. 检查用户名是否已存在
         Long count = baseMapper.selectCount(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, user.getUsername()));
         if (count > 0) {
             return ApiResult.error("用户名已存在");
         }
-        user.setNickname("用户" + RandomUtil.randomInt(1000, 10000));
+        // 2. 密码复杂度校验
+        if (PasswordUtils.checkComplexity(user.getPassword())) {
+            return ApiResult.error("密码复杂度不足：需至少8位，包含大小写字母、数字及特殊字符");
+        }
 
-        // 2. 密码加密 (使用 md5 加盐作为示例，实际推荐 BCrypt)
+        // 3. 密码加密 (使用 md5 加盐作为示例，实际推荐 BCrypt)
         String secretPassword = SaSecureUtil.md5BySalt(user.getPassword(), Constant.SALT);
         user.setPassword(secretPassword);
 
@@ -68,7 +71,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public ApiResult<?> login(LoginDTO loginDto) {
+    public ApiResult<String> login(LoginDTO loginDto) {
         // 1. 查询用户
         User user = baseMapper.selectOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, loginDto.getUsername()));
@@ -99,7 +102,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @date 2026/1/12 9:55
      */
     @Override
-    public ApiResult<?> getUserInfo(Long loginId) {
+    public ApiResult<UserDTO> getUserInfo(Long loginId) {
         User user = baseMapper.selectById(loginId);
         UserDTO userDto = mapper.map(user, UserDTO.class);
 
@@ -111,7 +114,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public ApiResult<?> getPage(Page<User> page, UserDTO userDTO) {
+    public ApiResult<Page<UserDTO>> getPage(Page<User> page, UserDTO userDTO) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (userDTO != null) {
             wrapper.like(StringUtils.isNotBlank(userDTO.getUsername()), User::getUsername, userDTO.getUsername())
@@ -132,7 +135,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public ApiResult<?> updateProfile(UserDTO userDTO) {
+    public ApiResult<String> updateProfile(UserDTO userDTO) {
         Long userId = StpUtil.getLoginIdAsLong();
         User user = baseMapper.selectById(userId);
         if (user == null) {
@@ -147,17 +150,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public ApiResult<?> updatePassword(String oldPassword, String newPassword) {
+    public ApiResult<String> updatePassword(UserDTO userDTO) {
         Long userId = StpUtil.getLoginIdAsLong();
         User user = baseMapper.selectById(userId);
         if (user == null) {
             return ApiResult.error("用户不存在");
         }
-        String oldSecretPassword = SaSecureUtil.md5BySalt(oldPassword, Constant.SALT);
+
+        // 密码复杂度校验
+        if (PasswordUtils.checkComplexity(userDTO.getPassword())) {
+            return ApiResult.error("密码复杂度不足：需至少8位，包含大小写字母、数字及特殊字符");
+        }
+
+        String oldSecretPassword = SaSecureUtil.md5BySalt(userDTO.getOldPassword(), Constant.SALT);
         if (!user.getPassword().equals(oldSecretPassword)) {
             return ApiResult.error("原密码错误");
         }
-        String newSecretPassword = SaSecureUtil.md5BySalt(newPassword, Constant.SALT);
+        String newSecretPassword = SaSecureUtil.md5BySalt(userDTO.getPassword(), Constant.SALT);
         user.setPassword(newSecretPassword);
         baseMapper.updateById(user);
         return ApiResult.success("密码修改成功");
