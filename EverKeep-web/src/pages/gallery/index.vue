@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
 import { getPublicImagesApi } from '../../api/image'
 import type { API } from '../../types'
 import { getImageUrl } from '../../utils/common'
