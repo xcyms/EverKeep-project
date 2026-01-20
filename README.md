@@ -1,38 +1,40 @@
-# EverKeep - 全栈个人相册管理系统
+# EverKeep - 全栈个人云相册管理系统
 
-EverKeep 是一款现代化的全栈相册管理解决方案，包含 Web 管理端、移动端（小程序）以及高性能后端服务。支持图片上传、相册分类、权限管理等核心功能。
+EverKeep 是一款专为个人打造的现代化全栈相册管理解决方案。它不仅提供高性能的图片存储与管理服务，还拥有优雅的 Web 管理端和跨平台的移动端（小程序），支持多维度的统计分析、精细的权限控制以及自动化部署。
 
-## 🚀 项目特性
+## ✨ 核心特性
 
-- **多端支持**：包含基于 Vue 3 的 Web 端和基于 Uni-app 的移动端。
-- **高性能后端**：采用 Spring Boot 3 + MyBatis Plus，支持响应式 API。
-- **权限控权**：集成 Sa-Token 框架，实现轻量级的登录认证和权限校验。
-- **优雅界面**：Web 端使用 Ant Design Vue，移动端支持瀑布流布局和 ECharts 图表展示。
-- **容器化部署**：支持 Docker Compose 一键快速部署整个生产环境。
-
----
+- **🚀 高性能架构**：后端基于 Spring Boot 3 + Redis，支持 TB 级图片元数据管理，接口响应毫秒级。
+- **📊 多维统计报表**：内置仪表盘，实时监控存储空间、图片数量及上传趋势，集成 ECharts 数据可视化。
+- **🔐 严密的权限体系**：集成 Sa-Token 权限框架，支持 RBAC 模型，实现登录认证、角色授权、接口防刷。
+- **🖼️ 优雅的视觉体验**：
+  - **Web 端**：响应式布局，支持图片拖拽上传、瀑布流预览、相册分类管理。
+  - **移动端**：原生流畅体验，支持沉浸式导航、图片懒加载、离线缓存。
+- **📝 接口文档自动化**：内置自定义接口文档系统，逻辑层与控制层完全分离，支持权限点展示与在线调试。
+- **💾 智能配额管理**：支持用户级存储配额限制（默认 100MB），实时计算已用空间。
+- **🐳 云原生部署**：提供完善的 Docker Compose 配置，支持一键扩容与快速迁移。
 
 ## 🛠️ 技术栈
 
 ### 后端 (EverKeep-server)
 - **核心框架**：Spring Boot 3.5.9
-- **数据库**：MySQL 8.0 + Druid 连接池
-- **持久层**：MyBatis Plus
-- **缓存**：Redis
-- **权限**：Sa-Token
-- **工具类**：Hutool, Lombok
+- **数据库/持久层**：MySQL 8.0 + MyBatis Plus 3.5.7
+- **缓存/性能**：Redis (Spring Cache)
+- **权限控权**：Sa-Token 1.37.0
+- **接口增强**：自定义 ApiDoc 引擎（支持 Service 层解析）
+- **工具类**：Hutool, ModelMapper, Lombok
 
 ### Web 端 (EverKeep-web)
-- **框架**：Vue 3 + Vite
+- **框架**：Vue 3.5 + Vite 6
+- **UI 组件库**：Ant Design Vue 4.2
+- **样式方案**：UnoCSS (Tailwind 兼容)
 - **状态管理**：Pinia
-- **路由**：Vue Router
-- **UI 组件库**：Ant Design Vue
-- **样式**：UnoCSS
+- **图表引擎**：ECharts 5.5
 
 ### 移动端 (EverKeep-mp)
 - **框架**：Uni-app (Vue 3 + Vite)
-- **UI 库**：Uni-ui
-- **图表**：ECharts
+- **请求流**：Alova.js (支持自动生成 API)
+- **UI 组件**：Wot Design Uni
 
 ---
 
@@ -40,57 +42,37 @@ EverKeep 是一款现代化的全栈相册管理解决方案，包含 Web 管理
 
 ```text
 EverKeep/
-├── EverKeep-server/    # SpringBoot 后端源码
-├── EverKeep-web/       # Vue 3 管理端源码
-├── EverKeep-mp/        # Uni-app 移动端源码
-├── init-sql/           # 数据库初始化脚本 (.sql)
-└── docker-compose.yml  # Docker 编排配置
+├── EverKeep-server/    # Spring Boot 核心后端 (Layered Architecture)
+├── EverKeep-web/       # Vue 3 + AntD 管理后台 (Admin Portal)
+├── EverKeep-mp/        # Uni-app 移动端 (Mini Program)
+├── init-sql/           # 数据库初始化与迁移脚本
+└── docker-compose.yml  # 生产环境一键部署配置
 ```
 
 ---
 
-## 📦 快速部署 (Docker)
+## 🚀 快速开始
 
-### 1. 前置要求
-- 已安装 **Docker** 和 **Docker Compose**。
-- 如果在国内环境，请配置 Docker 镜像加速器。
+### 1. 环境准备
+- JDK 17+ / Node.js 18+ / MySQL 8.0+ / Redis 6.0+
+- 推荐使用 Docker 部署：已安装 Docker & Docker Compose
 
-### 2. 准备数据库
-将您的数据库初始化脚本（如 `schema.sql`）放入根目录下的 `init-sql/` 文件夹中。
-
-### 3. 一键启动
-在项目根目录下运行：
+### 2. 一键部署 (Docker)
 ```bash
+# 克隆项目并进入目录
+git clone https://github.com/xcyms/EverKeep.git
+cd EverKeep
+
+# 一键启动全栈服务
 docker-compose up -d --build
 ```
 
-### 4. 访问服务
-- **前端 Web 界面**：`http://localhost`
-- **后端 API 地址**：`http://localhost/api`
-- **MySQL 地址**：`localhost:3306` (用户: root, 密码: your_password)
-- **Redis 地址**：`localhost:6379`
+### 3. 本地开发
+- **后端**：导入 `EverKeep-server` 到 IDEA，运行 `ApiApplication`。
+- **Web 端**：进入 `EverKeep-web`，运行 `npm install && npm run dev`。
+- **移动端**：使用 HBuilderX 运行 `EverKeep-mp` 或执行 `npm run dev:mp-weixin`。
 
 ---
 
-## 🔧 本地开发
-
-### 后端
-1. 导入 `EverKeep-server` 到 IDEA。
-2. 修改 `application-dev.yml` 中的 MySQL 和 Redis 连接信息。
-3. 运行 `ApiApplication`。
-
-### Web 端
-```bash
-cd EverKeep-web
-npm install
-npm run dev
-```
-
-### 移动端
-1. 使用 **HBuilderX** 导入 `EverKeep-mp` 目录。
-2. 运行到浏览器或小程序模拟器。
-
----
-
-## 📝 开源协议
-本项目遵循 [MIT License](LICENSE) 协议。
+## 📝 贡献与协议
+欢迎提交 Issue 或 Pull Request。本项目基于 **MIT License** 协议开源。
