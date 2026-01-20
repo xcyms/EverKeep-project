@@ -7,7 +7,7 @@ services:
     container_name: everkeep-mysql
     restart: always
     environment:
-      MYSQL_DATABASE: everKeep
+      MYSQL_DATABASE: everkeep
       MYSQL_ROOT_PASSWORD: 123456
     ports:
       - "3306:3306"
