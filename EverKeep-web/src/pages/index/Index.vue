@@ -17,6 +17,7 @@ const summary = ref<API.StatsSummary>({
   albumCount: 0,
   userCount: 0,
   storageUsage: 0,
+  totalSize: 0,
   uploadTrend: []
 })
 
@@ -37,7 +38,8 @@ const stats = computed(() => [
   { title: '图片总数', value: summary.value.imageCount.toLocaleString(), icon: 'i-ant-design:picture-outlined', color: ' text-blue-500' },
   { title: '相册总数', value: summary.value.albumCount.toLocaleString(), icon: 'i-ant-design:folder-outlined', color: ' text-green-500' },
   { title: '已用空间', value: formatSize(summary.value.storageUsage), icon: 'i-ant-design:cloud-server-outlined', color: ' text-orange-500' },
-  { title: '系统用户', value: summary.value.userCount.toLocaleString(), icon: 'i-ant-design:team-outlined', color: ' text-purple-500' },
+  { title: '总存储空间', value: formatSize(summary.value.totalSize), icon: 'i-ant-design:hdd-outlined', color: ' text-purple-500' },
+  { title: '系统用户', value: summary.value.userCount.toLocaleString(), icon: 'i-ant-design:team-outlined', color: ' text-indigo-500' },
 ])
 
 // 初始化图表
@@ -98,7 +100,8 @@ const loadData = async () => {
       albumCount: Number(statsRes.albumCount || 0),
       userCount: Number(statsRes.userCount || 0),
       storageUsage: Number(statsRes.storageUsage || 0),
-      uploadTrend: statsRes.uploadTrend || []
+      uploadTrend: statsRes.uploadTrend || [],
+      totalSize: Number(statsRes.totalSize || 0),
     }
     notices.value = noticeRes
     // 在数据加载后初始化图表，传入后端趋势数据
@@ -134,18 +137,18 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 统计卡片：PC 端四列布局 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <a-skeleton :loading="loading" active v-for="i in 4" :key="i" v-if="loading">
-        <div class="bg-white p-6 rounded-xl border border-gray-50 h-32" />
+    <!-- 统计卡片：PC 端五列布局 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <a-skeleton :loading="loading" active v-for="i in 5" :key="i" v-if="loading">
+        <div class="bg-white p-4 rounded-xl border border-gray-50 h-28" />
       </a-skeleton>
-      <div v-else v-for="s in stats" :key="s.title" class="bg-white p-6 rounded-xl shadow-sm border border-gray-50 hover:shadow-md transition-all duration-300 group">
+      <div v-else v-for="s in stats" :key="s.title" class="bg-white p-4 rounded-xl shadow-sm border border-gray-50 hover:shadow-md transition-all duration-300 group">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-gray-400 text-[14px] mb-1">{{ s.title }}</div>
-            <div class="text-2xl font-bold tracking-tight">{{ s.value }}</div>
+            <div class="text-gray-400 text-[13px] mb-1">{{ s.title }}</div>
+            <div class="text-xl font-bold tracking-tight">{{ s.value }}</div>
           </div>
-          <div :class="[s.icon, s.color, 'text-3xl p-2 rounded-lg transition-transform group-hover:scale-110']" />
+          <div :class="[s.icon, s.color, 'text-2xl p-2 rounded-lg transition-transform group-hover:scale-110']" />
         </div>
       </div>
     </div>

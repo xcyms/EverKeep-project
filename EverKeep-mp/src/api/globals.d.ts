@@ -1076,7 +1076,30 @@ declare global {
       // 获取用户统计信息
       getSummary<Config extends Alova2MethodConfig<null>>(
         config: Config
-      ): Alova2Method<ApiResult<SummaryDTO>, 'everkeep.summary', Config>;
+      ): Alova2Method<ApiResult<SummaryDTO>, 'everkeep.getSummary', Config>;
+      // 首页画廊
+      publicPage<
+        Config extends Alova2MethodConfig<{
+          current?: number;
+          size?: number;
+          column?: string;
+          asc?: boolean;
+        }, {
+          name?: string;
+        }> & {
+          params: {
+            current?: number;
+            size?: number;
+            column?: string;
+            asc?: boolean;
+          };
+          data: {
+            name?: string;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<PublicPageDTO>, 'everkeep.publicPage', Config>;
     }
   }
 

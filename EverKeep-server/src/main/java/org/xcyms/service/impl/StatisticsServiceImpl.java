@@ -1,18 +1,17 @@
 package org.xcyms.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.convert.Convert;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.xcyms.common.ApiResult;
+import org.xcyms.common.Constant;
 import org.xcyms.entity.Album;
 import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.StatsSummaryDTO;
-import org.xcyms.service.IAlbumService;
-import org.xcyms.service.IImageService;
-import org.xcyms.service.IStatisticsService;
-import org.xcyms.service.IUserService;
+import org.xcyms.service.*;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,7 @@ public class StatisticsServiceImpl implements IStatisticsService {
     private final IImageService imageService;
     private final IAlbumService albumService;
     private final IUserService userService;
+    private final IConfigService configService;
 
     @Override
     @Cacheable(value = "stats", key = "T(cn.dev33.satoken.stp.StpUtil).hasRole('ADMIN') ? 'admin' : #userId")
@@ -56,6 +56,7 @@ public class StatisticsServiceImpl implements IStatisticsService {
             stats.setStorageUsage(map != null && map.get("totalSize") != null ?
                     Long.parseLong(map.get("totalSize").toString()) : 0L);
         }
+        stats.setTotalSize(Convert.toLong(configService.getConfigValue(userId, Constant.ConfigKey.MAX_STORAGE_SIZE)));
 
         // 2. 最近7天趋势统计
         List<Map<String, Object>> trendData = imageService.listMaps(new QueryWrapper<Image>()

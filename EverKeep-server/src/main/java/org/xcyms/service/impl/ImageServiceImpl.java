@@ -13,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.xcyms.common.ApiResult;
+import org.xcyms.common.Constant;
 import org.xcyms.entity.Album;
 import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.ImageDTO;
@@ -26,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -66,7 +68,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         // 2. 路径处理
         String suffix = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
         String relativePath = getRelativePath(userId, category);
-        String rootPath = configService.getConfigValue(null, "upload_path");
+        String rootPath = configService.getConfigValue(null, Constant.ConfigKey.UPLOAD_PATH);
         if (StringUtils.isBlank(rootPath)) {
             return ApiResult.error("未配置系统上传根路径");
         }
@@ -107,16 +109,33 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
     }
 
     private ApiResult<ImageDTO> validateFile(MultipartFile file, Long userId) {
-        // 大小校验
-        String maxSizeStr = configService.getConfigValue(userId, "max_file_size");
+        // 1. 校验用户存储空间配额
+        String maxStorageStr = configService.getConfigValue(userId, Constant.ConfigKey.MAX_STORAGE_SIZE);
+        // 默认 100MB
+        long maxStorage = StringUtils.isNotBlank(maxStorageStr) ? Long.parseLong(maxStorageStr) : 100 * 1024 * 1024L;
+
+        // 查询用户已使用空间
+        Map<String, Object> map = this.getMap(new QueryWrapper<Image>()
+                .select("sum(size) as totalSize")
+                .eq("user_id", userId)
+                .eq("deleted", 0));
+        long usedSize = map != null && map.get("totalSize") != null ? Long.parseLong(map.get("totalSize").toString()) : 0L;
+
+        if (usedSize + file.getSize() > maxStorage) {
+            return ApiResult.error("存储空间已不足 (配额: " + (maxStorage / 1024 / 1024) + "MB)");
+        }
+
+        // 2. 单文件大小校验
+        String maxSizeStr = configService.getConfigValue(userId, Constant.ConfigKey.MAX_FILE_SIZE);
         long maxSize = StringUtils.isNotBlank(maxSizeStr) ? Long.parseLong(maxSizeStr) : 10 * 1024 * 1024;
         if (file.getSize() > maxSize) {
             return ApiResult.error("文件大小超限");
         }
-        // 格式校验
+
+        // 3. 格式校验
         String originalFilename = file.getOriginalFilename();
         String suffix = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
-        String allowedExtStr = configService.getConfigValue(userId, "allowed_extensions");
+        String allowedExtStr = configService.getConfigValue(userId, Constant.ConfigKey.ALLOWED_EXTENSIONS);
         Set<String> allowedExtensions = StringUtils.isNotBlank(allowedExtStr)
                 ? Set.of(allowedExtStr.toLowerCase().split(","))
                 : Set.of("jpg", "jpeg", "png", "gif", "webp");
@@ -128,7 +147,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
     }
 
     private String getRelativePath(Long userId, String category) {
-        String userSubDir = configService.getConfigValue(userId, "user_upload_dir");
+        String userSubDir = configService.getConfigValue(userId, Constant.ConfigKey.USER_UPLOAD_DIR);
         String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         StringBuilder sb = new StringBuilder();
         if (StringUtils.isNotBlank(userSubDir)) {

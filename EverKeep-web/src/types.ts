@@ -86,6 +86,7 @@ namespace API {
     albumCount: number
     userCount: number
     storageUsage: number
+    totalSize: number
   }
 
   export interface Notice {
