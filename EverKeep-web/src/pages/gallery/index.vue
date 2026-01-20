@@ -75,11 +75,6 @@ const formatSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
-
-// 图片详情预览
-const showDetails = (img: API.Image) => {
-  // 这里可以复用之前的详情展示逻辑或弹窗
-}
 </script>
 
 <template>

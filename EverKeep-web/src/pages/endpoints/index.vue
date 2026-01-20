@@ -94,7 +94,7 @@ const ParamTable = defineComponent({
       bordered: true,
       class: 'param-table-custom'
     }, {
-      bodyCell: ({ column, record, text }: any) => {
+      bodyCell: ({ column, text }: any) => {
         if (column.key === 'required') {
           return text ? h('span', { class: 'text-red-500' }, '是') : h('span', { class: 'text-gray-400' }, '否')
         }
