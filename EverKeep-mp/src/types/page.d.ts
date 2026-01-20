@@ -41,8 +41,12 @@ export interface MessageItem {
   type: 'system' | 'activity' | 'security'
   title: string
   content: string
-  time: string
-  unread: boolean
+  createTime: string
+  readFlag: {
+    code: number
+    desc: string
+  }
+  userId: string | number
   icon: string
   iconBg: string
   iconColor: string

@@ -1156,6 +1156,18 @@ declare global {
       >(
         config: Config
       ): Alova2Method<ApiResult<ImageItem>, 'everkeep.uploadImage', Config>;
+      // 获取用户消息
+      getMessage<Config extends Alova2MethodConfig<{
+        current?: number;
+        size?: number;
+      }> & {
+        params: {
+          current?: number;
+          size?: number;
+        };
+      }>(
+        config: Config
+      ): Alova2Method<ApiResult<Page<MessageItem>>, 'everkeep.getMessage', Config>;
     }
   }
 

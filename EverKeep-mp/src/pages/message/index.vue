@@ -1,8 +1,16 @@
 <script lang="ts" setup>
 import type { MessageItem } from '@/types/page'
-import { computed, onMounted, ref } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import { onMounted, ref } from 'vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { useManualTheme } from '@/composables/useManualTheme'
+import { PAGINATION } from '@/utils/constants'
+import 'dayjs/locale/zh-cn'
+
+dayjs.extend(relativeTime)
+dayjs.locale('zh-cn')
 
 definePage({
   name: 'message',
@@ -15,27 +23,88 @@ definePage({
 })
 
 const toast = useToast()
+const userStore = useAuthStore()
 const messageStore = useMessageStore()
 const { statusBarHeight } = useSystemInfo()
 const { isDark } = useManualTheme()
 const activeTab = ref(0)
+const loading = ref(false)
+
+// 预定义的图标和颜色组合
+const iconStyles = [
+  { icon: 'notification', bg: 'bg-blue-50', color: 'text-blue-600' },
+  { icon: 'spool', bg: 'bg-purple-50', color: 'text-purple-600' },
+  { icon: 'info-circle', bg: 'bg-orange-50', color: 'text-orange-500' },
+  { icon: 'chat', bg: 'bg-green-50', color: 'text-green-600' },
+  { icon: 'queue', bg: 'bg-red-50', color: 'text-red-600' },
+  { icon: 'star', bg: 'bg-yellow-50', color: 'text-yellow-600' },
+]
+
+// 获取消息图标样式
+function getMessageStyle(item: MessageItem) {
+  // 使用 id 进行哈希计算，确保随机分布且同一 ID 样式固定
+  const idStr = String(item.id)
+  let hash = 0
+  for (let i = 0; i < idStr.length; i++) {
+    hash = (hash << 5) - hash + idStr.charCodeAt(i)
+    hash |= 0 // Convert to 32bit integer
+  }
+  const index = Math.abs(hash) % iconStyles.length
+  return iconStyles[index]
+}
 
 // 从 store 获取消息数据
 const messages = computed(() => {
-  if (activeTab.value === 0) {
-    return messageStore.messages
-  } else if (activeTab.value === 1) {
-    return messageStore.messagesByType('system')
-  } else {
-    return messageStore.messagesByType('activity')
+  const list = messageStore.messages
+  if (activeTab.value === 1) {
+    // 系统消息：userId 为空（null 或 undefined）
+    return list.filter(m => m.userId === null || m.userId === undefined || m.userId === '')
+  } else if (activeTab.value === 2) {
+    // 活动消息：userId 不等于 null
+    return list.filter(m => m.userId !== null && m.userId !== undefined && m.userId !== '')
   }
+  return list
 })
+
+async function fetchMessages() {
+  if (!userStore.isLoggedIn) {
+    messageStore.setMessages([])
+    uni.stopPullDownRefresh()
+    return
+  }
+
+  loading.value = true
+  try {
+    const res = await Apis.everkeep.getMessage({
+      params: {
+        current: 1,
+        size: PAGINATION.MAX_PAGE_SIZE, // 消息通常不需要太复杂的分页，直接获取较多数量
+      },
+    })
+    if (res.code === 200 && res.data) {
+      messageStore.setMessages(res.data.records || [])
+    }
+  } catch (e) {
+    console.error('Failed to fetch messages:', e)
+  } finally {
+    loading.value = false
+    uni.stopPullDownRefresh()
+  }
+}
+
+onPullDownRefresh(() => {
+  fetchMessages()
+})
+
+function formatTime (time: string) {
+  return dayjs(time).fromNow()
+}
 
 const hasUnread = computed(() => messageStore.hasUnread)
 
 // 标记消息为已读
 function handleMessageClick(message: MessageItem) {
-  if (message.unread) {
+  if (message.readFlag.code === 0) {
     messageStore.markAsRead(message.id)
   }
 }
@@ -46,48 +115,19 @@ function handleMarkAllRead() {
   toast.success('已标记全部已读')
 }
 
-onMounted(() => {
-  // 初始化消息数据（如果 store 中没有数据）
-  if (messageStore.messages.length === 0) {
-    const defaultMessages: MessageItem[] = [
-      {
-        id: 1,
-        type: 'system',
-        title: '系统升级通知',
-        content: '为了提供更好的服务，系统将于今晚 2:00 进行维护升级，预计耗时 2 小时。',
-        time: '10:24',
-        unread: true,
-        icon: 'notification',
-        iconBg: 'bg-blue-50',
-        iconColor: 'text-blue-600',
-      },
-      {
-        id: 2,
-        type: 'activity',
-        title: '新功能上线',
-        content: '全新"智能分类"功能已上线，快去相册管理页体验吧！',
-        time: '昨天',
-        unread: false,
-        icon: 'twinkle',
-        iconBg: 'bg-purple-50',
-        iconColor: 'text-purple-600',
-      },
-      {
-        id: 3,
-        type: 'security',
-        title: '登录提醒',
-        content: '您的账号于 12-30 15:20 在新设备登录，如非本人操作请及时修改密码。',
-        time: '前天',
-        unread: false,
-        icon: 'info-circle',
-        iconBg: 'bg-orange-50',
-        iconColor: 'text-orange-500',
-      },
-    ]
-    messageStore.setMessages(defaultMessages)
+// 监听登录状态变化
+watch(() => userStore.isLoggedIn, (isLoggedIn) => {
+  if (isLoggedIn) {
+    fetchMessages()
+  } else {
+    messageStore.clearMessages()
   }
+})
 
-  toast.info('演示消息仅供参考')
+onMounted(() => {
+  if (userStore.isLoggedIn) {
+    fetchMessages()
+  }
 })
 </script>
 
@@ -129,15 +169,22 @@ onMounted(() => {
         @tap="handleMessageClick(item)"
       >
         <!-- 消息图标 -->
-        <div class="h-11 w-11 flex flex-shrink-0 items-center justify-center rounded-xl transition-colors" :class="isDark ? 'bg-gray-800' : item.iconBg">
-          <wd-icon :name="item.icon" size="22px" :custom-class="isDark ? '!text-gray-400' : item.iconColor" />
+        <div
+          class="h-11 w-11 flex flex-shrink-0 items-center justify-center rounded-xl transition-colors"
+          :class="isDark ? 'bg-gray-800' : (item.iconBg || getMessageStyle(item).bg)"
+        >
+          <wd-icon
+            :name="item.icon || getMessageStyle(item).icon"
+            size="22px"
+            :custom-class="isDark ? '!text-gray-400' : (item.iconColor || getMessageStyle(item).color)"
+          />
         </div>
 
         <!-- 消息内容 -->
         <div class="flex-1 overflow-hidden">
           <div class="mb-1 flex items-center justify-between">
             <span class="truncate text-[15px] text-gray-900 font-bold dark:text-gray-100">{{ item.title }}</span>
-            <span class="text-[11px] text-gray-400 font-medium dark:text-gray-500">{{ item.time }}</span>
+            <span class="text-[11px] text-gray-400 font-medium dark:text-gray-500">{{ formatTime(item.createTime) }}</span>
           </div>
           <p class="line-clamp-2 text-xs text-gray-500 leading-relaxed dark:text-gray-400">
             {{ item.content }}
@@ -145,7 +192,7 @@ onMounted(() => {
         </div>
 
         <!-- 未读红点 -->
-        <div v-if="item.unread" class="absolute right-3 top-3 h-2 w-2 border-2 border-white rounded-full bg-red-500 dark:border-gray-900" />
+        <div v-if="item.readFlag.code === 0" class="absolute right-3 top-3 h-2 w-2 border-2 border-white rounded-full bg-red-500 dark:border-gray-900" />
       </div>
     </div>
 

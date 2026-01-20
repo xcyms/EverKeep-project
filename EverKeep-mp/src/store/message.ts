@@ -11,7 +11,7 @@ export const useMessageStore = defineStore('message', {
     /**
      * 获取未读消息
      */
-    unreadMessages: (state) => state.messages.filter(m => m.unread),
+    unreadMessages: (state) => state.messages.filter(m => m.readFlag.code === 0),
 
     /**
      * 根据类型获取消息
@@ -50,8 +50,8 @@ export const useMessageStore = defineStore('message', {
      */
     markAsRead(id: string | number) {
       const message = this.messages.find(m => m.id === id)
-      if (message && message.unread) {
-        message.unread = false
+      if (message && message.readFlag.code === 0) {
+        message.readFlag.code = 1
         this.updateUnreadCount()
         this.saveToStorage()
       }
@@ -62,7 +62,7 @@ export const useMessageStore = defineStore('message', {
      */
     markAllAsRead() {
       this.messages.forEach(m => {
-        m.unread = false
+        m.readFlag.code = 1
       })
       this.updateUnreadCount()
       this.saveToStorage()
@@ -72,7 +72,7 @@ export const useMessageStore = defineStore('message', {
      * 更新未读数量
      */
     updateUnreadCount() {
-      this.unreadCount = this.messages.filter(m => m.unread).length
+      this.unreadCount = this.messages.filter(m => m.readFlag.code === 0).length
     },
 
     /**

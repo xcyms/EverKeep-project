@@ -64,6 +64,16 @@ export async function handleAlovaResponse(
   if (import.meta.env.MODE === 'development') {
     console.log('[Alova Response]', json)
   }
+  // Check for API errors
+  if (json.code === 401) {
+    // 如果是未授权错误，清除用户信息并跳转到登录页
+    globalToast.error({ msg: '登录已过期，请重新登录！', duration: 500 })
+    const timer = setTimeout(() => {
+      clearTimeout(timer)
+      router.replaceAll({ name: 'login' })
+    }, 500)
+    throw new ApiError('登录已过期，请重新登录！', json.code, json.data)
+  }
 
   // Return data for successful responses
   return json

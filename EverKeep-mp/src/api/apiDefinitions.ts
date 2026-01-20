@@ -53,4 +53,5 @@ export default {
   'everkeep.albumPage': ['POST', '/album/page'],
   'everkeep.imagePage': ['POST', '/image/page'],
   'everkeep.uploadImage': ['POST', '/file/upload'],
+  'everkeep.getMessage': ['GET', '/message/my/page'],
 };
