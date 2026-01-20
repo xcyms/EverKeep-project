@@ -23,3 +23,11 @@ export interface SummaryDTO {
   storageUsage?: number
   totalSize?: number
 }
+
+export interface Page<T> {
+  records: T[]
+  total: number
+  size: number
+  current: number
+  pages: number
+}

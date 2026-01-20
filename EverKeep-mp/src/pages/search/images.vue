@@ -45,35 +45,57 @@ const {
   reset,
 } = useListPagination<ImageItem>({
   fetchFn: async (currentPage) => {
-    // 模拟网络延迟
-    await new Promise(resolve => setTimeout(resolve, 1800))
-
-    const mockImages: ImageItem[] = []
-    const totalPages = 5
-
-    if (currentPage <= totalPages) {
-      for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
-        const width = 200 + Math.floor(Math.random() * 100)
-        const height = 200 + Math.floor(Math.random() * 200)
-        const id = (currentPage - 1) * PAGINATION.DEFAULT_PAGE_SIZE + i + 1
-        mockImages.push({
-          key: `album-img-${albumId.value}-${currentPage}-${id}`,
-          name: `图片 ${id}`,
-          links: {
-            url: `https://picsum.photos/id/${Math.floor(Math.random() * 100) + 100}/${width}/${height}`,
-          },
-          width,
-          height,
-        })
+    if (!albumId.value) {
+      return {
+        data: [],
+        current_page: currentPage,
+        last_page: 0,
+        total: 0,
+        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
       }
     }
 
-    return {
-      data: mockImages,
-      current_page: currentPage,
-      last_page: totalPages,
-      total: totalPages * PAGINATION.DEFAULT_PAGE_SIZE,
-      per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+    const sortMap: Record<string, { column: string; asc: boolean }> = {
+      newest: { column: 'create_time', asc: false },
+      earliest: { column: 'create_time', asc: true },
+      utmost: { column: 'size', asc: false },
+      least: { column: 'size', asc: true },
+    }
+    const { column, asc } = sortMap[order.value] || sortMap.newest
+
+    try {
+      const res = await Apis.everkeep.imagePage({
+        params: {
+          current: currentPage,
+          size: PAGINATION.DEFAULT_PAGE_SIZE,
+          column,
+          asc,
+        },
+        data: {
+          albumId: albumId.value,
+          name: searchQuery.value || undefined,
+        },
+      })
+
+      if (res.code === 200 && res.data) {
+        return {
+          data: res.data.records || [],
+          current_page: res.data.current || currentPage,
+          last_page: res.data.pages || 1,
+          total: res.data.total || 0,
+          per_page: res.data.size || PAGINATION.DEFAULT_PAGE_SIZE,
+        }
+      }
+      throw new Error(res.message || '获取数据失败')
+    } catch (e) {
+      console.error('Failed to fetch album images:', e)
+      return {
+        data: [],
+        current_page: currentPage,
+        last_page: 0,
+        total: 0,
+        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+      }
     }
   },
   pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
@@ -115,7 +137,7 @@ function handleUpload() {
         uni.showLoading({ title: '正在上传...', mask: true })
 
         uni.uploadFile({
-          url: `${import.meta.env.VITE_API_BASE_URL}/upload`,
+          url: `${import.meta.env.VITE_API_BASE_URL}/file/upload`,
           filePath: tempFilePath,
           name: 'file',
           header: {
@@ -123,11 +145,11 @@ function handleUpload() {
             Accept: 'application/json',
           },
           formData: {
-            album_id: String(albumId.value),
+            albumId: String(albumId.value),
           },
           success: (uploadRes) => {
             const data = JSON.parse(uploadRes.data)
-            if (data.status) {
+            if (data.code === 200) {
               toast.success('上传成功')
               setTimeout(() => {
                 reset()

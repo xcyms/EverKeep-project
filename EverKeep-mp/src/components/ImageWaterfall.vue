@@ -2,12 +2,18 @@
 import { computed } from 'vue'
 
 interface ImageItem {
-  key?: string | number
-  links: {
-    url: string
-    [key: string]: any
+  albumId: string | number
+  createTime: string
+  id: string | number
+  name?: string
+  size?: number
+  status: {
+    code: number
+    desc: string
   }
-  [key: string]: any
+  type: string
+  url: string
+  userId: string | number
 }
 
 const props = defineProps<{
@@ -23,7 +29,7 @@ const leftCol = computed(() => props.list.filter((_, i) => i % 2 === 0))
 const rightCol = computed(() => props.list.filter((_, i) => i % 2 !== 0))
 
 function handleImageTap(currentUrl: string) {
-  const urls = props.list.map(item => item.links.url)
+  const urls = props.list.map(item => getImageUrl(item.url))
   uni.previewImage({
     urls,
     current: currentUrl,
@@ -40,12 +46,12 @@ function handleImageTap(currentUrl: string) {
       <div class="flex flex-1 flex-col gap-3">
         <div
           v-for="(img, index) in leftCol"
-          :key="img.key || index"
+          :key="img.id || index"
           class="overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-opacity active:opacity-80"
-          @tap="handleImageTap(img.links.url)"
+          @tap="handleImageTap(img.url)"
         >
           <image
-            :src="img.links.url"
+            :src="getImageUrl(img.url)"
             mode="widthFix"
             class="fade-in block h-auto w-full"
             lazy-load
@@ -56,12 +62,12 @@ function handleImageTap(currentUrl: string) {
       <div class="flex flex-1 flex-col gap-3">
         <div
           v-for="(img, index) in rightCol"
-          :key="img.key || index"
+          :key="img.id || index"
           class="overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-opacity active:opacity-80"
-          @tap="handleImageTap(img.links.url)"
+          @tap="handleImageTap(img.url)"
         >
           <image
-            :src="img.links.url"
+            :src="getImageUrl(img.url)"
             mode="widthFix"
             class="fade-in block h-auto w-full"
             lazy-load

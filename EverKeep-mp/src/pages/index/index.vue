@@ -48,6 +48,17 @@ const {
   reset,
 } = useListPagination<ImageItem>({
   fetchFn: async (currentPage) => {
+    // 仅“画廊”分类有数据，其他分类暂无功能
+    if (categoryId.value !== 0) {
+      return {
+        data: [],
+        current_page: currentPage,
+        last_page: 0,
+        total: 0,
+        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+      }
+    }
+
     // 模拟网络延迟
     await new Promise(resolve => setTimeout(resolve, 1800))
 
@@ -59,12 +70,18 @@ const {
         const width = 200 + Math.floor(Math.random() * 100)
         const height = 200 + Math.floor(Math.random() * 200)
         mockImages.push({
-          key: `img-${categoryId.value}-${currentPage}-${i}`,
-          links: {
-            url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
+          albumId: categoryId.value,
+          createTime: new Date().toISOString(),
+          id: `img-${categoryId.value}-${currentPage}-${i}`,
+          name: `图片 ${categoryId.value}-${currentPage}-${i}`,
+          size: width * height,
+          status: {
+            code: 0,
+            desc: '',
           },
-          width,
-          height,
+          type: 'image/jpeg',
+          url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
+          userId: user.user?.id || 'mock-user',
         })
       }
 
@@ -77,28 +94,45 @@ const {
       }
     }
 
-    // 已登录：这里模拟数据
-    const mockImages: ImageItem[] = []
-    for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
-      const width = 200 + Math.floor(Math.random() * 100)
-      const height = 200 + Math.floor(Math.random() * 200)
-      mockImages.push({
-        key: `logged-img-${categoryId.value}-${currentPage}-${i}`,
-        name: `模拟图片 ${currentPage}-${i}`,
-        links: {
-          url: `https://picsum.photos/id/${Math.floor(Math.random() * 200)}/${width}/${height}`,
-        },
-        width,
-        height,
-      })
+    // 已登录：调用真实接口实现功能
+    const sortMap: Record<string, { column: string; asc: boolean }> = {
+      newest: { column: 'create_time', asc: false },
+      earliest: { column: 'create_time', asc: true },
+      utmost: { column: 'size', asc: false },
+      least: { column: 'size', asc: true },
     }
+    const { column, asc } = sortMap[order.value] || sortMap.newest
 
-    return {
-      data: mockImages,
-      current_page: currentPage,
-      last_page: 10,
-      total: 100,
-      per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+    try {
+      const res = await Apis.everkeep.publicPage({
+        params: {
+          current: currentPage,
+          size: PAGINATION.DEFAULT_PAGE_SIZE,
+          column,
+          asc,
+        },
+        data: {},
+      })
+
+      if (res.code === 200 && res.data) {
+        return {
+          data: res.data.records || [],
+          current_page: res.data.current || currentPage,
+          last_page: res.data.pages || 1,
+          total: res.data.total || 0,
+          per_page: res.data.size || PAGINATION.DEFAULT_PAGE_SIZE,
+        }
+      }
+      throw new Error(res.message || '获取数据失败')
+    } catch (e) {
+      console.error('Failed to fetch public images:', e)
+      return {
+        data: [],
+        current_page: currentPage,
+        last_page: 0,
+        total: 0,
+        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+      }
     }
   },
   pageSize: PAGINATION.DEFAULT_PAGE_SIZE,

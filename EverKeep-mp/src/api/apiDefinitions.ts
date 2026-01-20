@@ -50,4 +50,7 @@ export default {
   'everkeep.logout': ['GET', '/user/logout'],
   'everkeep.getSummary': ['GET', '/stats/summary'],
   'everkeep.publicPage': ['POST', '/image/public/page'],
+  'everkeep.albumPage': ['POST', '/album/page'],
+  'everkeep.imagePage': ['POST', '/image/page'],
+  'everkeep.uploadImage': ['POST', '/file/upload'],
 };

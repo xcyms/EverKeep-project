@@ -1099,7 +1099,63 @@ declare global {
         }
       >(
         config: Config
-      ): Alova2Method<ApiResult<PublicPageDTO>, 'everkeep.publicPage', Config>;
+      ): Alova2Method<ApiResult<Page<ImageItem>>, 'everkeep.publicPage', Config>;
+      // 相册列表
+      albumPage<
+        Config extends Alova2MethodConfig<{
+          current?: number;
+          size?: number;
+          column?: string;
+          asc?: boolean;
+        }, {
+          name?: string;
+        }> & {
+          params: {
+            current?: number;
+            size?: number;
+            column?: string;
+            asc?: boolean;
+          };
+          data: {
+            name?: string;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<Page<AlbumItem>>, 'everkeep.albumPage', Config>;
+      // 相册图片
+      imagePage<
+        Config extends Alova2MethodConfig<{
+          current?: number;
+          size?: number;
+          column?: string;
+          asc?: boolean;
+        }, {
+          name?: string;
+          albumId?: string | number;
+        }> & {
+          params: {
+            current?: number;
+            size?: number;
+            column?: string;
+            asc?: boolean;
+          };
+          data: {
+            name?: string;
+            albumId?: string | number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<Page<ImageItem>>, 'everkeep.imagePage', Config>;
+      // 上传图片
+      uploadImage<
+        Config extends Alova2MethodConfig<null> & {
+          data: FormData;
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<ImageItem>, 'everkeep.uploadImage', Config>;
     }
   }
 

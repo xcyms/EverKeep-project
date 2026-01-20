@@ -7,7 +7,7 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import SortSheet from '@/components/common/SortSheet.vue'
 import { useManualTheme } from '@/composables/useManualTheme'
 import { usePageCache } from '@/composables/usePageCache'
-import { CACHE_KEYS, CACHE_TTL, PLACEHOLDER_IMAGE } from '@/utils/constants'
+import { CACHE_KEYS, CACHE_TTL, PAGINATION, PLACEHOLDER_IMAGE } from '@/utils/constants'
 
 definePage({
   name: 'search',
@@ -56,31 +56,43 @@ const orderOptions: SortOption[] = [
 const defaultAlbums: AlbumItem[] = [
   {
     id: 'd1',
+    userId: user.user?.id || 0,
     name: '风景精选',
-    image_num: 12,
-    intro: '大自然最纯净的呼吸，定格山川河流的美丽瞬间。',
+    description: '大自然最纯净的呼吸，定格山川河流的美丽瞬间。',
     cover: 'https://picsum.photos/id/10/400/300',
+    imageCount: 12,
+    createTime: '2023-01-01',
+    updateTime: '2023-01-01',
   },
   {
     id: 'd2',
+    userId: user.user?.id || 0,
     name: '人像摄影',
-    image_num: 8,
-    intro: '捕捉眼神中的故事，记录每一个真实而动人的面孔。',
+    description: '捕捉眼神中的故事，记录每一个真实而动人的面孔。',
     cover: 'https://picsum.photos/id/20/400/300',
+    imageCount: 8,
+    createTime: '2023-01-02',
+    updateTime: '2023-01-02',
   },
   {
     id: 'd3',
+    userId: user.user?.id || 0,
     name: '城市建筑',
-    image_num: 15,
-    intro: '穿梭于钢筋水泥之间，探索城市空间的几何美学。',
+    description: '穿梭于钢筋水泥之间，探索城市空间的几何美学。',
     cover: 'https://picsum.photos/id/30/400/300',
+    imageCount: 15,
+    createTime: '2023-01-03',
+    updateTime: '2023-01-03',
   },
   {
     id: 'd4',
+    userId: user.user?.id || 0,
     name: '自然风光',
-    image_num: 20,
-    intro: '从森林到海洋，带你领略地球上最原始的生命力。',
+    description: '从森林到海洋，带你领略地球上最原始的生命力。',
     cover: 'https://picsum.photos/id/40/400/300',
+    imageCount: 20,
+    createTime: '2023-01-04',
+    updateTime: '2023-01-04',
   },
 ]
 
@@ -88,9 +100,31 @@ const defaultAlbums: AlbumItem[] = [
 const { data: cachedAlbums, refresh: refreshCache } = usePageCache<AlbumItem[]>({
   key: CACHE_KEYS.SEARCH_ALBUMS,
   fetchFn: async () => {
-    // 模拟网络延迟
-    await new Promise(resolve => setTimeout(resolve, 1800))
-    return defaultAlbums.map(item => ({ ...item, _error: false }))
+    // 未登录时返回模拟数据
+    if (!user.isLoggedIn) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return defaultAlbums.map(item => ({ ...item, userId: user.user?.id || 0 }))
+    }
+
+    try {
+      const res = await Apis.everkeep.albumPage({
+        params: {
+          current: 1,
+          size: PAGINATION.DEFAULT_PAGE_SIZE,
+          column: 'a.create_time',
+          asc: false,
+        },
+        data: {},
+      })
+
+      if (res.code === 200 && res.data) {
+        return res.data.records || []
+      }
+      return []
+    } catch (e) {
+      console.error('Failed to fetch cached albums:', e)
+      return []
+    }
   },
   ttl: CACHE_TTL.MEDIUM,
   immediate: false,
@@ -113,36 +147,73 @@ async function fetchAlbums(isLoadMore = false) {
   loading.value = true
 
   try {
-    // 模拟网络延迟
-    await new Promise(resolve => setTimeout(resolve, 1800))
+    // 未登录时返回模拟数据
+    if (!user.isLoggedIn) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-    const mockData: AlbumItem[] = []
-    const totalPages = 3
+      const mockData: AlbumItem[] = []
+      const totalPages = 3
 
-    // 模拟分页数据
-    if (page.value <= totalPages) {
-      for (let i = 0; i < 6; i++) {
-        const id = (page.value - 1) * 6 + i + 1
-        mockData.push({
-          id: `mock-${id}`,
-          name: searchQuery.value ? `搜索结果: ${searchQuery.value} ${id}` : `相册 ${id}`,
-          image_num: Math.floor(Math.random() * 50) + 1,
-          intro: `这是一个模拟相册的描述内容，用于演示 UI 效果。序号：${id}`,
-          cover: `https://picsum.photos/id/${Math.floor(Math.random() * 50) + 50}/400/300`,
-          _error: false
-        })
+      if (page.value <= totalPages) {
+        for (let i = 0; i < 6; i++) {
+          const id = (page.value - 1) * 6 + i + 1
+          mockData.push({
+            id: `mock-${id}`,
+            name: searchQuery.value ? `搜索结果: ${searchQuery.value} ${id}` : `相册 ${id}`,
+            description: `这是一个模拟相册的描述内容，用于演示 UI 效果。序号：${id}`,
+            cover: `https://picsum.photos/id/${Math.floor(Math.random() * 50) + 50}/400/300`,
+            imageCount: Math.floor(Math.random() * 50) + 1,
+            createTime: new Date().toISOString(),
+            updateTime: new Date().toISOString(),
+            userId: user.user?.id || 0,
+          })
+        }
       }
+
+      if (isLoadMore) {
+        albumList.value.push(...mockData)
+      } else {
+        albumList.value = mockData
+      }
+
+      hasMore.value = page.value < totalPages
+      return
     }
 
-    if (isLoadMore) {
-      albumList.value.push(...mockData)
+    // 已登录：调用真实接口
+    const sortMap: Record<string, { column: string; asc: boolean }> = {
+      newest: { column: 'a.create_time', asc: false },
+      earliest: { column: 'a.create_time', asc: true },
+      most: { column: 'imageCount', asc: false },
+      least: { column: 'imageCount', asc: true },
+    }
+    const { column, asc } = sortMap[order.value] || sortMap.newest
+
+    const res = await Apis.everkeep.albumPage({
+      params: {
+        current: page.value,
+        size: PAGINATION.DEFAULT_PAGE_SIZE,
+        column,
+        asc,
+      },
+      data: {
+        name: searchQuery.value || undefined,
+      },
+    })
+
+    if (res.code === 200 && res.data) {
+      const records = res.data.records || []
+      if (isLoadMore) {
+        albumList.value.push(...records)
+      } else {
+        albumList.value = records
+      }
+      hasMore.value = page.value < (res.data.pages || 0)
     } else {
-      albumList.value = mockData
+      throw new Error(res.message || '获取相册失败')
     }
-
-    hasMore.value = page.value < totalPages
   } catch (error) {
-    console.log(error)
+    console.error(error)
     toast.error('加载相册失败')
   } finally {
     loading.value = false
@@ -297,17 +368,17 @@ onReachBottom(() => {
             @tap="goImages(album.id)">
             <div class="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
               <image
-                :src="album.cover" mode="widthFix" class="block h-auto w-full" lazy-load
+                :src="getImageUrl(album.cover)" mode="widthFix" class="block h-auto w-full" lazy-load
                 @error="handleImageError(album)" />
               <div
                 class="absolute right-2.5 top-2.5 z-10 rounded-full bg-black/30 px-2 py-0.5 text-[10px] text-white font-bold backdrop-blur-md">
-                {{ album.image_num }}
+                {{ album.imageCount }}
               </div>
             </div>
             <div class="p-3">
               <div class="text-sm text-gray-800 font-bold leading-snug dark:text-gray-200">{{ album.name }}</div>
-              <div v-if="album.intro" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed dark:text-gray-500">
-                {{ album.intro }}
+              <div v-if="album.description" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed dark:text-gray-500">
+                {{ album.description }}
               </div>
             </div>
           </div>
@@ -321,17 +392,17 @@ onReachBottom(() => {
             @tap="goImages(album.id)">
             <div class="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
               <image
-                :src="album.cover" mode="widthFix" class="block h-auto w-full" lazy-load
+                :src="getImageUrl(album.cover)" mode="widthFix" class="block h-auto w-full" lazy-load
                 @error="handleImageError(album)" />
               <div
                 class="absolute right-2.5 top-2.5 z-10 rounded-full bg-black/30 px-2 py-0.5 text-[10px] text-white font-bold backdrop-blur-md">
-                {{ album.image_num }}
+                {{ album.imageCount }}
               </div>
             </div>
             <div class="p-3">
               <div class="text-sm text-gray-800 font-bold leading-snug dark:text-gray-200">{{ album.name }}</div>
-              <div v-if="album.intro" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed dark:text-gray-500">
-                {{ album.intro }}
+              <div v-if="album.description" class="mt-1.5 text-[11px] text-gray-400 leading-relaxed dark:text-gray-500">
+                {{ album.description }}
               </div>
             </div>
           </div>

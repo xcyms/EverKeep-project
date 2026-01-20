@@ -4,15 +4,18 @@
  * 图片数据
  */
 export interface ImageItem {
-  key: string
-  links: {
-    url: string
-  }
+  albumId: string | number
+  createTime: string
+  id: string | number
   name?: string
   size?: number
-  width?: number
-  height?: number
-  _error?: boolean
+  status: {
+    code: number
+    desc: string
+  }
+  type: string
+  url: string
+  userId: string | number
 }
 
 /**
@@ -20,12 +23,13 @@ export interface ImageItem {
  */
 export interface AlbumItem {
   id: string | number
+  userId: string | number
   name: string
-  intro?: string
+  description: string
   cover: string
-  image_num: number
-  created_at?: string
-  updated_at?: string
+  imageCount: number
+  createTime: string
+  updateTime: string
   _error?: boolean
 }
 
