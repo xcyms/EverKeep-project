@@ -2,18 +2,33 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.xcyms.mapper.ImageMapper">
 
+    <sql id="columns">
+        id,
+        user_id as 'userId',
+        album_id as 'albumId',
+        url,
+        name,
+        size,
+        type,
+        status,
+        create_time as 'createTime',
+        update_time as 'updateTime',
+        deleted,
+        make,
+        model,
+        exposure_time as 'exposureTime',
+        f_number as 'fNumber',
+        iso,
+        focal_length as 'focalLength',
+        lens_model as 'lensModel',
+        lat,
+        lng,
+        take_time as 'takeTime'
+    </sql>
+
     <select id="selectRecyclePage" resultType="org.xcyms.entity.Image">
         SELECT
-            id,
-            user_id as 'userId',
-            album_id as 'albumId',
-            url,
-            name,
-            size,
-            type,
-            status,
-            create_time as 'createTime',
-            deleted
+            <include refid="columns" />
         FROM biz_image
         WHERE user_id = #{userId} AND deleted = 1
         ORDER BY create_time DESC
@@ -26,5 +41,12 @@
     <update id="restore">
         UPDATE biz_image SET deleted = 0 WHERE id IN (${idList})
     </update>
+
+    <select id="selectExpiredRecycleImages" resultType="org.xcyms.entity.Image">
+        SELECT
+            <include refid="columns" />
+        FROM biz_image
+        WHERE deleted = 1 AND update_time &lt; #{expireTime}
+    </select>
 
 </mapper>

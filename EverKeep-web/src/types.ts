@@ -75,6 +75,16 @@ namespace API {
       name: string
     }
     createTime: string
+    make?: string
+    model?: string
+    exposureTime?: string
+    fNumber?: string
+    iso?: string
+    focalLength?: string
+    lensModel?: string
+    lat?: string
+    lng?: string
+    takeTime?: string
   }
 
   export interface StatsSummary {

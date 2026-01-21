@@ -47,6 +47,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
     private final ModelMapper mapper;
     private final AlbumMapper albumMapper;
     private final IConfigService configService;
+    private final ExifProcessor exifProcessor;
 
     @Override
     public ApiResult<ImageDTO> uploadImage(MultipartFile file, Long albumId, String category) {
@@ -99,7 +100,12 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             image.setUrl(webUrl);
             image.setSize(file.getSize());
             image.setType(suffix.substring(1));
+
             this.save(image);
+
+            // 触发异步解析
+            exifProcessor.processExifAsync(destFile, image.getId());
+
             return ApiResult.success(mapper.map(image, ImageDTO.class));
         }
 

@@ -44,6 +44,39 @@ public class ImageDTO {
     @ApiDocProperty("上传时间")
     private LocalDateTime createTime;
 
+    @ApiDocProperty("更新时间")
+    private LocalDateTime updateTime;
+
     @ApiDocProperty("批量操作ID列表")
     private List<Long> ids;
+
+    @ApiDocProperty("相机制造厂商")
+    private String make;
+
+    @ApiDocProperty("相机型号")
+    private String model;
+
+    @ApiDocProperty("曝光时间")
+    private String exposureTime;
+
+    @ApiDocProperty("光圈值")
+    private String fNumber;
+
+    @ApiDocProperty("ISO感光度")
+    private String iso;
+
+    @ApiDocProperty("焦距")
+    private String focalLength;
+
+    @ApiDocProperty("镜头型号")
+    private String lensModel;
+
+    @ApiDocProperty("纬度")
+    private String lat;
+
+    @ApiDocProperty("经度")
+    private String lng;
+
+    @ApiDocProperty("拍摄时间")
+    private LocalDateTime takeTime;
 }

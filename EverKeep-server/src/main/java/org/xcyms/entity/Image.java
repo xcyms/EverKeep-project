@@ -60,8 +60,52 @@ public class Image implements Serializable {
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
+    @ApiDocProperty("更新时间")
+    @TableField(value = "update_time", fill = FieldFill.UPDATE)
+    private LocalDateTime updateTime;
+
     @ApiDocProperty("删除标志 (YES-已删除, NO-未删除)")
     @TableField("deleted")
     @TableLogic
     private YesNoEnum deleted;
+
+    @ApiDocProperty("相机制造厂商")
+    @TableField("make")
+    private String make;
+
+    @ApiDocProperty("相机型号")
+    @TableField("model")
+    private String model;
+
+    @ApiDocProperty("曝光时间")
+    @TableField("exposure_time")
+    private String exposureTime;
+
+    @ApiDocProperty("光圈值")
+    @TableField("f_number")
+    private String fNumber;
+
+    @ApiDocProperty("ISO感光度")
+    @TableField("iso")
+    private String iso;
+
+    @ApiDocProperty("焦距")
+    @TableField("focal_length")
+    private String focalLength;
+
+    @ApiDocProperty("镜头型号")
+    @TableField("lens_model")
+    private String lensModel;
+
+    @ApiDocProperty("纬度")
+    @TableField("lat")
+    private String lat;
+
+    @ApiDocProperty("经度")
+    @TableField("lng")
+    private String lng;
+
+    @ApiDocProperty("拍摄时间")
+    @TableField("take_time")
+    private LocalDateTime takeTime;
 }

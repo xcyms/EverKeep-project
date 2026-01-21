@@ -6,6 +6,9 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.xcyms.entity.Image;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 
 /**
  * <p>
@@ -32,4 +35,9 @@ public interface ImageMapper extends BaseMapper<Image> {
      * 批量恢复
      */
     void restore(@Param("idList") String idList);
+
+    /**
+     * 查询回收站中超过指定时间的过期图片
+     */
+    List<Image> selectExpiredRecycleImages(@Param("expireTime") LocalDateTime expireTime);
 }

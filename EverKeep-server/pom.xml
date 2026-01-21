@@ -27,6 +27,7 @@
         <hutool.version>5.8.43</hutool.version>
         <common-lang3.version>3.20.0</common-lang3.version>
         <model-mapper.version>3.2.6</model-mapper.version>
+        <metadata-extractor.version>2.19.0</metadata-extractor.version>
     </properties>
 
     <dependencies>
@@ -117,6 +118,13 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!-- EXIF 元数据解析 -->
+        <dependency>
+            <groupId>com.drewnoakes</groupId>
+            <artifactId>metadata-extractor</artifactId>
+            <version>${metadata-extractor.version}</version>
         </dependency>
 
     </dependencies>

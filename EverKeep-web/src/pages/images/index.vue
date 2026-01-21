@@ -208,16 +208,41 @@ const handleMenuClick = (action: string, img: API.Image) => {
 const showDetails = (img: API.Image) => {
   Modal.info({
     title: '图片详情',
-    width: 400,
-    content: h('div', { class: 'space-y-3 pt-4' }, [
-      h('div', { class: 'flex justify-between' }, [h('span', '文件名:'), h('span', { class: 'font-medium' }, img.name)]),
-      h('div', { class: 'flex justify-between' }, [h('span', '所属相册:'), h('span', albumList.value.find(a => a.id === img.albumId)?.name || '无')]),
-      h('div', { class: 'flex justify-between' }, [h('span', '文件大小:'), h('span', formatSize(img.size))]),
-      h('div', { class: 'flex justify-between' }, [h('span', '上传时间:'), h('span', img.createTime)]),
-      h('div', { class: 'flex justify-between' }, [h('span', '状态:'), h('span', img.status.code === 1 ? '公开' : '私有')]),
-      h('div', { class: 'mt-4 border-t pt-4' }, [
-        h('img', { src: getImageUrl(img.url), class: 'w-full rounded-lg shadow-sm' })
-      ])
+    width: 500,
+    content: h('div', { class: 'space-y-4 pt-4' }, [
+      // 预览图
+      h('div', { class: 'relative group' }, [
+        h('img', { src: getImageUrl(img.url), class: 'w-full rounded-lg shadow-md border border-gray-100' }),
+        h('div', { class: 'absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-[10px] rounded backdrop-blur-sm' }, img.type?.toUpperCase())
+      ]),
+      
+      // 基础信息
+      h('div', { class: 'grid grid-cols-2 gap-4 text-sm' }, [
+        h('div', { class: 'space-y-2' }, [
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400 text-xs' }, '文件名'), h('span', { class: 'font-medium truncate' }, img.name)]),
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400 text-xs' }, '文件大小'), h('span', { class: 'font-medium' }, formatSize(img.size))]),
+        ]),
+        h('div', { class: 'space-y-2' }, [
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400 text-xs' }, '所属相册'), h('span', { class: 'font-medium' }, albumList.value.find(a => a.id === img.albumId)?.name || '无')]),
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400 text-xs' }, '上传时间'), h('span', { class: 'font-medium' }, img.createTime)]),
+        ])
+      ]),
+
+      // EXIF 信息 (如果有)
+      (img.model || img.make) ? h('div', { class: 'bg-gray-50 p-4 rounded-lg space-y-3' }, [
+        h('div', { class: 'flex items-center gap-2 border-b border-gray-200 pb-2 mb-2' }, [
+          h('div', { class: 'i-fa6-solid:camera text-blue-500' }),
+          h('span', { class: 'font-bold text-gray-700' }, '拍摄参数 (EXIF)')
+        ]),
+        h('div', { class: 'grid grid-cols-2 gap-y-3 text-xs' }, [
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400' }, '相机型号'), h('span', { class: 'text-gray-700 font-medium' }, `${img.make || ''} ${img.model || ''}`)]),
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400' }, '拍摄时间'), h('span', { class: 'text-gray-700 font-medium' }, img.takeTime || '-')]),
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400' }, '曝光/光圈'), h('span', { class: 'text-gray-700 font-medium' }, `${img.exposureTime || '-'}s · f/${img.fNumber || '-'}`)]),
+          h('div', { class: 'flex flex-col' }, [h('span', { class: 'text-gray-400' }, 'ISO/焦距'), h('span', { class: 'text-gray-700 font-medium' }, `ISO ${img.iso || '-'} · ${img.focalLength || '-'}`)]),
+          img.lensModel ? h('div', { class: 'col-span-2 flex flex-col' }, [h('span', { class: 'text-gray-400' }, '镜头型号'), h('span', { class: 'text-gray-700 font-medium' }, img.lensModel)]) : null,
+          img.lat ? h('div', { class: 'col-span-2 flex flex-col' }, [h('span', { class: 'text-gray-400' }, '地理位置'), h('span', { class: 'text-gray-700 font-medium' }, `${img.lat}, ${img.lng}`)]) : null,
+        ])
+      ]) : null
     ]),
     okText: '关闭',
   })
