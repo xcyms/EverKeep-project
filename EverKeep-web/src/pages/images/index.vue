@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, watch, h, onMounted } from 'vue'
+import { ref, reactive, watch, h, onMounted, computed } from 'vue'
 import { message, Modal, Select } from 'ant-design-vue'
 import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue'
 import { getMyImagesApi, deleteImagesApi, updateImagesStatusApi, moveImageToAlbumApi, setAlbumCoverApi, batchMoveImagesApi } from '../../api/image'
@@ -19,8 +19,26 @@ const queryParams = reactive({
   albumId: null as number | null,
   status: 'all',
   sort: 'createTime_desc',
+  viewMode: 'grid', // grid | timeline
   current: 1,
   size: 12,
+})
+
+// --- 计算属性：时间轴分组 ---
+const groupedImages = computed(() => {
+  if (queryParams.viewMode !== 'timeline') return []
+  
+  const groups: { date: string | undefined, images: API.Image[] }[] = []
+  displayedImages.value.forEach(img => {
+    const date = img.createTime ? img.createTime.split(' ')[0] : '未知日期'
+    const group = groups.find(g => g.date === date)
+    if (group) {
+      group.images.push(img)
+    } else {
+      groups.push({ date, images: [img] })
+    }
+  })
+  return groups
 })
 
 // --- 核心逻辑：获取数据 ---
@@ -333,6 +351,14 @@ const handleSetCover = async (img: API.Image) => {
         </a-space>
 
         <a-space>
+          <span class="text-gray-500 text-sm">视图:</span>
+          <a-radio-group v-model:value="queryParams.viewMode" button-style="solid">
+            <a-radio-button value="grid">网格</a-radio-button>
+            <a-radio-button value="timeline">时间轴</a-radio-button>
+          </a-radio-group>
+        </a-space>
+
+        <a-space>
           <span class="text-gray-500 text-sm">排序:</span>
           <a-select v-model:value="queryParams.sort"
             class="w-40">
@@ -379,80 +405,133 @@ const handleSetCover = async (img: API.Image) => {
 
     <!-- 图片列表区 -->
     <a-spin :spinning="loading" tip="加载中...">
-      <div v-if="displayedImages.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 min-h-[200px]">
-        <a-dropdown 
-          v-for="img in displayedImages" 
-          :key="img.id"
-          :trigger="['contextmenu']"
-        >
-          <div 
-            class="group relative bg-white rounded-lg overflow-hidden border transition-all hover:shadow-md cursor-pointer"
-            :class="selectedIds.includes(img.id) ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-100'"
+      <div v-if="displayedImages.length > 0">
+        <!-- 1. 网格模式 (保持原样) -->
+        <div v-if="queryParams.viewMode === 'grid'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 min-h-[200px]">
+          <a-dropdown 
+            v-for="img in displayedImages" 
+            :key="img.id"
+            :trigger="['contextmenu']"
           >
-            <!-- 复选框 -->
             <div 
-              class="absolute top-2 left-2 z-10 w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors"
-              :class="selectedIds.includes(img.id) ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white/80 border-gray-300'"
-              @click.stop="toggleSelect(img.id)"
+              class="group relative bg-white rounded-lg overflow-hidden border transition-all hover:shadow-md cursor-pointer"
+              :class="selectedIds.includes(img.id) ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-100'"
             >
-              <div v-if="selectedIds.includes(img.id)" class="i-fa6-solid:check text-[10px]" />
+              <!-- 复选框 -->
+              <div 
+                class="absolute top-2 left-2 z-10 w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors"
+                :class="selectedIds.includes(img.id) ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white/80 border-gray-300'"
+                @click.stop="toggleSelect(img.id)"
+              >
+                <div v-if="selectedIds.includes(img.id)" class="i-fa6-solid:check text-[10px]" />
+              </div>
+
+              <!-- 图片预览 -->
+              <div class="aspect-square overflow-hidden bg-gray-50">
+                <a-image
+                  :src="getImageUrl(img.url)"
+                  class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  :preview="true"
+                />
+              </div>
+
+              <!-- 图片信息 -->
+              <div class="p-2 space-y-1">
+                <div class="text-sm font-medium truncate text-gray-800" :title="img.name">
+                  {{ img.name }}
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-gray-400">
+                  <span>{{ formatSize(img.size) }}</span>
+                  <a-tag :color="img.status.code === 1 ? 'green' : 'orange'" size="small" class="m-0 scale-90 origin-right">
+                    {{ img.status.code === 1 ? '公开' : '私有' }}
+                  </a-tag>
+                </div>
+                <div class="text-[10px] text-gray-400 truncate">
+                  {{ img.createTime }}
+                </div>
+              </div>
+
+              <!-- 悬浮操作层 -->
+              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 pointer-events-none transition-colors" />
             </div>
 
-            <!-- 图片预览 -->
-            <div class="aspect-square overflow-hidden bg-gray-50">
-              <a-image
-                :src="getImageUrl(img.url)"
-                class="w-full h-full object-cover transition-transform group-hover:scale-105"
-                :preview="true"
-              />
+            <template #overlay>
+              <a-menu @click="({ key }) => handleMenuClick(key as string, img)">
+                <a-menu-item key="details">
+                  <template #icon><div class="i-fa6-solid:circle-info" /></template>
+                  图片详情
+                </a-menu-item>
+                <a-menu-item key="copyUrl">
+                  <template #icon><div class="i-fa6-solid:copy" /></template>
+                  复制图片链接
+                </a-menu-item>
+                <a-menu-item key="move">
+                  <template #icon><div class="i-fa6-solid:folder-open" /></template>
+                  移动到相册
+                </a-menu-item>
+                <a-menu-item key="setCover" :disabled="!img.albumId">
+                  <template #icon><div class="i-fa6-solid:image" /></template>
+                  设置为相册封面
+                </a-menu-item>
+                <a-menu-divider />
+                <a-menu-item key="delete" danger>
+                  <template #icon><div class="i-fa6-solid:trash-can" /></template>
+                  删除图片
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+        </div>
+
+        <!-- 2. 时间轴模式 (新增加) -->
+        <div v-else class="space-y-8 py-4">
+          <div v-for="group in groupedImages" :key="group.date" class="relative pl-8 border-l-2 border-gray-100 ml-4">
+            <!-- 日期标记点 -->
+            <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-white shadow-sm"></div>
+            
+            <div class="mb-4 -mt-1 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-lg font-bold text-gray-800">{{ group.date }}</span>
+                <span class="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-500">{{ group.images.length }} 张图片</span>
+              </div>
             </div>
 
-            <!-- 图片信息 -->
-            <div class="p-2 space-y-1">
-              <div class="text-sm font-medium truncate text-gray-800" :title="img.name">
-                {{ img.name }}
-              </div>
-              <div class="flex items-center justify-between text-[10px] text-gray-400">
-                <span>{{ formatSize(img.size) }}</span>
-                <a-tag :color="img.status.code === 1 ? 'green' : 'orange'" size="small" class="m-0 scale-90 origin-right">
-                  {{ img.status.code === 1 ? '公开' : '私有' }}
-                </a-tag>
-              </div>
-              <div class="text-[10px] text-gray-400 truncate">
-                {{ img.createTime }}
-              </div>
-            </div>
+            <div class="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+              <a-dropdown 
+                v-for="img in group.images" 
+                :key="img.id"
+                :trigger="['contextmenu']"
+              >
+                <div 
+                  class="group relative aspect-square rounded-lg overflow-hidden border border-gray-100 transition-all hover:shadow-lg cursor-pointer"
+                  :class="selectedIds.includes(img.id) ? 'border-blue-500 ring-2 ring-blue-100' : ''"
+                >
+                  <a-image :src="getImageUrl(img.url)" class="w-full h-full object-cover" />
+                  
+                  <!-- 复选框 -->
+                  <div 
+                    class="absolute top-1 left-1 z-10 w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-opacity"
+                    :class="selectedIds.includes(img.id) ? 'bg-blue-500 border-blue-500 text-white opacity-100' : 'bg-white/80 border-gray-300 opacity-0 group-hover:opacity-100'"
+                    @click.stop="toggleSelect(img.id)"
+                  >
+                    <div v-if="selectedIds.includes(img.id)" class="i-fa6-solid:check text-[8px]" />
+                  </div>
 
-            <!-- 悬浮操作层 -->
-            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 pointer-events-none transition-colors" />
+                  <div v-if="selectedIds.includes(img.id)" class="absolute inset-0 bg-blue-500/10 pointer-events-none" />
+                </div>
+
+                <template #overlay>
+                  <a-menu @click="({ key }) => handleMenuClick(key as string, img)">
+                    <a-menu-item key="details">图片详情</a-menu-item>
+                    <a-menu-item key="copyUrl">复制链接</a-menu-item>
+                    <a-menu-item key="move">移动相册</a-menu-item>
+                    <a-menu-item key="delete" danger>删除图片</a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </div>
           </div>
-
-          <template #overlay>
-            <a-menu @click="({ key }) => handleMenuClick(key as string, img)">
-              <a-menu-item key="details">
-                <template #icon><div class="i-fa6-solid:circle-info" /></template>
-                图片详情
-              </a-menu-item>
-              <a-menu-item key="copyUrl">
-                <template #icon><div class="i-fa6-solid:copy" /></template>
-                复制图片链接
-              </a-menu-item>
-              <a-menu-item key="move">
-                <template #icon><div class="i-fa6-solid:folder-open" /></template>
-                移动到相册
-              </a-menu-item>
-              <a-menu-item key="setCover" :disabled="!img.albumId">
-                <template #icon><div class="i-fa6-solid:image" /></template>
-                设置为相册封面
-              </a-menu-item>
-              <a-menu-divider />
-              <a-menu-item key="delete" danger>
-                <template #icon><div class="i-fa6-solid:trash-can" /></template>
-                删除图片
-              </a-menu-item>
-            </a-menu>
-          </template>
-        </a-dropdown>
+        </div>
       </div>
 
       <!-- 空状态 -->

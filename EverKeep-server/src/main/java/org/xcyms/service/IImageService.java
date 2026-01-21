@@ -8,6 +8,8 @@ import org.xcyms.common.ApiResult;
 import org.xcyms.entity.Image;
 import org.xcyms.entity.dto.ImageDTO;
 
+import java.util.List;
+
 /**
  * <p>
  * 图片表 服务类
@@ -29,4 +31,19 @@ public interface IImageService extends IService<Image> {
     ApiResult<String> setCover(Long imageId);
 
     ApiResult<String> batchMove(ImageDTO imageDTO);
+
+    /**
+     * 获取回收站分页列表
+     */
+    ApiResult<IPage<ImageDTO>> getRecyclePage(Page<Image> page, Long userId);
+
+    /**
+     * 恢复图片
+     */
+    ApiResult<String> restore(List<Long> idList);
+
+    /**
+     * 彻底删除图片
+     */
+    ApiResult<String> deletePermanently(List<Long> idList);
 }

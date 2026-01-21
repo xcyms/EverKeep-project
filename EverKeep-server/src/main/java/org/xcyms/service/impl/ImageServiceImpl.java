@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,7 +90,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         }
 
         // 4. 数据入库
-        String webUrl = "/uploads/" + relativePath + newFileName;
+        String webUrl = Constant.UPLOAD_ROOT_PATH + relativePath + newFileName;
         if ("image".equals(category)) {
             Image image = new Image();
             image.setUserId(userId);
@@ -252,12 +253,58 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             return ApiResult.error("未选择图片");
         }
         if (imageDTO.getAlbumId() == null) {
-            return ApiResult.error("未选择目标相册");
+            return ApiResult.error("目标相册不能为空");
         }
 
+        LambdaQueryWrapper<Image> queryWrapper = new LambdaQueryWrapper<Image>()
+                .in(Image::getId, imageDTO.getIds());
         Image image = new Image();
         image.setAlbumId(imageDTO.getAlbumId());
-        this.update(image, new LambdaQueryWrapper<Image>().in(Image::getId, imageDTO.getIds()));
+        this.update(image, queryWrapper);
         return ApiResult.success("批量移动成功");
+    }
+
+    @Override
+    public ApiResult<IPage<ImageDTO>> getRecyclePage(Page<Image> page, Long userId) {
+        IPage<Image> iPage = this.baseMapper.selectRecyclePage(page, userId);
+        IPage<ImageDTO> iPageDTO = iPage.convert(image -> mapper.map(image, ImageDTO.class));
+        return ApiResult.success(iPageDTO);
+    }
+
+    @Override
+    public ApiResult<String> restore(List<Long> idList) {
+        if (idList == null || idList.isEmpty()) {
+            return ApiResult.error("请选择要恢复的图片");
+        }
+        String ids = StringUtils.join(idList, ",");
+        this.baseMapper.restore(ids);
+        return ApiResult.success("已从回收站恢复");
+    }
+
+    @Override
+    public ApiResult<String> deletePermanently(List<Long> idList) {
+        if (idList == null || idList.isEmpty()) {
+            return ApiResult.error("请选择要删除的图片");
+        }
+
+        for (Long id : idList) {
+            Image image = this.baseMapper.selectById(id);
+            if (image != null) {
+                // 1. 删除文件
+                String rootPath = configService.getConfigValue(null, Constant.ConfigKey.UPLOAD_PATH);
+                if (StringUtils.isNotBlank(rootPath)) {
+                    // 修正路径拼接逻辑
+                    String relativeUrl = image.getUrl().replace(Constant.UPLOAD_ROOT_PATH, "");
+                    String fullPath = rootPath.endsWith(File.separator) ? rootPath + relativeUrl : rootPath + File.separator + relativeUrl;
+                    File file = new File(fullPath.replace("/", File.separator));
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                }
+                // 2. 物理删除数据库记录
+                this.baseMapper.deletePermanently(id);
+            }
+        }
+        return ApiResult.success("已永久删除");
     }
 }

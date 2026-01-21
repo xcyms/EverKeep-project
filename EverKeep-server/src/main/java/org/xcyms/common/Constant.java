@@ -14,6 +14,8 @@ public class Constant {
 
     public static final String SALT = "everKeep_salt";
 
+    public static final String UPLOAD_ROOT_PATH = "/uploads/";
+
     /**
      * 配置键常量
      */

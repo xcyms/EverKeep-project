@@ -24,6 +24,7 @@ export const menuItems: MenuItem[] = [
       { key: '/upload', label: '上传图片', icon: 'i-fa6-solid:cloud-arrow-up' },
       { key: '/images', label: '我的图片', icon: 'i-fa6-solid:image' },
       { key: '/albums', label: '我的相册', icon: 'i-fa6-solid:folder' },
+      { key: '/recycle', label: '回收站', icon: 'i-fa6-solid:trash-can' },
     ],
   },
   {

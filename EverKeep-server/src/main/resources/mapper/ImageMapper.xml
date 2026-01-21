@@ -2,4 +2,29 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.xcyms.mapper.ImageMapper">
 
+    <select id="selectRecyclePage" resultType="org.xcyms.entity.Image">
+        SELECT
+            id,
+            user_id as 'userId',
+            album_id as 'albumId',
+            url,
+            name,
+            size,
+            type,
+            status,
+            create_time as 'createTime',
+            deleted
+        FROM biz_image
+        WHERE user_id = #{userId} AND deleted = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <delete id="deletePermanently">
+        DELETE FROM biz_image WHERE id = #{id}
+    </delete>
+
+    <update id="restore">
+        UPDATE biz_image SET deleted = 0 WHERE id IN (${idList})
+    </update>
+
 </mapper>

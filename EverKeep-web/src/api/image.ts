@@ -100,3 +100,36 @@ export const setAlbumCoverApi = (imageId: number): Promise<string> => {
     params: { imageId }
   })
 }
+
+/**
+ * 获取回收站图片列表
+ */
+export const getRecycleImagesApi = (params: { current: number; size: number }): Promise<API.PageResult<API.Image>> => {
+  return request({
+    url: '/image/recycle/page',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 从回收站恢复图片
+ */
+export const restoreImagesApi = (ids: number[]): Promise<string> => {
+  return request({
+    url: '/image/restore',
+    method: 'post',
+    data: ids
+  })
+}
+
+/**
+ * 永久删除图片
+ */
+export const deletePermanentlyApi = (ids: number[]): Promise<string> => {
+  return request({
+    url: '/image/deletePermanently',
+    method: 'delete',
+    data: ids
+  })
+}

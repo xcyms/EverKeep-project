@@ -60,7 +60,7 @@ const {
     }
 
     // 模拟网络延迟
-    await new Promise(resolve => setTimeout(resolve, 1800))
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
     // 未登录时返回模拟数据
     if (!user.isLoggedIn) {

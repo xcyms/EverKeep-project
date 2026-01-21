@@ -101,6 +101,24 @@ public class ImageController {
         return imageService.setCover(imageId);
     }
 
+    @ApiDoc("获取回收站图片列表")
+    @GetMapping("/recycle/page")
+    public ApiResult<IPage<ImageDTO>> recyclePage(Page<Image> page) {
+        return imageService.getRecyclePage(page, StpUtil.getLoginIdAsLong());
+    }
+
+    @ApiDoc("从回收站恢复图片")
+    @PostMapping("/restore")
+    public ApiResult<String> restore(@RequestBody List<Long> idList) {
+        return imageService.restore(idList);
+    }
+
+    @ApiDoc("永久删除图片")
+    @DeleteMapping("/deletePermanently")
+    public ApiResult<String> deletePermanently(@RequestBody List<Long> idList) {
+        return imageService.deletePermanently(idList);
+    }
+
     @ApiDoc("批量移动图片到相册")
     @PostMapping("/batchMove")
     public ApiResult<String> batchMove(@RequestBody ImageDTO imageDTO) {
