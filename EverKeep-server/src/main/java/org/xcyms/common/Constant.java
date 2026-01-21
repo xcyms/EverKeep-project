@@ -16,6 +16,8 @@ public class Constant {
 
     public static final String UPLOAD_ROOT_PATH = "/uploads/";
 
+    public static final String THUMBNAIL_SUFFIX = "_thumb";
+
     /**
      * 配置键常量
      */

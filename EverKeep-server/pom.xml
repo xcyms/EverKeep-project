@@ -28,6 +28,7 @@
         <common-lang3.version>3.20.0</common-lang3.version>
         <model-mapper.version>3.2.6</model-mapper.version>
         <metadata-extractor.version>2.19.0</metadata-extractor.version>
+        <thumbnailator.version>0.4.20</thumbnailator.version>
     </properties>
 
     <dependencies>
@@ -125,6 +126,13 @@
             <groupId>com.drewnoakes</groupId>
             <artifactId>metadata-extractor</artifactId>
             <version>${metadata-extractor.version}</version>
+        </dependency>
+
+        <!-- 图片处理（缩略图） -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>${thumbnailator.version}</version>
         </dependency>
 
     </dependencies>

@@ -40,6 +40,10 @@ public class Image implements Serializable {
     @TableField("url")
     private String url;
 
+    @ApiDocProperty("缩略图URL")
+    @TableField("thumbnail_url")
+    private String thumbnailUrl;
+
     @ApiDocProperty("图片名称")
     @TableField("name")
     private String name;

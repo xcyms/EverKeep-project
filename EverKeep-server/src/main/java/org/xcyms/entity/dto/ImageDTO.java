@@ -29,6 +29,9 @@ public class ImageDTO {
     @ApiDocProperty("图片URL")
     private String url;
 
+    @ApiDocProperty("缩略图URL")
+    private String thumbnailUrl;
+
     @ApiDocProperty("图片名称")
     private String name;
 

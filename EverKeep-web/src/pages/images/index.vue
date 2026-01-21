@@ -454,9 +454,11 @@ const handleSetCover = async (img: API.Image) => {
               <!-- 图片预览 -->
               <div class="aspect-square overflow-hidden bg-gray-50">
                 <a-image
-                  :src="getImageUrl(img.url)"
+                  :src="getImageUrl(img.thumbnailUrl || img.url)"
                   class="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  :preview="true"
+                  :preview="{
+                    src: getImageUrl(img.url)
+                  }"
                 />
               </div>
 
@@ -531,7 +533,13 @@ const handleSetCover = async (img: API.Image) => {
                   class="group relative aspect-square rounded-lg overflow-hidden border border-gray-100 transition-all hover:shadow-lg cursor-pointer"
                   :class="selectedIds.includes(img.id) ? 'border-blue-500 ring-2 ring-blue-100' : ''"
                 >
-                  <a-image :src="getImageUrl(img.url)" class="w-full h-full object-cover" />
+                  <a-image
+                    :src="getImageUrl(img.thumbnailUrl || img.url)"
+                    class="w-full h-full object-cover"
+                    :preview="{
+                      src: getImageUrl(img.url)
+                    }"
+                  />
                   
                   <!-- 复选框 -->
                   <div 

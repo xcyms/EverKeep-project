@@ -67,6 +67,7 @@ namespace API {
     userId: number
     albumId: number
     url: string
+    thumbnailUrl?: string
     name: string
     size: number
     type: string

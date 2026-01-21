@@ -103,8 +103,8 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
 
             this.save(image);
 
-            // 触发异步解析
-            exifProcessor.processExifAsync(destFile, image.getId());
+            // 触发异步解析 (传递 webUrl 避免异步任务重新查询数据库)
+            exifProcessor.processExifAsync(destFile, image.getId(), webUrl);
 
             return ApiResult.success(mapper.map(image, ImageDTO.class));
         }
@@ -299,12 +299,22 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
                 // 1. 删除文件
                 String rootPath = configService.getConfigValue(null, Constant.ConfigKey.UPLOAD_PATH);
                 if (StringUtils.isNotBlank(rootPath)) {
-                    // 修正路径拼接逻辑
+                    // 1. 删除原图
                     String relativeUrl = image.getUrl().replace(Constant.UPLOAD_ROOT_PATH, "");
                     String fullPath = rootPath.endsWith(File.separator) ? rootPath + relativeUrl : rootPath + File.separator + relativeUrl;
                     File file = new File(fullPath.replace("/", File.separator));
                     if (file.exists()) {
                         file.delete();
+                    }
+
+                    // 2. 删除缩略图 (如果有)
+                    if (StringUtils.isNotBlank(image.getThumbnailUrl())) {
+                        String relativeThumbUrl = image.getThumbnailUrl().replace(Constant.UPLOAD_ROOT_PATH, "");
+                        String fullThumbPath = rootPath.endsWith(File.separator) ? rootPath + relativeThumbUrl : rootPath + File.separator + relativeThumbUrl;
+                        File thumbFile = new File(fullThumbPath.replace("/", File.separator));
+                        if (thumbFile.exists()) {
+                            thumbFile.delete();
+                        }
                     }
                 }
                 // 2. 物理删除数据库记录
