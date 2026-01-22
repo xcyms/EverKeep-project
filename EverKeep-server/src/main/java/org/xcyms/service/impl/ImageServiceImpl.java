@@ -294,7 +294,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         }
 
         for (Long id : idList) {
-            Image image = this.baseMapper.selectById(id);
+            Image image = this.baseMapper.selectWithDeleted(id);
             if (image != null) {
                 // 1. 删除文件
                 String rootPath = configService.getConfigValue(null, Constant.ConfigKey.UPLOAD_PATH);

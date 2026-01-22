@@ -40,4 +40,9 @@ public interface ImageMapper extends BaseMapper<Image> {
      * 查询回收站中超过指定时间的过期图片
      */
     List<Image> selectExpiredRecycleImages(@Param("expireTime") LocalDateTime expireTime);
+
+    /**
+     * 根据ID查询记录，忽略逻辑删除状态
+     */
+    Image selectWithDeleted(@Param("id") Long id);
 }

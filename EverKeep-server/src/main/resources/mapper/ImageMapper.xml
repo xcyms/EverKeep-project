@@ -7,6 +7,7 @@
         user_id as 'userId',
         album_id as 'albumId',
         url,
+        thumbnail_url as 'thumbnailUrl',
         name,
         size,
         type,
@@ -47,6 +48,13 @@
             <include refid="columns" />
         FROM biz_image
         WHERE deleted = 1 AND update_time &lt; #{expireTime}
+    </select>
+
+    <select id="selectWithDeleted" resultType="org.xcyms.entity.Image">
+        SELECT
+        <include refid="columns" />
+        FROM biz_image
+        WHERE id = #{id}
     </select>
 
 </mapper>
