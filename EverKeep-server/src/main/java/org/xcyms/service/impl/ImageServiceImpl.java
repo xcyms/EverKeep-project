@@ -21,6 +21,7 @@ import org.xcyms.mapper.AlbumMapper;
 import org.xcyms.mapper.ImageMapper;
 import org.xcyms.service.IConfigService;
 import org.xcyms.service.IImageService;
+import org.xcyms.service.storage.StorageFactory;
 import org.xcyms.utils.IdGenerator;
 
 import java.io.File;
@@ -48,6 +49,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
     private final AlbumMapper albumMapper;
     private final IConfigService configService;
     private final ExifProcessor exifProcessor;
+    private final StorageFactory storageFactory;
 
     @Override
     public ApiResult<ImageDTO> uploadImage(MultipartFile file, Long albumId, String category) {
@@ -70,49 +72,45 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         // 2. 路径处理
         String suffix = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
         String relativePath = getRelativePath(userId, category);
-        String rootPath = configService.getConfigValue(null, Constant.ConfigKey.UPLOAD_PATH);
-        if (StringUtils.isBlank(rootPath)) {
-            return ApiResult.error("未配置系统上传根路径");
-        }
-
-        String fullDirPath = rootPath.endsWith(File.separator) ? rootPath + relativePath : rootPath + File.separator + relativePath;
         String newFileName = IdGenerator.nextIdStr() + suffix;
-        File destFile = new File(fullDirPath.replace("/", File.separator), newFileName);
+        String finalRelativePath = relativePath + newFileName;
 
-        // 3. 保存文件
+        // 3. 临时保存并上传
+        File tempFile = null;
         try {
-            if (!destFile.getParentFile().exists() && !destFile.getParentFile().mkdirs()) {
-                return ApiResult.error("目录创建失败");
+            tempFile = File.createTempFile("upload_", suffix);
+            file.transferTo(tempFile);
+
+            // 执行上传策略
+            String webUrl = storageFactory.getService().upload(tempFile, finalRelativePath);
+
+            // 4. 数据入库
+            if ("image".equals(category)) {
+                Image image = new Image();
+                image.setUserId(userId);
+                image.setAlbumId(albumId);
+                image.setName(originalFilename);
+                image.setUrl(webUrl);
+                image.setSize(file.getSize());
+                image.setType(suffix.substring(1));
+
+                this.save(image);
+
+                // 触发异步解析 (传入临时文件进行处理)
+                exifProcessor.processExifAsync(tempFile, image.getId(), webUrl);
+
+                return ApiResult.success(mapper.map(image, ImageDTO.class));
             }
-            file.transferTo(destFile);
+
+            ImageDTO imageDTO = new ImageDTO();
+            imageDTO.setName(originalFilename);
+            imageDTO.setUrl(webUrl);
+            return ApiResult.success(imageDTO);
+
         } catch (IOException e) {
-            log.error("文件保存失败", e);
-            return ApiResult.error("文件保存失败");
+            log.error("文件上传失败", e);
+            return ApiResult.error("文件上传失败");
         }
-
-        // 4. 数据入库
-        String webUrl = Constant.UPLOAD_ROOT_PATH + relativePath + newFileName;
-        if ("image".equals(category)) {
-            Image image = new Image();
-            image.setUserId(userId);
-            image.setAlbumId(albumId);
-            image.setName(originalFilename);
-            image.setUrl(webUrl);
-            image.setSize(file.getSize());
-            image.setType(suffix.substring(1));
-
-            this.save(image);
-
-            // 触发异步解析 (传递 webUrl 避免异步任务重新查询数据库)
-            exifProcessor.processExifAsync(destFile, image.getId(), webUrl);
-
-            return ApiResult.success(mapper.map(image, ImageDTO.class));
-        }
-
-        ImageDTO imageDTO = new ImageDTO();
-        imageDTO.setName(originalFilename);
-        imageDTO.setUrl(webUrl);
-        return ApiResult.success(imageDTO);
     }
 
     private ApiResult<ImageDTO> validateFile(MultipartFile file, Long userId) {
@@ -296,27 +294,16 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         for (Long id : idList) {
             Image image = this.baseMapper.selectWithDeleted(id);
             if (image != null) {
-                // 1. 删除文件
-                String rootPath = configService.getConfigValue(null, Constant.ConfigKey.UPLOAD_PATH);
-                if (StringUtils.isNotBlank(rootPath)) {
-                    // 1. 删除原图
-                    String relativeUrl = image.getUrl().replace(Constant.UPLOAD_ROOT_PATH, "");
-                    String fullPath = rootPath.endsWith(File.separator) ? rootPath + relativeUrl : rootPath + File.separator + relativeUrl;
-                    File file = new File(fullPath.replace("/", File.separator));
-                    if (file.exists()) {
-                        file.delete();
-                    }
-
-                    // 2. 删除缩略图 (如果有)
+                // 1. 调用存储策略删除物理文件
+                try {
+                    storageFactory.getService().delete(image.getUrl());
                     if (StringUtils.isNotBlank(image.getThumbnailUrl())) {
-                        String relativeThumbUrl = image.getThumbnailUrl().replace(Constant.UPLOAD_ROOT_PATH, "");
-                        String fullThumbPath = rootPath.endsWith(File.separator) ? rootPath + relativeThumbUrl : rootPath + File.separator + relativeThumbUrl;
-                        File thumbFile = new File(fullThumbPath.replace("/", File.separator));
-                        if (thumbFile.exists()) {
-                            thumbFile.delete();
-                        }
+                        storageFactory.getService().delete(image.getThumbnailUrl());
                     }
+                } catch (Exception e) {
+                    log.error("删除物理文件失败: {}", image.getUrl(), e);
                 }
+
                 // 2. 物理删除数据库记录
                 this.baseMapper.deletePermanently(id);
             }

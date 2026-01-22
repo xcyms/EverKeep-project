@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.xcyms.common.Constant;
 import org.xcyms.entity.Image;
 import org.xcyms.mapper.ImageMapper;
+import org.xcyms.service.storage.StorageFactory;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -33,16 +34,18 @@ import java.util.Date;
 public class ExifProcessor {
 
     private final ImageMapper imageMapper;
+    private final StorageFactory storageFactory;
 
     /**
      * 异步提取并更新图片元数据
-     * @param file 物理文件
+     * @param file 物理临时文件
      * @param imageId 数据库记录ID
      * @param originalUrl 原始图片Web访问路径
      */
     @Async("ioExecutor")
     public void processExifAsync(File file, Long imageId, String originalUrl) {
         log.info("开始异步处理图片: {}, ID: {}, URL: {}", file.getName(), imageId, originalUrl);
+        File thumbFile = null;
         try {
             if (!file.exists()) {
                 log.warn("文件不存在，跳过处理: {}", file.getAbsolutePath());
@@ -52,27 +55,35 @@ public class ExifProcessor {
             Image updateImage = new Image();
             updateImage.setId(imageId);
 
-            // 1. 生成缩略图
+            // 1. 生成并上传缩略图
             try {
                 String originalPath = file.getAbsolutePath();
-                String thumbnailPath = insertBeforeExtension(originalPath, Constant.THUMBNAIL_SUFFIX);
-                File thumbFile = new File(thumbnailPath);
+                String thumbnailPath = insertBeforeExtension(originalPath);
+                thumbFile = new File(thumbnailPath);
 
                 log.debug("准备生成缩略图: {} -> {}", originalPath, thumbnailPath);
 
                 Thumbnails.of(file)
-                        .size(400, 400) // 限制最大宽高
-                        .outputQuality(0.8) // 质量
+                        .size(400, 400)
+                        .outputQuality(0.8)
                         .toFile(thumbFile);
 
-                // 设置缩略图 URL
-                if (originalUrl != null) {
-                    String thumbUrl = insertBeforeExtension(originalUrl, Constant.THUMBNAIL_SUFFIX);
-                    updateImage.setThumbnailUrl(thumbUrl);
-                }
-                log.info("缩略图生成成功: {}", thumbnailPath);
+                // 上传缩略图 (使用与原图相同的相对路径逻辑，但在文件名后加后缀)
+                // 注意：这里需要从 originalUrl 中提取出相对路径
+                // 简化处理：我们直接从存储服务获取上传路径逻辑，或者在 uploadImage 时就把 relativePath 传过来
+                // 为了简单，我们这里假设 relativePath 可以从 originalUrl 推导，或者干脆重新生成
+
+                // 改进：我们这里需要 thumbnail 的相对路径
+                // 暂时简单处理，从 originalUrl 提取相对路径部分
+                String relativeUrl = extractRelativePath(originalUrl);
+                String thumbRelativePath = insertBeforeExtension(relativeUrl);
+
+                String thumbUrl = storageFactory.getService().upload(thumbFile, thumbRelativePath);
+                updateImage.setThumbnailUrl(thumbUrl);
+
+                log.info("缩略图生成并上传成功: {}", thumbUrl);
             } catch (Exception e) {
-                log.error("缩略图生成失败 (ID: {}): {}", imageId, e.getMessage());
+                log.error("缩略图处理失败 (ID: {}): {}", imageId, e.getMessage());
             }
 
             // 2. 解析 EXIF 信息
@@ -119,14 +130,36 @@ public class ExifProcessor {
 
         } catch (Exception e) {
             log.error("EXIF 异步解析失败: {}", file.getName(), e);
-        }
-    }
-        private String insertBeforeExtension(String path, String suffix) {
-            if (path == null) return null;
-            int lastDotIndex = path.lastIndexOf(".");
-            if (lastDotIndex == -1) {
-                return path + suffix;
+        } finally {
+            // 清理临时文件
+            if (file.exists()) {
+                file.delete();
             }
-            return path.substring(0, lastDotIndex) + suffix + path.substring(lastDotIndex);
+            if (thumbFile != null && thumbFile.exists()) {
+                thumbFile.delete();
+            }
         }
     }
+
+    private String extractRelativePath(String url) {
+        if (url.startsWith(Constant.UPLOAD_ROOT_PATH)) {
+            return url.replace(Constant.UPLOAD_ROOT_PATH, "");
+        }
+        // 对于 S3，使用 URI 解析路径
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            String path = uri.getPath();
+            return path.startsWith("/") ? path.substring(1) : path;
+        } catch (Exception e) {
+            return url;
+        }
+    }
+    private String insertBeforeExtension(String path) {
+        if (path == null) return null;
+        int lastDotIndex = path.lastIndexOf(".");
+        if (lastDotIndex == -1) {
+            return path + Constant.THUMBNAIL_SUFFIX;
+        }
+        return path.substring(0, lastDotIndex) + Constant.THUMBNAIL_SUFFIX + path.substring(lastDotIndex);
+    }
+}

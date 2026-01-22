@@ -29,6 +29,8 @@
         <model-mapper.version>3.2.6</model-mapper.version>
         <metadata-extractor.version>2.19.0</metadata-extractor.version>
         <thumbnailator.version>0.4.20</thumbnailator.version>
+        <minio.version>8.5.12</minio.version>
+        <okhttp3.version>4.12.0</okhttp3.version>
     </properties>
 
     <dependencies>
@@ -135,6 +137,26 @@
             <version>${thumbnailator.version}</version>
         </dependency>
 
+        <!-- Minio SDK (使用稳定的 8.5.12) -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>${minio.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-lang3</artifactId>
+                    <groupId>org.apache.commons</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- 显式引入 OkHttp 4.12.0 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp3.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -150,6 +172,26 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>1.9.24</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <source>src/main/java</source>
+                                <source>target/generated-sources/annotations</source>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <resources>
