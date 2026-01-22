@@ -48,6 +48,9 @@ services:
       - everkeep-server
     ports:
       - "80:80"
+      - "443:443"
   # 图片保存目录  对应数据库  
     volumes:
       - ./uploads:/data/uploads
+      # 将服务器本地的证书文件夹挂载到容器内
+      - ./ssl:/etc/nginx/ssl:ro 
