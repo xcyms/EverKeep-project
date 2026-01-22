@@ -5,7 +5,7 @@ import type { Rule } from 'ant-design-vue/es/form'
 import { ExclamationCircleOutlined, PictureOutlined, ClockCircleOutlined, LoadingOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { getMyAlbumsPageApi, createAlbumApi, updateAlbumApi, deleteAlbumApi } from '../../api/album'
 import { getMyImagesApi, setAlbumCoverApi } from '../../api/image'
-import { getImageUrl } from '../../utils/common'
+import { getImageUrl, DEFAULT_IMAGE } from '../../utils/common'
 import type { API } from '../../types'
 import { useUserStore } from '../../store/user'
 
@@ -217,7 +217,11 @@ const showDetails = (album: API.Album) => {
       ]),
       h('div', { class: 'space-y-1.5' }, [
         h('span', { class: 'text-gray-500 block' }, '相册封面:'),
-        h('img', { src: getImageUrl(album.cover), class: 'w-full h-40 object-cover rounded-xl border border-gray-100 shadow-sm' })
+        h('img', { 
+          src: getImageUrl(album.cover), 
+          class: 'w-full h-40 object-cover rounded-xl border border-gray-100 shadow-sm',
+          onerror: (e: any) => { e.target.src = DEFAULT_IMAGE }
+        })
       ])
     ]),
     okText: '知道了',
@@ -307,6 +311,7 @@ const handleDeleteAlbum = (album: API.Album) => {
               :src="getImageUrl(album.cover)" 
               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               alt="cover"
+              @error="(e: any) => { e.target.src = DEFAULT_IMAGE }"
             />
             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
               <a-button type="primary" shape="round" @click="handlePreview(album)">
@@ -399,7 +404,12 @@ const handleDeleteAlbum = (album: API.Album) => {
             :headers="{ Authorization: `Bearer ${userStore.token}` }"
             @change="handleUploadChange"
           >
-            <img v-if="albumForm.cover" :src="getImageUrl(albumForm.cover)" alt="cover" class="w-full h-full object-cover" />
+            <img v-if="albumForm.cover" 
+                 :src="getImageUrl(albumForm.cover)" 
+                 alt="cover" 
+                 class="w-full h-full object-cover" 
+                 @error="(e: any) => { e.target.src = DEFAULT_IMAGE }"
+            />
             <div v-else>
               <loading-outlined v-if="modalLoading" />
               <plus-outlined v-else />
@@ -436,7 +446,11 @@ const handleDeleteAlbum = (album: API.Album) => {
             :key="img.id" 
             class="group relative aspect-square rounded-lg overflow-hidden border border-gray-100"
           >
-            <a-image :src="getImageUrl(img.url)" class="w-full h-full object-cover" />
+            <a-image 
+              :src="getImageUrl(img.url)" 
+              :fallback="DEFAULT_IMAGE"
+              class="w-full h-full object-cover" 
+            />
             <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <a-button type="primary" size="small" @click="handleSetCover(img)">
                 设为封面

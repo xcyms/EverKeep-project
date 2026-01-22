@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { getRecycleImagesApi, restoreImagesApi, deletePermanentlyApi } from '../../api/image'
-import { getImageUrl } from '../../utils/common'
+import { getImageUrl, DEFAULT_IMAGE } from '../../utils/common'
 import type { API } from '../../types'
 
 const loading = ref(false)
@@ -157,6 +157,7 @@ const formatSize = (bytes: number) => {
             :src="getImageUrl(img.url)" 
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
+            @error="(e: any) => { e.target.src = DEFAULT_IMAGE }"
           />
         </div>
 

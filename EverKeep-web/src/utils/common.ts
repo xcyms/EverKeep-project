@@ -1,3 +1,5 @@
+export const DEFAULT_IMAGE = 'https://placehold.co/600x400?text=Image+Not+Found'
+
 export const getImageUrl = (url: string | undefined) => {
   if (!url) return ''
   // 如果是完整的 http 地址则直接返回

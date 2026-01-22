@@ -4,7 +4,7 @@ import { message, Modal, Select } from 'ant-design-vue'
 import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue'
 import { getMyImagesApi, deleteImagesApi, updateImagesStatusApi, moveImageToAlbumApi, setAlbumCoverApi, batchMoveImagesApi } from '../../api/image'
 import { getMyAlbumsApi } from '../../api/album'
-import { getImageUrl } from '../../utils/common'
+import { getImageUrl, DEFAULT_IMAGE } from '../../utils/common'
 import type { API } from '../../types'
 
 // --- 状态变量 ---
@@ -212,9 +212,13 @@ const showDetails = (img: API.Image) => {
     content: h('div', { class: 'space-y-4 pt-4' }, [
       // 预览图
       h('div', { class: 'relative group' }, [
-        h('img', { src: getImageUrl(img.url), class: 'w-full rounded-lg shadow-md border border-gray-100' }),
-        h('div', { class: 'absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-[10px] rounded backdrop-blur-sm' }, img.type?.toUpperCase())
-      ]),
+          h('img', { 
+            src: getImageUrl(img.url), 
+            class: 'w-full rounded-lg shadow-md border border-gray-100',
+            onerror: (e: any) => { e.target.src = DEFAULT_IMAGE }
+          }),
+          h('div', { class: 'absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-[10px] rounded backdrop-blur-sm' }, img.type?.toUpperCase())
+        ]),
       
       // 基础信息
       h('div', { class: 'grid grid-cols-2 gap-4 text-sm' }, [
@@ -287,8 +291,12 @@ const handleMoveToAlbum = (img: API.Image) => {
     width: 420,
     content: h('div', { class: 'pt-4' }, [
       h('div', { class: 'mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center gap-3' }, [
-        h('img', { src: getImageUrl(img.url), class: 'w-12 h-12 object-cover rounded' }),
-        h('div', { class: 'flex-1 min-w-0' }, [
+          h('img', { 
+            src: getImageUrl(img.url), 
+            class: 'w-12 h-12 object-cover rounded',
+            onerror: (e: any) => { e.target.src = DEFAULT_IMAGE }
+          }),
+          h('div', { class: 'flex-1 min-w-0' }, [
           h('p', { class: 'text-xs text-gray-400 mb-0.5' }, '当前图片'),
           h('p', { class: 'text-sm font-medium truncate mb-0' }, img.name)
         ])
@@ -455,6 +463,7 @@ const handleSetCover = async (img: API.Image) => {
               <div class="aspect-square overflow-hidden bg-gray-50">
                 <a-image
                   :src="getImageUrl(img.thumbnailUrl || img.url)"
+                  :fallback="DEFAULT_IMAGE"
                   class="w-full h-full object-cover transition-transform group-hover:scale-105"
                   :preview="{
                     src: getImageUrl(img.url)
@@ -535,6 +544,7 @@ const handleSetCover = async (img: API.Image) => {
                 >
                   <a-image
                     :src="getImageUrl(img.thumbnailUrl || img.url)"
+                    :fallback="DEFAULT_IMAGE"
                     class="w-full h-full object-cover"
                     :preview="{
                       src: getImageUrl(img.url)

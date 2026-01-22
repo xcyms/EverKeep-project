@@ -2,7 +2,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { getPublicImagesApi } from '../../api/image'
 import type { API } from '../../types'
-import { getImageUrl } from '../../utils/common'
+import { getImageUrl, DEFAULT_IMAGE } from '../../utils/common'
 
 // --- 状态定义 ---
 const loading = ref(false)
@@ -118,6 +118,7 @@ const formatSize = (bytes: number) => {
           <div class="aspect-[4/5] overflow-hidden bg-gray-50 relative">
             <a-image
               :src="getImageUrl(img.url)"
+              :fallback="DEFAULT_IMAGE"
               class="w-full h-full object-cover"
               :preview="true"
             />
