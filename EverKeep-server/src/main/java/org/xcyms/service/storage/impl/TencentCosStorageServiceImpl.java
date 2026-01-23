@@ -58,7 +58,6 @@ public class TencentCosStorageServiceImpl implements IStorageService {
         try {
             cosClient = createCOSClient();
             PutObjectResult putObjectResult = cosClient.putObject(putObjectRequest);
-            log.info("腾讯云上传成功: {}", putObjectResult);
             return putObjectResult.getETag();
         } catch (Exception e) {
             log.error("腾讯云上传失败", e);
