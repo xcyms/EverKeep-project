@@ -25,18 +25,18 @@ public class S3StorageServiceImpl implements IStorageService {
 
     private MinioClient getClient() {
         return MinioClient.builder()
-                .endpoint(configService.getConfigValue(null, Constant.ConfigKey.S3_ENDPOINT))
+                .endpoint(configService.getConfigValue(null, Constant.ConfigKey.S3.ENDPOINT))
                 .credentials(
-                        configService.getConfigValue(null, Constant.ConfigKey.S3_ACCESS_KEY),
-                        configService.getConfigValue(null, Constant.ConfigKey.S3_SECRET_KEY)
+                        configService.getConfigValue(null, Constant.ConfigKey.S3.ACCESS_KEY),
+                        configService.getConfigValue(null, Constant.ConfigKey.S3.SECRET_KEY)
                 )
                 .build();
     }
 
     @Override
     public String upload(File file, String relativePath) {
-        String bucket = configService.getConfigValue(null, Constant.ConfigKey.S3_BUCKET);
-        String domain = configService.getConfigValue(null, Constant.ConfigKey.S3_DOMAIN);
+        String bucket = configService.getConfigValue(null, Constant.ConfigKey.S3.BUCKET);
+        String domain = configService.getConfigValue(null, Constant.ConfigKey.S3.DOMAIN);
 
         try (FileInputStream fis = new FileInputStream(file)) {
             getClient().putObject(
@@ -56,8 +56,8 @@ public class S3StorageServiceImpl implements IStorageService {
 
     @Override
     public void delete(String url) {
-        String domain = configService.getConfigValue(null, Constant.ConfigKey.S3_DOMAIN);
-        String bucket = configService.getConfigValue(null, Constant.ConfigKey.S3_BUCKET);
+        String domain = configService.getConfigValue(null, Constant.ConfigKey.S3.DOMAIN);
+        String bucket = configService.getConfigValue(null, Constant.ConfigKey.S3.BUCKET);
 
         // 只有不是本地路径的才尝试从 S3 删除
         if (!url.startsWith(Constant.UPLOAD_ROOT_PATH)) {

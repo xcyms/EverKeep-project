@@ -32,13 +32,24 @@ public class Constant {
         String UPLOAD_PATH = "upload_path";
         /** 用户上传目录 */
         String USER_UPLOAD_DIR = "user_upload_dir";
+
         /** 存储类型 (LOCAL/S3) */
         String STORAGE_TYPE = "storage_type";
-        String S3_ENDPOINT = "s3_endpoint";
-        String S3_ACCESS_KEY = "s3_access_key";
-        String S3_SECRET_KEY = "s3_secret_key";
-        String S3_BUCKET = "s3_bucket";
-        String S3_DOMAIN = "s3_domain";
+
+        interface S3 {
+            String ENDPOINT = "s3_endpoint";
+            String ACCESS_KEY = "s3_access_key";
+            String SECRET_KEY = "s3_secret_key";
+            String BUCKET = "s3_bucket";
+            String DOMAIN = "s3_domain";
+        }
+
+        interface TencentCOS {
+            String SECRET_ID = "tencent_cos_secret_id";
+            String SECRET_KEY = "tencent_cos_secret_key";
+            String BUCKET = "tencent_cos_bucket";
+            String REGION = "tencent_cos_region";
+        }
     }
 
     /**
