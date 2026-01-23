@@ -56,7 +56,6 @@ export function useListPagination<T>(
         } else {
           list.value = newData
         }
-        console.log('Pagination load success:', response)
         // 判断是否还有更多数据
         hasMore.value = Number(response.current_page) < Number(response.last_page)
       } else {

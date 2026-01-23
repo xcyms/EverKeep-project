@@ -282,8 +282,35 @@ onReachBottom(() => {
 
     <!-- 内容区域 - 使用原生页面滚动 -->
     <div class="px-3 pt-3">
+      <!-- 初始加载骨架屏 -->
+      <template v-if="loading && allImages.length === 0">
+        <!-- 画廊骨架屏 -->
+        <div v-if="categoryId === 0" class="flex gap-3">
+          <div v-for="col in 2" :key="col" class="flex flex-1 flex-col gap-3">
+            <div
+              v-for="i in 4" :key="i"
+              class="skeleton-pulse w-full rounded-2xl bg-gray-100 dark:bg-gray-900"
+              :style="{ height: `${[220, 160, 260, 200][i - 1]  }px` }"
+            />
+          </div>
+        </div>
+
+        <!-- 时光骨架屏 -->
+        <div v-else-if="categoryId === 1" class="pl-10 space-y-12">
+          <div v-for="g in 2" :key="g" class="relative">
+            <div class="absolute top-8 h-6 w-6 flex items-center justify-center -left-10">
+              <div class="h-2 w-2 rounded-full bg-gray-200 dark:bg-gray-800" />
+            </div>
+            <div class="skeleton-pulse mb-6 h-10 w-40 rounded-xl bg-gray-100 dark:bg-gray-900" />
+            <div class="grid grid-cols-3 gap-2 pr-4">
+              <div v-for="i in 6" :key="i" class="skeleton-pulse aspect-square rounded-2xl bg-gray-100 dark:bg-gray-900" />
+            </div>
+          </div>
+        </div>
+      </template>
+
       <!-- 画廊模式：瀑布流 -->
-      <ImageWaterfall v-if="categoryId === 0" :list="allImages" :loading="loading" />
+      <ImageWaterfall v-if="categoryId === 0 && allImages.length > 0" :list="allImages" :loading="loading" />
 
       <!-- 时光模式：时间轴分组 -->
       <div v-else-if="categoryId === 1" class="space-y-6">
@@ -405,5 +432,43 @@ onReachBottom(() => {
 :deep(.tabs),
 :deep(.wd-tabs__nav) {
   background-color: transparent !important;
+}
+.skeleton-pulse {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-pulse::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.dark .skeleton-pulse::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
 }
 </style>

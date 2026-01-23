@@ -31,8 +31,8 @@ function handleImageTap(currentUrl: string) {
       <!-- 左列 -->
       <div class="flex flex-1 flex-col gap-3">
         <div
-          v-for="(img, index) in leftCol"
-          :key="img.id || index"
+          v-for="(img) in leftCol"
+          :key="img.id"
           class="overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-opacity active:opacity-80"
           @tap="handleImageTap(img.url)"
         >
@@ -47,8 +47,8 @@ function handleImageTap(currentUrl: string) {
       <!-- 右列 -->
       <div class="flex flex-1 flex-col gap-3">
         <div
-          v-for="(img, index) in rightCol"
-          :key="img.id || index"
+          v-for="(img) in rightCol"
+          :key="img.id"
           class="overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-opacity active:opacity-80"
           @tap="handleImageTap(img.url)"
         >
