@@ -15,25 +15,6 @@ spring:
       minIdle: 5
       # 最大连接数
       maxActive: 40
-      #配置过滤器，过滤掉静态文件
-      web-stat-filter:
-        enabled: true
-        url-pattern: /*
-        exclusions: /druid/*,*.js,*.css,*.gif,*.jpg,*.bmp,*.png,*.ico
-      #配置可视化控制台页面
-      stat-view-servlet:
-        enabled: true
-        #访问德鲁伊监控页面的地址
-        url-pattern: /druid/*
-        #IP白名单 没有配置或者为空 则允许所有访问
-        allow:
-        #IP黑名单 若白名单也存在 则优先使用
-        deny:
-        #禁用重置按钮
-        reset-enable: true
-        #登录所用的用户名与密码
-        login-username: admin
-        login-password: 123456
 
   data:
     redis:
