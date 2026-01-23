@@ -48,17 +48,19 @@ export function useListPagination<T>(
     try {
       const response = await fetchFn(page.value)
 
-      if (response && response.data) {
-        const newData = response.data
+      if (response) {
+        const newData = response.data || []
 
         if (isLoadMore) {
           list.value.push(...newData)
         } else {
           list.value = newData
         }
-
+        console.log('Pagination load success:', response)
         // 判断是否还有更多数据
-        hasMore.value = response.current_page < response.last_page
+        hasMore.value = Number(response.current_page) < Number(response.last_page)
+      } else {
+        hasMore.value = false
       }
     } catch (err) {
       error.value = err instanceof Error ? err : new Error(String(err))

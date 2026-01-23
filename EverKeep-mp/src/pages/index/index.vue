@@ -1,10 +1,13 @@
 <script lang="ts" setup>
 import type { SortOption } from '@/types/common'
 import type { ImageItem } from '@/types/page'
-import { ref, watch } from 'vue'
+import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
+import { computed, ref, watch } from 'vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import SortSheet from '@/components/common/SortSheet.vue'
 import ImageWaterfall from '@/components/ImageWaterfall.vue'
 import { useListPagination } from '@/composables/usePagination'
+import { getImageUrl } from '@/utils'
 import { PAGINATION } from '@/utils/constants'
 
 definePage({
@@ -34,7 +37,7 @@ const orderOptions: SortOption[] = [
 
 const category = ref([
   { name: '画廊', id: 0 },
-  { name: '个性化', id: 1 },
+  { name: '时光', id: 1 },
   { name: '推荐', id: 2 },
 ])
 
@@ -48,19 +51,8 @@ const {
   reset,
 } = useListPagination<ImageItem>({
   fetchFn: async (currentPage) => {
-    // 仅“画廊”分类有数据，其他分类暂无功能
-    if (categoryId.value !== 0) {
-      return {
-        data: [],
-        current_page: currentPage,
-        last_page: 0,
-        total: 0,
-        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
-      }
-    }
-
     // 模拟网络延迟
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 800))
 
     // 未登录时返回模拟数据
     if (!user.isLoggedIn) {
@@ -88,13 +80,23 @@ const {
       return {
         data: mockImages,
         current_page: currentPage,
-        last_page: 3, // 确保有分页
+        last_page: 3,
         total: 3 * PAGINATION.DEFAULT_PAGE_SIZE,
         per_page: PAGINATION.DEFAULT_PAGE_SIZE,
       }
     }
 
     // 已登录：调用真实接口实现功能
+    if (categoryId.value === 2) {
+      return {
+        data: [],
+        current_page: currentPage,
+        last_page: 0,
+        total: 0,
+        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+      }
+    }
+
     const sortMap: Record<string, { column: string; asc: boolean }> = {
       newest: { column: 'create_time', asc: false },
       earliest: { column: 'create_time', asc: true },
@@ -104,7 +106,9 @@ const {
     const { column, asc } = sortMap[order.value] || sortMap.newest
 
     try {
-      const res = await Apis.everkeep.publicPage({
+      // 画廊(0)使用公共接口，时光(1)使用个人接口
+      const apiMethod = categoryId.value === 0 ? Apis.everkeep.publicPage : Apis.everkeep.imagePage
+      const res = await apiMethod({
         params: {
           current: currentPage,
           size: PAGINATION.DEFAULT_PAGE_SIZE,
@@ -120,12 +124,12 @@ const {
           current_page: res.data.current || currentPage,
           last_page: res.data.pages || 1,
           total: res.data.total || 0,
-          per_page: res.data.size || PAGINATION.DEFAULT_PAGE_SIZE,
+          per_page: res.data.records.size || PAGINATION.DEFAULT_PAGE_SIZE,
         }
       }
       throw new Error(res.message || '获取数据失败')
     } catch (e) {
-      console.error('Failed to fetch public images:', e)
+      console.error('Failed to fetch images:', e)
       return {
         data: [],
         current_page: currentPage,
@@ -138,6 +142,53 @@ const {
   pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
   immediate: true,
 })
+
+// 计算属性：将 allImages 按日期分组
+const timeGroups = computed(() => {
+  if (categoryId.value !== 1) return []
+
+  const groups: Record<string, ImageItem[]> = {}
+  const now = new Date()
+  const todayMonthDay = `${now.getMonth() + 1}-${now.getDate()}`
+
+  allImages.value.forEach((img) => {
+    // 统一处理日期格式，确保只保留 YYYY-MM-DD
+    const rawDate = img.createTime || (img as any).create_time || ''
+    if (!rawDate) return
+
+    const date = rawDate.includes('T')
+      ? rawDate.split('T')[0]
+      : rawDate.split(' ')[0]
+
+    if (!groups[date]) groups[date] = []
+    groups[date].push(img)
+  })
+
+  return Object.keys(groups)
+    .sort((a, b) => b.localeCompare(a))
+    .map((date) => {
+      const dateObj = new Date(date)
+      const monthDay = `${dateObj.getMonth() + 1}-${dateObj.getDate()}`
+      return {
+        date, // 格式为 YYYY-MM-DD
+        images: groups[date],
+        isTodayInHistory: monthDay === todayMonthDay && dateObj.getFullYear() < now.getFullYear(),
+      }
+    })
+})
+
+onPullDownRefresh(async () => {
+  await refresh()
+  uni.stopPullDownRefresh()
+})
+
+function handleImageTap(url: string) {
+  const urls = allImages.value.map((img) => getImageUrl(img.url))
+  uni.previewImage({
+    urls,
+    current: getImageUrl(url),
+  })
+}
 
 function changeCategory(event: { index: number; name: string }) {
   categoryId.value = event.index
@@ -188,7 +239,7 @@ onReachBottom(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8f9fa] pb-10 dark:bg-black">
+  <div class="bg-[#f8f9fa] dark:bg-black">
     <!-- 沉浸式顶部 Tab 栏 - 使用 fixed 固定 -->
     <div
       class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-1 backdrop-blur-xl transition-all dark:bg-black/60"
@@ -223,13 +274,89 @@ onReachBottom(() => {
 
     <!-- 内容区域 - 使用原生页面滚动 -->
     <div class="px-3 pt-3">
-      <ImageWaterfall :list="allImages" :loading="loading" />
+      <!-- 画廊模式：瀑布流 -->
+      <ImageWaterfall v-if="categoryId === 0" :list="allImages" :loading="loading" />
+
+      <!-- 时光模式：时间轴分组 -->
+      <div v-else-if="categoryId === 1" class="space-y-6">
+        <template v-if="timeGroups.length > 0">
+          <div v-for="group in timeGroups" :key="group.date" class="relative pl-4">
+            <!-- 左侧时间轴线条 -->
+            <div class="absolute bottom-0 left-0 top-0 w-[1px] bg-gray-200 dark:bg-gray-800" />
+            <div
+              class="absolute left-[-3px] top-4 h-2 w-2 border border-white rounded-full dark:border-black"
+              :class="group.isTodayInHistory ? 'bg-orange-500 scale-125' : 'bg-primary'"
+            />
+
+            <!-- 日期标题 -->
+            <div
+              class="sticky top-[110px] z-10 mb-3 flex items-center gap-2 py-2 backdrop-blur-sm transition-colors"
+              :class="group.isTodayInHistory ? 'bg-orange-50/90 dark:bg-orange-900/20 -ml-4 pl-8 pr-2 rounded-r-full' : 'bg-[#f8f9fa]/80 dark:bg-black/80'"
+            >
+              <span
+                class="text-lg font-bold"
+                :class="group.isTodayInHistory ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'"
+              >
+                {{ group.date }}
+              </span>
+              <!-- 那年今日挂件 -->
+              <div v-if="group.isTodayInHistory" class="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 dark:bg-orange-900/40">
+                <span class="text-[10px] text-orange-600 font-bold dark:text-orange-300">那年今日</span>
+              </div>
+            </div>
+
+            <!-- 图片网格 -->
+            <div class="grid grid-cols-3 gap-1">
+              <div
+                v-for="img in group.images"
+                :key="img.id"
+                class="aspect-square overflow-hidden rounded-sm bg-gray-100 active:opacity-80"
+                @tap="handleImageTap(img.url)"
+              >
+                <image :src="getImageUrl(img.url)" mode="aspectFill" class="h-full w-full" lazy-load />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- 时光模式空状态 -->
+        <div v-else-if="!loading" class="py-20">
+          <EmptyState
+            icon="clock"
+            title="时光里还没有照片"
+            description="记录美好瞬间，从第一张照片开始"
+            action-text="去画廊看看"
+            @action="categoryId = 0"
+          />
+        </div>
+      </div>
+
+      <!-- 推荐模式：暂未开放 -->
+      <div v-else-if="categoryId === 2" class="py-20">
+        <EmptyState
+          icon="setting"
+          title="推荐功能暂未开放"
+          description="我们正在努力开发中，敬请期待"
+        />
+      </div>
 
       <!-- 加载状态 -->
-      <wd-loadmore
-        custom-class="py-8"
-        :state="loading ? 'loading' : (hasMore ? 'loading' : 'finished')"
-      />
+      <div v-if="allImages.length > 0">
+        <wd-loadmore
+          v-if="loading || !hasMore"
+          custom-class="py-8"
+          :state="loading ? 'loading' : 'finished'"
+        />
+        <!-- 引导上拉加载更多 -->
+        <div
+          v-else-if="hasMore"
+          class="flex flex-col items-center justify-center py-8 transition-opacity active:opacity-60"
+          @tap="loadMore"
+        >
+          <wd-icon name="arrow-up" size="16px" color="#999" class="animate-bounce" />
+          <span class="mt-1 text-sm text-gray-400">轻触加载更多</span>
+        </div>
+      </div>
     </div>
 
     <!-- 未登录底部模糊提示栏 -->

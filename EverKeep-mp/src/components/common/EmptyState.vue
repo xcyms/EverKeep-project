@@ -12,7 +12,7 @@ interface Emits {
   (e: 'action'): void
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const _props = withDefaults(defineProps<Props>(), {
   icon: 'search',
   iconSize: '32px',
   title: '暂无数据',
@@ -25,13 +25,13 @@ const emit = defineEmits<Emits>()
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center py-20">
+  <div class="flex flex-col items-center justify-center gap-2 py-20">
     <div class="mb-4 h-20 w-20 flex items-center justify-center rounded-full bg-gray-100">
       <wd-icon :name="icon" :size="iconSize" color="#cbd5e1" />
     </div>
     <span class="text-sm text-gray-900 font-medium">{{ title }}</span>
     <span v-if="description" class="mt-1 text-xs text-gray-400">{{ description }}</span>
-    
+
     <wd-button
       v-if="actionText"
       :type="actionType"

@@ -28,7 +28,7 @@ export const registerApi = (data: API.RegisterRequest): Promise<string> => {
 export const logoutApi = (): Promise<string> => {
   return request({
     url: '/user/logout',
-    method: 'post'
+    method: 'get'
   })
 }
 
