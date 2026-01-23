@@ -73,7 +73,7 @@ namespace API {
     type: string
     status: {
       code: number
-      name: string
+      desc: string
     }
     createTime: string
     make?: string

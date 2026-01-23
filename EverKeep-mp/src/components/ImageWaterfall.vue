@@ -1,20 +1,6 @@
 <script lang="ts" setup>
+import type { ImageItem } from '@/types/page';
 import { computed } from 'vue'
-
-interface ImageItem {
-  albumId: string | number
-  createTime: string
-  id: string | number
-  name?: string
-  size?: number
-  status: {
-    code: number
-    desc: string
-  }
-  type: string
-  url: string
-  userId: string | number
-}
 
 const props = defineProps<{
   list: ImageItem[]
@@ -51,7 +37,7 @@ function handleImageTap(currentUrl: string) {
           @tap="handleImageTap(img.url)"
         >
           <image
-            :src="getImageUrl(img.url)"
+            :src="getImageUrl(img.thumbnailUrl || img.url)"
             mode="widthFix"
             class="fade-in block h-auto w-full"
             lazy-load
@@ -67,7 +53,7 @@ function handleImageTap(currentUrl: string) {
           @tap="handleImageTap(img.url)"
         >
           <image
-            :src="getImageUrl(img.url)"
+            :src="getImageUrl(img.thumbnailUrl || img.url)"
             mode="widthFix"
             class="fade-in block h-auto w-full"
             lazy-load

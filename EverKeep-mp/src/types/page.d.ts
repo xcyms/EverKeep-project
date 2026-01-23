@@ -4,18 +4,29 @@
  * 图片数据
  */
 export interface ImageItem {
-  albumId: string | number
-  createTime: string
-  id: string | number
-  name?: string
-  size?: number
+  id: number | string
+  userId: number | string
+  albumId: number | string
+  url: string
+  thumbnailUrl?: string
+  name: string
+  size: number
+  type: string
   status: {
     code: number
     desc: string
   }
-  type: string
-  url: string
-  userId: string | number
+  createTime: string
+  make?: string
+  model?: string
+  exposureTime?: string
+  fNumber?: string
+  iso?: string
+  focalLength?: string
+  lensModel?: string
+  lat?: string
+  lng?: string
+  takeTime?: string
 }
 
 /**

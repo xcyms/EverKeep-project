@@ -168,9 +168,17 @@ const timeGroups = computed(() => {
     .sort((a, b) => b.localeCompare(a))
     .map((date) => {
       const dateObj = new Date(date)
+      const now = new Date()
+      const diffDays = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime()) / (1000 * 60 * 60 * 24))
+
+      let displayDate = date
+      if (diffDays === 0) displayDate = '今天'
+      else if (diffDays === 1) displayDate = '昨天'
+
       const monthDay = `${dateObj.getMonth() + 1}-${dateObj.getDate()}`
       return {
-        date, // 格式为 YYYY-MM-DD
+        date,
+        displayDate,
         images: groups[date],
         isTodayInHistory: monthDay === todayMonthDay && dateObj.getFullYear() < now.getFullYear(),
       }
@@ -279,41 +287,55 @@ onReachBottom(() => {
 
       <!-- 时光模式：时间轴分组 -->
       <div v-else-if="categoryId === 1" class="space-y-6">
-        <template v-if="timeGroups.length > 0">
-          <div v-for="group in timeGroups" :key="group.date" class="relative pl-4">
+        <template v-if="allImages.length > 0">
+          <div v-for="group in timeGroups" :key="group.date" class="relative pb-8 pl-6">
             <!-- 左侧时间轴线条 -->
-            <div class="absolute bottom-0 left-0 top-0 w-[1px] bg-gray-200 dark:bg-gray-800" />
+            <div class="absolute bottom-0 left-[7px] top-0 w-[2px] bg-gray-100 dark:bg-gray-800" />
+
+            <!-- 时间轴节点 -->
             <div
-              class="absolute left-[-3px] top-4 h-2 w-2 border border-white rounded-full dark:border-black"
-              :class="group.isTodayInHistory ? 'bg-orange-500 scale-125' : 'bg-primary'"
-            />
+              class="absolute left-0 top-5 z-20 h-4 w-4 flex items-center justify-center rounded-full bg-white dark:bg-black"
+            >
+              <div
+                class="h-2 w-2 rounded-full transition-all duration-300"
+                :class="group.isTodayInHistory ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] scale-125' : 'bg-primary shadow-[0_0_8px_rgba(var(--wot-primary-rgb),0.4)]'"
+              />
+            </div>
 
             <!-- 日期标题 -->
             <div
-              class="sticky top-[110px] z-10 mb-3 flex items-center gap-2 py-2 backdrop-blur-sm transition-colors"
-              :class="group.isTodayInHistory ? 'bg-orange-50/90 dark:bg-orange-900/20 -ml-4 pl-8 pr-2 rounded-r-full' : 'bg-[#f8f9fa]/80 dark:bg-black/80'"
+              class="sticky z-10 mb-4 flex items-center gap-3 py-3 backdrop-blur-xl transition-all"
+              :style="{ top: `${statusBarHeight + 44}px` }"
+              :class="group.isTodayInHistory
+                ? 'bg-orange-50/90 dark:bg-orange-950/40 -ml-6 pl-10 pr-4 rounded-r-2xl border-b border-orange-100/50 dark:border-orange-900/30'
+                : 'bg-white/70 dark:bg-black/50 -mx-3 px-6 border-b border-gray-100/50 dark:border-gray-800/20 shadow-sm shadow-black/5'"
             >
-              <span
-                class="text-lg font-bold"
-                :class="group.isTodayInHistory ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'"
-              >
-                {{ group.date }}
-              </span>
+              <div class="flex flex-col">
+                <span
+                  class="text-xl font-black tracking-tight"
+                  :class="group.isTodayInHistory ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'"
+                >
+                  {{ group.displayDate }}
+                </span>
+                <span v-if="group.displayDate !== group.date" class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] opacity-80">{{ group.date }}</span>
+              </div>
+
               <!-- 那年今日挂件 -->
-              <div v-if="group.isTodayInHistory" class="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 dark:bg-orange-900/40">
-                <span class="text-[10px] text-orange-600 font-bold dark:text-orange-300">那年今日</span>
+              <div v-if="group.isTodayInHistory" class="flex animate-pulse items-center gap-1.5 border border-orange-200 rounded-full from-orange-100 to-orange-50 bg-gradient-to-r px-3 py-1 dark:border-orange-800 dark:from-orange-900/40 dark:to-orange-900/20">
+                <wd-icon name="time" size="12px" color="#ea580c" />
+                <span class="text-[11px] text-orange-700 font-bold dark:text-orange-300">那年今日</span>
               </div>
             </div>
 
             <!-- 图片网格 -->
-            <div class="grid grid-cols-3 gap-1">
+            <div class="grid grid-cols-3 gap-2">
               <div
                 v-for="img in group.images"
                 :key="img.id"
-                class="aspect-square overflow-hidden rounded-sm bg-gray-100 active:opacity-80"
+                class="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 ring-1 ring-black/5 transition-all active:scale-95 dark:bg-gray-800 dark:ring-white/5"
                 @tap="handleImageTap(img.url)"
               >
-                <image :src="getImageUrl(img.url)" mode="aspectFill" class="h-full w-full" lazy-load />
+                <image :src="getImageUrl(img.thumbnailUrl || img.url)" mode="aspectFill" class="h-full w-full" lazy-load />
               </div>
             </div>
           </div>
