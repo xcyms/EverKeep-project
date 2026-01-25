@@ -170,7 +170,7 @@ watch(
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8f9fa] pb-10 dark:bg-[#000]">
+  <div class="min-h-screen bg-gray-50 pb-10 dark:bg-black">
     <!-- 顶部背景和用户信息区域 -->
     <div class="relative overflow-hidden bg-white pb-12 dark:bg-gray-900">
       <!-- 动态背景装饰 -->
@@ -179,6 +179,32 @@ watch(
 
       <!-- 用户基本信息 -->
       <div class="relative z-10 flex flex-col items-center pt-16" :style="{ paddingTop: `${statusBarHeight + 40}px` }">
+        <!-- 左上角功能区 (避开胶囊按钮) -->
+        <div
+          class="absolute left-6 flex items-center gap-3"
+          :style="{ top: `${statusBarHeight + 10}px` }"
+        >
+          <div
+            class="h-9 w-9 flex items-center justify-center rounded-full bg-white/60 shadow-sm backdrop-blur-md transition-all active:scale-90 dark:bg-black/30"
+            @tap="handleMenuClick('theme')"
+          >
+            <div
+              :class="followSystem ? 'i-solar-clapperboard-edit-bold-duotone' : (isDark ? 'i-solar-moon-bold-duotone' : 'i-solar-sun-2-bold-duotone')"
+              class="text-lg"
+              :style="{ color: currentThemeColor.primary }"
+            />
+          </div>
+          <div
+            class="h-9 w-9 flex items-center justify-center rounded-full bg-white/60 shadow-sm backdrop-blur-md transition-all active:scale-90 dark:bg-black/30"
+            @tap="handleMenuClick('themeColor')"
+          >
+            <div
+              class="h-4.5 w-4.5 border-2 border-white rounded-full shadow-inner dark:border-gray-800"
+              :style="{ backgroundColor: currentThemeColor.primary }"
+            />
+          </div>
+        </div>
+
         <div class="relative mb-4">
           <div class="absolute inset-0 scale-110 rounded-full bg-blue-100/50 blur-md dark:bg-blue-900/30" />
           <image
@@ -199,7 +225,7 @@ watch(
     </div>
 
     <!-- 核心数据看板 -->
-    <div class="relative z-10 mx-5 -mt-8">
+    <div class="relative mx-5">
       <div class="grid grid-cols-2 gap-4">
         <!-- 容量卡片 -->
         <div class="col-span-2 overflow-hidden rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-gray-900 dark:shadow-none">
@@ -247,50 +273,11 @@ watch(
     </div>
 
     <!-- 功能菜单列表 -->
-    <div class="mt-8 px-5">
+    <div class="mt-4 px-5">
       <div class="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-gray-900 dark:shadow-none">
         <div class="py-2 space-y-1">
-          <!-- 主题模式 -->
           <div
-            class="group flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
-            @tap="handleMenuClick('theme')">
-            <div class="flex items-center gap-4">
-              <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
-                <div class="i-solar-palette-bold-duotone text-xl" />
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">主题模式</span>
-                <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ followSystem ? '跟随系统' : (isDark ? '深色模式' : '浅色模式') }}</span>
-              </div>
-            </div>
-            <wd-icon name="arrow-right" size="16px" color="#cbd5e1" />
-          </div>
-
-          <div class="mx-4 h-[1px] bg-gray-50 dark:bg-gray-800" />
-
-          <!-- 主题色 -->
-          <div
-            class="group flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
-            @tap="handleMenuClick('themeColor')">
-            <div class="flex items-center gap-4">
-              <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-pink-50 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400">
-                <div class="i-solar-settings-bold-duotone text-xl" />
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">主题色</span>
-                <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ currentThemeColor.name }}</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="h-6 w-6 rounded-full" :style="{ backgroundColor: currentThemeColor.primary }" />
-              <wd-icon name="arrow-right" size="16px" color="#cbd5e1" />
-            </div>
-          </div>
-
-          <div class="mx-4 h-[1px] bg-gray-50 dark:bg-gray-800" />
-
-          <div
-            class="group flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
+            class="flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
             @tap="handleMenuClick('about')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
@@ -298,13 +285,13 @@ watch(
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">关于系统</span>
             </div>
-            <wd-icon name="arrow-right" size="16px" color="#cbd5e1" />
+            <div class="i-solar-alt-arrow-right-linear text-gray-300" />
           </div>
 
           <div class="mx-4 h-[1px] bg-gray-50 dark:bg-gray-800" />
 
           <div
-            class="group flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
+            class="flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
             @tap="handleMenuClick('support')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400">
@@ -312,13 +299,13 @@ watch(
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">赞赏支持</span>
             </div>
-            <wd-icon name="arrow-right" size="16px" color="#cbd5e1" />
+            <div class="i-solar-alt-arrow-right-linear text-gray-300" />
           </div>
 
           <div class="mx-4 h-[1px] bg-gray-50 dark:bg-gray-800" />
 
           <div
-            class="group flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
+            class="flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
             @tap="handleMenuClick('contact')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400">
@@ -326,13 +313,13 @@ watch(
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">合作勾搭</span>
             </div>
-            <wd-icon name="arrow-right" size="16px" color="#cbd5e1" />
+            <div class="i-solar-alt-arrow-right-linear text-gray-300" />
           </div>
 
           <div class="mx-4 h-[1px] bg-gray-50 dark:bg-gray-800" />
 
           <div
-            class="group flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
+            class="flex items-center justify-between p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
             @tap="handleMenuClick('feedback')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
@@ -340,7 +327,7 @@ watch(
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">问题反馈</span>
             </div>
-            <wd-icon name="arrow-right" size="16px" color="#cbd5e1" />
+            <div class="i-solar-alt-arrow-right-linear text-gray-300" />
           </div>
         </div>
       </div>
@@ -348,13 +335,13 @@ watch(
 
     <!-- 底部操作按钮 -->
     <div class="mt-10 px-10" v-if="user.isLoggedIn">
-      <div
-        class="flex items-center justify-center gap-2 rounded-2xl bg-gray-900 py-4 text-center text-[16px] text-white font-bold shadow-gray-200 shadow-xl transition-all active:scale-[0.98] dark:bg-gray-800 active:opacity-90 dark:shadow-none"
-        :class="{ 'opacity-70 pointer-events-none': loading }" @tap="doLogout">
-        <wd-loading v-if="loading" size="18px" color="#fff" custom-class="mr-2" />
-        <wd-icon v-else name="logout" size="18px" />
-        <span>{{ loading ? '正在退出...' : '退出当前账号' }}</span>
-      </div>
+        <div
+          class="flex items-center justify-center gap-2 rounded-2xl bg-gray-900 py-4 text-center text-[16px] text-white font-bold shadow-gray-200 shadow-xl transition-all active:scale-[0.98] dark:bg-gray-800 active:opacity-90 dark:shadow-none"
+          :class="{ 'opacity-70 pointer-events-none': loading }" @tap="doLogout">
+          <wd-loading v-if="loading" size="18px" color="#fff" custom-class="mr-2" />
+          <div v-else class="i-solar-logout-2-bold text-lg" />
+          <span>{{ loading ? '正在退出...' : '退出当前账号' }}</span>
+        </div>
     </div>
     <div class="mt-10 px-10" v-else>
       <div
@@ -370,7 +357,7 @@ watch(
       <div class="bg-white px-6 pb-8 pt-6 dark:bg-gray-900">
         <div class="mb-6 flex flex-col items-center">
           <div class="mb-4 h-16 w-16 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-            <wd-icon name="mail" size="32px" />
+            <div class="i-solar-letter-bold-duotone text-3xl" />
           </div>
           <span class="text-lg text-gray-900 font-bold dark:text-gray-100">联系作者</span>
           <span class="mt-1 text-center text-sm text-gray-400 dark:text-gray-500">如果您有任何问题或建议，欢迎随时联系</span>
@@ -422,7 +409,7 @@ watch(
               <div
                 class="h-12 w-12 flex items-center justify-center rounded-xl"
                 :class="!followSystem && theme === 'light' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
-                <wd-icon name="sunny" size="24px" />
+                <div class="i-solar-sun-2-bold-duotone text-2xl" />
               </div>
               <div class="flex flex-col">
                 <span
@@ -451,7 +438,7 @@ watch(
               <div
                 class="h-12 w-12 flex items-center justify-center rounded-xl"
                 :class="!followSystem && theme === 'dark' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
-                <wd-icon name="moon" size="24px" />
+                <div class="i-solar-moon-bold-duotone text-2xl" />
               </div>
               <div class="flex flex-col">
                 <span
@@ -480,7 +467,7 @@ watch(
               <div
                 class="h-12 w-12 flex items-center justify-center rounded-xl"
                 :class="followSystem ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
-                <wd-icon name="phone-portrait" size="24px" />
+                <div class="i-solar-clapperboard-edit-bold-duotone text-2xl" />
               </div>
               <div class="flex flex-col">
                 <span class="text-[15px] font-semibold" :class="followSystem ? 'text-blue-700 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'">
@@ -514,7 +501,7 @@ watch(
       <div class="bg-white px-6 pb-8 pt-6 dark:bg-gray-900">
         <div class="mb-6 flex flex-col items-center">
           <div class="mb-4 h-16 w-16 flex items-center justify-center rounded-full bg-pink-50 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400">
-            <wd-icon name="setting" size="32px" />
+            <div class="i-solar-palette-bold-duotone text-3xl" />
           </div>
           <span class="text-lg text-gray-900 font-bold dark:text-gray-100">选择主题色</span>
           <span class="mt-1 text-center text-sm text-gray-400 dark:text-gray-500">选择您喜欢的主题颜色</span>
@@ -529,7 +516,7 @@ watch(
             <div
               class="h-14 w-14 flex items-center justify-center rounded-full transition-all"
               :style="{ backgroundColor: option.primary }">
-              <wd-icon v-if="currentThemeColor.value === option.value" name="check" size="24px" color="#fff" />
+              <div v-if="currentThemeColor.value === option.value" class="i-solar-check-read-bold text-2xl text-white" />
             </div>
             <span class="text-xs text-gray-700 font-medium">{{ option.name }}</span>
           </div>

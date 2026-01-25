@@ -29,10 +29,10 @@ const uploading = ref(false)
 const { isDark } = useManualTheme()
 
 const orderOptions: SortOption[] = [
-  { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'time' },
-  { name: '最早发布', value: 'earliest', subname: '按上传时间从旧到新', icon: 'history' },
-  { name: '最大尺寸', value: 'utmost', subname: '按文件大小从大到小', icon: 'order-descending' },
-  { name: '最小尺寸', value: 'least', subname: '按文件大小从小到大', icon: 'order-descending' },
+  { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'i-solar-clock-circle-bold-duotone' },
+  { name: '最早发布', value: 'earliest', subname: '按上传时间从旧到新', icon: 'i-solar-history-bold-duotone' },
+  { name: '最大尺寸', value: 'utmost', subname: '按文件大小从大到小', icon: 'i-solar-database-bold-duotone' },
+  { name: '最小尺寸', value: 'least', subname: '按文件大小从小到大', icon: 'i-solar-database-linear' },
 ]
 
 // 使用 useListPagination 管理图片列表

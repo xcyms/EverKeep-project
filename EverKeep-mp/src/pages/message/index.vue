@@ -32,12 +32,12 @@ const loading = ref(false)
 
 // 预定义的图标和颜色组合
 const iconStyles = [
-  { icon: 'notification', bg: 'bg-blue-50', color: 'text-blue-600' },
-  { icon: 'spool', bg: 'bg-purple-50', color: 'text-purple-600' },
-  { icon: 'info-circle', bg: 'bg-orange-50', color: 'text-orange-500' },
-  { icon: 'chat', bg: 'bg-green-50', color: 'text-green-600' },
-  { icon: 'queue', bg: 'bg-red-50', color: 'text-red-600' },
-  { icon: 'star', bg: 'bg-yellow-50', color: 'text-yellow-600' },
+  { icon: 'i-solar-bell-bing-bold-duotone', bg: 'bg-blue-50', color: 'text-blue-600' },
+  { icon: 'i-solar-gallery-bold-duotone', bg: 'bg-purple-50', color: 'text-purple-600' },
+  { icon: 'i-solar-info-circle-bold-duotone', bg: 'bg-orange-50', color: 'text-orange-500' },
+  { icon: 'i-solar-chat-round-dots-bold-duotone', bg: 'bg-green-50', color: 'text-green-600' },
+  { icon: 'i-solar-list-bold-duotone', bg: 'bg-red-50', color: 'text-red-600' },
+  { icon: 'i-solar-star-bold-duotone', bg: 'bg-yellow-50', color: 'text-yellow-600' },
 ]
 
 // 获取消息图标样式
@@ -173,10 +173,11 @@ onMounted(() => {
           class="h-11 w-11 flex flex-shrink-0 items-center justify-center rounded-xl transition-colors"
           :class="isDark ? 'bg-gray-800' : (item.iconBg || getMessageStyle(item).bg)"
         >
-          <wd-icon
-            :name="item.icon || getMessageStyle(item).icon"
-            size="22px"
-            :custom-class="isDark ? '!text-gray-400' : (item.iconColor || getMessageStyle(item).color)"
+          <div
+            class="text-xl" :class="[
+              isDark ? 'text-gray-400' : (item.iconColor || getMessageStyle(item).color),
+              item.icon || getMessageStyle(item).icon
+            ]"
           />
         </div>
 
@@ -205,7 +206,7 @@ onMounted(() => {
         class="flex items-center gap-2 rounded-full bg-gray-900/90 px-5 py-2.5 text-xs text-white font-bold shadow-xl backdrop-blur-md transition-all active:scale-95 dark:bg-gray-800/90"
         @tap="handleMarkAllRead"
       >
-        <wd-icon name="check-circle" size="14px" />
+        <div class="i-solar-check-read-linear text-sm" />
         <span>忽略全部未读</span>
       </div>
     </div>
