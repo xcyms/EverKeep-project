@@ -46,10 +46,10 @@ const loadingState = computed(() => {
 })
 
 const orderOptions: SortOption[] = [
-  { name: '最新创建', value: 'newest', subname: '按相册创建时间从新到旧', icon: 'time' },
-  { name: '最早创建', value: 'earliest', subname: '按相册创建时间从旧到新', icon: 'history' },
-  { name: '图片最多', value: 'most', subname: '按相册内图片数量从多到少', icon: 'chart-bar' },
-  { name: '图片最少', value: 'least', subname: '按相册内图片数量从少到多', icon: 'chart-bar' },
+  { name: '最新创建', value: 'newest', subname: '按相册创建时间从新到旧', icon: 'i-solar-clock-circle-linear' },
+  { name: '最早创建', value: 'earliest', subname: '按相册创建时间从旧到新', icon: 'i-solar-history-linear' },
+  { name: '图片最多', value: 'most', subname: '按相册内图片数量从多到少', icon: 'i-solar-graph-new-linear' },
+  { name: '图片最少', value: 'least', subname: '按相册内图片数量从少到多', icon: 'i-solar-graph-linear' },
 ]
 
 // 默认模拟数据
@@ -316,7 +316,7 @@ onReachBottom(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8f9fa] pb-10 transition-colors duration-300 dark:bg-black">
+  <div class="bg-[#f8f9fa] pb-10 transition-colors duration-300 dark:bg-black">
     <!-- 沉浸式搜索头部 - 使用 fixed 确保不随页面滚动 -->
     <div
       class="fixed left-0 right-0 top-0 z-50 bg-white/80 px-3 pb-2 backdrop-blur-xl transition-all dark:bg-black/60"
@@ -325,11 +325,11 @@ onReachBottom(() => {
         <div class="flex-1">
           <wd-search
             v-model="searchQuery" placeholder="搜索相册、摄影师..." @search="handleSearch" @clear="handleSearch"
-            :hide-cancel="true" custom-class="!bg-gray-100/80 dark:!bg-gray-800/80 !rounded-xl !p-0" />
+            :hide-cancel="true" custom-class="!bg-gray-100/80 dark:!bg-gray-800/80 !rounded-xl !p-0"/>
         </div>
         <!-- 排序触发按钮 -->
         <div class="ml-1 h-10 flex flex-shrink-0 items-center justify-center px-2" @tap="showSortSheet = true">
-          <wd-icon name="order-descending" size="18px" :color="isDark ? '#999' : '#666'" />
+          <div class="i-solar-sort-from-top-to-bottom-linear text-xl" :style="{ color: isDark ? '#999' : '#666' }" />
         </div>
       </div>
     </div>
@@ -413,7 +413,7 @@ onReachBottom(() => {
       <EmptyState v-else-if="!loading" icon="search" title="未发现相关相册" description="尝试使用其他关键词搜索" />
 
       <!-- 底部状态与适配 -->
-      <div class="mt-auto">
+      <div v-if="albumList.length > 0" class="mt-auto">
         <wd-loadmore custom-class="py-8" :state="loadingState" @reload="fetchAlbums" />
       </div>
     </div>
@@ -425,7 +425,7 @@ onReachBottom(() => {
       <div
         class="h-12 w-12 flex items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-md transition-transform active:scale-90 dark:bg-gray-800/90"
         @click="scrollToTop">
-        <wd-icon name="arrow-up" size="20px" :color="isDark ? '#ddd' : '#333'" />
+        <div class="i-solar-alt-arrow-up-linear text-2xl" :style="{ color: isDark ? '#ddd' : '#333' }" />
       </div>
     </div>
 

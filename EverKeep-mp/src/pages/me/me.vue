@@ -256,7 +256,7 @@ watch(
             @tap="handleMenuClick('theme')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
-                <wd-icon :name="isDark ? 'translate-bold' : 'translate-bold'" size="20px" />
+                <div class="i-solar-palette-bold-duotone text-xl" />
               </div>
               <div class="flex flex-col">
                 <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">主题模式</span>
@@ -274,7 +274,7 @@ watch(
             @tap="handleMenuClick('themeColor')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-pink-50 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400">
-                <wd-icon name="setting" size="20px" />
+                <div class="i-solar-settings-bold-duotone text-xl" />
               </div>
               <div class="flex flex-col">
                 <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">主题色</span>
@@ -294,7 +294,7 @@ watch(
             @tap="handleMenuClick('about')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                <wd-icon name="info-circle" size="20px" />
+                <div class="i-solar-info-circle-bold-duotone text-xl" />
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">关于系统</span>
             </div>
@@ -308,7 +308,7 @@ watch(
             @tap="handleMenuClick('support')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400">
-                <wd-icon name="heart" size="20px" />
+                <div class="i-solar-heart-bold-duotone text-xl" />
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">赞赏支持</span>
             </div>
@@ -322,7 +322,7 @@ watch(
             @tap="handleMenuClick('contact')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400">
-                <wd-icon name="link" size="20px" />
+                <div class="i-solar-link-bold-duotone text-xl" />
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">合作勾搭</span>
             </div>
@@ -336,7 +336,7 @@ watch(
             @tap="handleMenuClick('feedback')">
             <div class="flex items-center gap-4">
               <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                <wd-icon name="chat" size="20px" />
+                <div class="i-solar-chat-round-dots-bold-duotone text-xl" />
               </div>
               <span class="text-[15px] text-gray-700 font-medium dark:text-gray-200">问题反馈</span>
             </div>

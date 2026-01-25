@@ -29,10 +29,10 @@ const showSortSheet = ref(false)
 const { isDark } = useManualTheme()
 
 const orderOptions: SortOption[] = [
-  { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'time' },
-  { name: '最早发布', value: 'earliest', subname: '按上传时间从旧到新', icon: 'history' },
-  { name: '最大尺寸', value: 'utmost', subname: '按文件大小从大到小', icon: 'order-descending' },
-  { name: '最小尺寸', value: 'least', subname: '按文件大小从小到大', icon: 'order-descending' },
+  { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'i-solar-clock-circle-bold-duotone' },
+  { name: '最早发布', value: 'earliest', subname: '按上传时间从旧到新', icon: 'i-solar-history-bold-duotone' },
+  { name: '最大尺寸', value: 'utmost', subname: '按文件大小从大到小', icon: 'i-solar-database-bold-duotone' },
+  { name: '最小尺寸', value: 'least', subname: '按文件大小从小到大', icon: 'i-solar-database-linear' },
 ]
 
 const category = ref([
@@ -87,16 +87,6 @@ const {
     }
 
     // 已登录：调用真实接口实现功能
-    if (categoryId.value === 2) {
-      return {
-        data: [],
-        current_page: currentPage,
-        last_page: 0,
-        total: 0,
-        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
-      }
-    }
-
     const sortMap: Record<string, { column: string; asc: boolean }> = {
       newest: { column: 'create_time', asc: false },
       earliest: { column: 'create_time', asc: true },
@@ -106,14 +96,22 @@ const {
     const { column, asc } = sortMap[order.value] || sortMap.newest
 
     try {
-      // 画廊(0)使用公共接口，时光(1)使用个人接口
-      const apiMethod = categoryId.value === 0 ? Apis.everkeep.publicPage : Apis.everkeep.imagePage
+      // 根据不同分类配置接口和参数
+      const tabConfigs: Record<number, { api: any; params?: any }> = {
+        0: { api: Apis.everkeep.publicPage }, // 画廊
+        1: { api: Apis.everkeep.imagePage },  // 时光
+        2: { api: Apis.everkeep.publicPage, params: { column: 'size', asc: false } }, // 推荐
+      }
+
+      const config = tabConfigs[categoryId.value] || tabConfigs[0]
+      const apiMethod = config.api
+      const finalParams = config.params || { column, asc }
+
       const res = await apiMethod({
         params: {
           current: currentPage,
           size: PAGINATION.DEFAULT_PAGE_SIZE,
-          column,
-          asc,
+          ...finalParams,
         },
         data: {},
       })
@@ -307,10 +305,15 @@ onReachBottom(() => {
             </div>
           </div>
         </div>
+
+        <!-- 推荐骨架屏 -->
+        <div v-else-if="categoryId === 2" class="space-y-4">
+          <div v-for="i in 3" :key="i" class="skeleton-pulse h-64 w-full rounded-2xl bg-gray-100 dark:bg-gray-900" />
+        </div>
       </template>
 
       <!-- 画廊模式：瀑布流 -->
-      <ImageWaterfall v-if="categoryId === 0 && allImages.length > 0" :list="allImages" :loading="loading" />
+      <ImageWaterfall v-if="categoryId === 0" :list="allImages" :loading="loading" />
 
       <!-- 时光模式：时间轴分组 -->
       <div v-else-if="categoryId === 1" class="space-y-6">
@@ -344,7 +347,7 @@ onReachBottom(() => {
                 >
                   {{ group.displayDate }}
                 </span>
-                <span v-if="group.displayDate !== group.date" class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] opacity-80">{{ group.date }}</span>
+                <span v-if="group.displayDate !== group.date" class="text-[10px] text-gray-400 font-bold tracking-[0.2em] uppercase opacity-80">{{ group.date }}</span>
               </div>
 
               <!-- 那年今日挂件 -->
@@ -357,8 +360,8 @@ onReachBottom(() => {
             <!-- 图片网格 -->
             <div class="grid grid-cols-3 gap-2">
               <div
-                v-for="img in group.images"
-                :key="img.id"
+                v-for="(img, imgIndex) in group.images"
+                :key="`${img.id}-${imgIndex}`"
                 class="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 ring-1 ring-black/5 transition-all active:scale-95 dark:bg-gray-800 dark:ring-white/5"
                 @tap="handleImageTap(img.url)"
               >
@@ -369,24 +372,59 @@ onReachBottom(() => {
         </template>
 
         <!-- 时光模式空状态 -->
-        <div v-else-if="!loading" class="py-20">
+        <div v-else-if="!loading">
           <EmptyState
             icon="clock"
             title="时光里还没有照片"
             description="记录美好瞬间，从第一张照片开始"
-            action-text="去画廊看看"
-            @action="categoryId = 0"
           />
         </div>
       </div>
 
-      <!-- 推荐模式：暂未开放 -->
-      <div v-else-if="categoryId === 2" class="py-20">
-        <EmptyState
-          icon="setting"
-          title="推荐功能暂未开放"
-          description="我们正在努力开发中，敬请期待"
-        />
+      <!-- 推荐模式：大图精选流 -->
+      <div v-else-if="categoryId === 2" class="pb-10 space-y-6">
+        <template v-if="allImages.length > 0">
+          <!-- 顶部专题入口 -->
+          <div class="bg-primary/10 dark:bg-primary/5 relative overflow-hidden rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-primary dark:text-primary-light text-lg font-bold">今日专题</h3>
+                <p class="text-primary/60 dark:text-primary-light/50 mt-1 text-xs">探索世界的美好瞬间</p>
+              </div>
+              <wd-icon name="arrow-right" size="20px" custom-class="!text-primary/40" />
+            </div>
+          </div>
+
+          <!-- 精选图片列表 -->
+          <div
+            v-for="(img, index) in allImages"
+            :key="`${img.id}-${index}`"
+            class="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all active:scale-[0.99] dark:bg-gray-900"
+            @tap="handleImageTap(img.url)"
+          >
+            <image
+              :src="getImageUrl(img.thumbnailUrl || img.url)"
+              mode="aspectFill"
+              class="h-72 w-full transition-transform duration-500 group-active:scale-105"
+              lazy-load
+            />
+            <div class="absolute bottom-0 left-0 right-0 from-black/80 via-black/30 to-transparent bg-gradient-to-t p-5">
+              <div class="flex items-end justify-between">
+                <div class="flex-1 overflow-hidden">
+                  <div class="mb-2 flex items-center gap-2">
+                    <span class="bg-primary/90 rounded px-1.5 py-0.5 text-[10px] text-white font-bold">精选</span>
+                    <span class="text-[10px] text-white/60 font-medium tracking-wider">{{ img.type?.split('/')[1]?.toUpperCase() || 'IMAGE' }}</span>
+                  </div>
+                  <h4 class="truncate text-base text-white font-bold">{{ img.name || '未命名图片' }}</h4>
+                </div>
+                <div class="h-10 w-10 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-md active:bg-white/20">
+                  <wd-icon name="download" size="18px" color="#fff" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        <EmptyState v-else-if="!loading" icon="star" title="暂无推荐" description="更多精彩内容正在准备中" />
       </div>
 
       <!-- 加载状态 -->

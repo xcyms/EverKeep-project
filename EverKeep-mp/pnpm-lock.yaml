@@ -126,6 +126,9 @@ importers:
       '@iconify-json/carbon':
         specifier: ^1.1.37
         version: 1.2.18
+      '@iconify-json/solar':
+        specifier: ^1.2.5
+        version: 1.2.5
       '@mini-types/alipay':
         specifier: ^3.0.14
         version: 3.0.14
@@ -1699,6 +1702,9 @@ packages:
 
   '@iconify-json/carbon@1.2.18':
     resolution: {integrity: sha512-Grb13E6r/RqTEV4Sqd/BQR2FUt57U2WLuticJ5H8JbTdHLop1LmdePu3EJJA3Xi8DcWRbD6OnC133hKfOwlgtg==}
+
+  '@iconify-json/solar@1.2.5':
+    resolution: {integrity: sha512-WMAiNwchU8zhfrySww6KQBRIBbsQ6SvgIu2yA+CHGyMima/0KQwT5MXogrZPJGoQF+1Ye3Qj6K+1CiyNn3YkoA==}
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -9475,6 +9481,10 @@ snapshots:
   '@hutson/parse-repository-url@3.0.2': {}
 
   '@iconify-json/carbon@1.2.18':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/solar@1.2.5':
     dependencies:
       '@iconify/types': 2.0.0
 

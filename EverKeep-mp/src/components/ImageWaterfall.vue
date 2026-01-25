@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { ImageItem } from '@/types/page';
 import { computed } from 'vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 const props = defineProps<{
   list: ImageItem[]
@@ -31,8 +32,8 @@ function handleImageTap(currentUrl: string) {
       <!-- 左列 -->
       <div class="flex flex-1 flex-col gap-3">
         <div
-          v-for="(img) in leftCol"
-          :key="img.id"
+          v-for="(img, index) in leftCol"
+          :key="`${img.id}-${index}`"
           class="overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-opacity active:opacity-80"
           @tap="handleImageTap(img.url)"
         >
@@ -47,8 +48,8 @@ function handleImageTap(currentUrl: string) {
       <!-- 右列 -->
       <div class="flex flex-1 flex-col gap-3">
         <div
-          v-for="(img) in rightCol"
-          :key="img.id"
+          v-for="(img, index) in rightCol"
+          :key="`${img.id}-${index}`"
           class="overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-opacity active:opacity-80"
           @tap="handleImageTap(img.url)"
         >
@@ -63,12 +64,14 @@ function handleImageTap(currentUrl: string) {
     </div>
 
     <!-- 缺省展示 -->
-    <div v-else-if="!loading && list.length === 0" class="fade-in flex flex-col items-center justify-center py-20">
-      <div class="mb-4 h-20 w-20 flex items-center justify-center rounded-full bg-gray-50/50">
-        <wd-icon name="picture" size="72px" color="#cbd5e1" />
-      </div>
-      <span class="text-sm text-gray-400 font-medium">{{ emptyText || '暂无数据' }}</span>
-    </div>
+    <!-- Empty State -->
+    <EmptyState
+      v-else-if="!loading && list.length === 0"
+      icon="image"
+      :title="emptyText || '暂无数据'"
+      description="这里空空如也，快去上传或探索吧"
+      class="py-12"
+    />
   </div>
 </template>
 

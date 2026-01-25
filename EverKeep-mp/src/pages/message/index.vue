@@ -132,7 +132,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8f9fa] pb-10 transition-colors duration-300 dark:bg-black">
+  <div class="bg-[#f8f9fa] pb-10 transition-colors duration-300 dark:bg-black">
     <!-- 沉浸式毛玻璃顶栏 -->
     <div
       class="sticky top-0 z-50 w-full border-b border-white/20 bg-white/70 backdrop-blur-xl transition-all dark:border-white/5 dark:bg-black/60"
