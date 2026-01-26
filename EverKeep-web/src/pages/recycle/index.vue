@@ -154,7 +154,7 @@ const formatSize = (bytes: number) => {
         <!-- 图片预览 -->
         <div class="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-900">
           <img 
-            :src="getImageUrl(img.url)" 
+            :src="getImageUrl(img.thumbnailUrl || img.url)" 
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
             @error="(e: any) => { e.target.src = DEFAULT_IMAGE }"

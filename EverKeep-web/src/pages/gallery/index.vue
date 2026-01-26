@@ -117,7 +117,7 @@ const formatSize = (bytes: number) => {
           <!-- 图片展示 -->
           <div class="aspect-[4/5] overflow-hidden bg-gray-50 relative">
             <a-image
-              :src="getImageUrl(img.url)"
+              :src="getImageUrl(img.thumbnailUrl || img.url)"
               :fallback="DEFAULT_IMAGE"
               class="w-full h-full object-cover"
               :preview="true"

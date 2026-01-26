@@ -41,12 +41,12 @@ const storagePercentage = computed(() => {
 
 // 格式化已用空间
 const usedSpaceFormatted = computed(() => {
-  return user.isLoggedIn ? formatSize(summary.value?.storageUsage || 0) : '0 B'
+  return user.isLoggedIn ? formatSize(Number(summary.value?.storageUsage) || 0) : '0 B'
 })
 
 // 格式化总空间
 const totalSpaceFormatted = computed(() => {
-  return user.isLoggedIn ? formatSize(summary.value?.totalSize || 0) : '0 B'
+  return user.isLoggedIn ? formatSize(Number(summary.value?.totalSize) || 0) : '0 B'
 })
 
 // 主题管理
