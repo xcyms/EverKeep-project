@@ -270,7 +270,12 @@ onReachBottom(() => {
         </div>
         <!-- 排序触发按钮 -->
         <div class="h-10 flex flex-shrink-0 items-center justify-center px-3" @tap="showSortSheet = true">
-          <wd-icon name="order-descending" size="18px" :color="isDark ? '#eee' : '#666'" />
+          <div
+            class="text-xl transition-all duration-300" :class="[
+              order !== 'newest' ? 'i-solar-tuning-bold-duotone scale-110' : 'i-solar-sort-vertical-line-duotone'
+            ]"
+            :style="{ color: order !== 'newest' ? (isDark ? '#5189fb' : '#2979ff') : (isDark ? '#eee' : '#666') }"
+          />
         </div>
       </div>
     </div>

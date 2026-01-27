@@ -94,6 +94,7 @@ async function fetchMessages() {
 
 onPullDownRefresh(() => {
   fetchMessages()
+  uni.stopPullDownRefresh()
 })
 
 function formatTime (time: string) {

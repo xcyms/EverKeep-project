@@ -1168,6 +1168,25 @@ declare global {
       }>(
         config: Config
       ): Alova2Method<ApiResult<Page<MessageItem>>, 'everkeep.getMessage', Config>;
+      // 更新图片状态
+      updateStatus<
+        Config extends Alova2MethodConfig<null> & {
+          data: {
+            ids: (string | number)[];
+            status: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<string>, 'everkeep.updateStatus', Config>;
+      // 删除图片
+      delete<
+        Config extends Alova2MethodConfig<null> & {
+          data: (string | number)[];
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<string>, 'everkeep.delete', Config>;
     }
   }
 

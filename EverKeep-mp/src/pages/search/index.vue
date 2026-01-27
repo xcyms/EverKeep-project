@@ -311,7 +311,10 @@ onReachBottom(() => {
   loadMoreAlbums()
 })
 
-
+onPullDownRefresh(async () => {
+  await fetchAlbums()
+  uni.stopPullDownRefresh()
+})
 
 </script>
 
@@ -328,8 +331,13 @@ onReachBottom(() => {
             :hide-cancel="true" custom-class="!bg-gray-100/80 dark:!bg-gray-800/80 !rounded-xl !p-0"/>
         </div>
         <!-- 排序触发按钮 -->
-        <div class="ml-1 h-10 flex flex-shrink-0 items-center justify-center px-2" @tap="showSortSheet = true">
-          <div class="i-solar-sort-from-top-to-bottom-linear text-xl" :style="{ color: isDark ? '#999' : '#666' }" />
+        <div class="h-10 flex flex-shrink-0 items-center justify-center px-3" @tap="showSortSheet = true">
+          <div
+            class="text-xl transition-all duration-300" :class="[
+              order !== 'newest' ? 'i-solar-tuning-bold-duotone scale-110' : 'i-solar-sort-vertical-line-duotone'
+            ]"
+            :style="{ color: order !== 'newest' ? (isDark ? '#5189fb' : '#2979ff') : (isDark ? '#eee' : '#666') }"
+          />
         </div>
       </div>
     </div>

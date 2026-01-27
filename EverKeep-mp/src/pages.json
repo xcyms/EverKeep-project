@@ -36,7 +36,7 @@
         "enablePullDownRefresh": true
       }
     },
-    // #ifdef H5
+    // #ifdef H5 || MP-WEIXIN
     {
       "path": "pages/me/me",
       "type": "page",
@@ -48,17 +48,6 @@
       }
     },
     // #endif
-    {
-      "path": "pages/me/me",
-      "type": "page",
-      "name": "me",
-      "layout": "tabbar",
-      "style": {
-        "navigationBarTitleText": "我的",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": true
-      }
-    },
     // #ifdef H5
     {
       "path": "pages/message/index",

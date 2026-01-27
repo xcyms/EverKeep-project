@@ -54,4 +54,7 @@ export default {
   'everkeep.imagePage': ['POST', '/image/page'],
   'everkeep.uploadImage': ['POST', '/file/upload'],
   'everkeep.getMessage': ['GET', '/message/my/page'],
+  'everkeep.updateStatus': ['POST', '/image/updateStatus'],
+  'everkeep.move': ['POST', '/image/move'],
+  'everkeep.delete': ['DELETE', '/image/delete'],
 };

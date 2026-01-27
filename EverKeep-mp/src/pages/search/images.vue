@@ -19,14 +19,20 @@ definePage({
 const router = useRouter()
 const user = useAuthStore()
 const toast = useToast()
-const { statusBarHeight, menuButtonRight } = useSystemInfo()
+const message = useMessage()
+const { statusBarHeight, menuButtonRight, safeAreaInsetsBottom } = useSystemInfo()
 
 const albumId = ref<string | null>(null)
 const searchQuery = ref('')
 const order = ref<'newest' | 'earliest' | 'utmost' | 'least'>('newest')
 const showSortSheet = ref(false)
+const showPublicSheet = ref(false)
 const uploading = ref(false)
 const { isDark } = useManualTheme()
+
+// 选择模式状态
+const isSelectionMode = ref(false)
+const selectedIds = ref(new Set<string | number>())
 
 const orderOptions: SortOption[] = [
   { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'i-solar-clock-circle-bold-duotone' },
@@ -178,6 +184,67 @@ function handleUpload() {
   })
 }
 
+const publicOptions = [
+  { name: '设为私有', color: '#2979ff' },
+  { name: '设为公开', color: '#666' },
+]
+
+// 批量操作处理
+function handleBatchPublic() {
+  if (selectedIds.value.size === 0) return
+  showPublicSheet.value = true
+}
+
+function handlePublicSelect({ item, index }: { item: { name: string; value?: any }; index: number }) {
+  message.confirm({
+    title: '权限设置',
+    msg: `确定将选中的 ${selectedIds.value.size} 张图片${item.name}吗？`,
+  }).then(async () => {
+    // 这里后续对接真实的修改权限接口
+    try {
+      await Apis.everkeep.updateStatus({
+        data: {
+          ids: Array.from(selectedIds.value),
+          status: index,
+        },
+      })
+      toast.success('设置成功')
+      selectedIds.value.clear()
+      reset()
+      refresh()
+    } catch (error) {
+      console.error('Failed to update image status:', error)
+      toast.error('设置失败')
+    }
+  }).catch(() => {})
+}
+
+function handleBatchMove() {
+  if (selectedIds.value.size === 0) return
+  toast.info('暂未实现移动功能')
+}
+
+function handleBatchDelete() {
+  if (selectedIds.value.size === 0) return
+  message.confirm({
+    title: '批量删除',
+    msg: `确定要删除选中的 ${selectedIds.value.size} 张图片吗？删除后不可恢复。`,
+  }).then(async () => {
+    try {
+      await Apis.everkeep.delete({
+        data: Array.from(selectedIds.value),
+      })
+      toast.success('删除成功')
+    } catch (error) {
+      console.error('Failed to delete images:', error)
+      toast.error('删除失败')
+    }
+    selectedIds.value.clear()
+    reset()
+    refresh()
+  }).catch(() => {})
+}
+
 onLoad((option) => {
   if (option && option.id) {
     albumId.value = option.id
@@ -219,8 +286,13 @@ onReachBottom(() => {
             :hide-cancel="true" custom-class="!bg-gray-100/80 dark:!bg-gray-800/60 !rounded-xl !p-0" />
         </div>
         <!-- 排序触发按钮 -->
-        <div class="ml-1 h-10 flex flex-shrink-0 items-center justify-center px-2" @tap="showSortSheet = true">
-          <wd-icon name="order-descending" size="18px" :color="isDark ? '#eee' : '#666'" />
+        <div class="h-10 flex flex-shrink-0 items-center justify-center px-3" @tap="showSortSheet = true">
+          <div
+            class="text-xl transition-all duration-300" :class="[
+              order !== 'newest' ? 'i-solar-tuning-bold-duotone scale-110' : 'i-solar-sort-vertical-line-duotone'
+            ]"
+            :style="{ color: order !== 'newest' ? (isDark ? '#5189fb' : '#2979ff') : (isDark ? '#eee' : '#666') }"
+          />
         </div>
       </div>
     </div>
@@ -230,23 +302,92 @@ onReachBottom(() => {
 
     <!-- 内容区域 -->
     <div class="px-3 pt-3">
-      <ImageWaterfall :list="images" :loading="loading" />
+      <ImageWaterfall
+        v-model:selected-ids="selectedIds"
+        :list="images"
+        :loading="loading"
+        :is-selection-mode="isSelectionMode"
+      />
 
       <!-- 加载状态 -->
       <wd-loadmore custom-class="py-8" :state="loading ? 'loading' : (hasMore ? 'loading' : 'finished')" />
     </div>
 
-    <!-- 悬浮上传按钮 -->
-    <div class="fixed bottom-10 right-6 z-50 transform-gpu transition-all active:scale-90" @tap="handleUpload">
-      <div
-        class="h-14 w-14 flex items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_8px_32px_rgba(59,130,246,0.3)]">
-        <wd-icon name="add" size="24px" />
+    <!-- 底部批量操作栏 -->
+    <div
+      v-if="isSelectionMode"
+      class="fixed left-1/2 z-[10] h-16 w-[90%] flex items-center justify-between rounded-2xl bg-gray-800/95 px-6 shadow-2xl backdrop-blur-xl -translate-x-1/2 dark:bg-gray-900/95"
+      :style="{ bottom: `${safeAreaInsetsBottom + 24}px` }"
+    >
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-white/70">已选 <span class="text-white font-bold">{{ selectedIds.size }}</span></span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div
+          class="h-10 w-10 flex items-center justify-center rounded-xl bg-white/15 text-white transition-all active:scale-90 active:bg-white/25"
+          @tap="handleBatchMove"
+        >
+          <div class="i-solar-folder-path-connect-bold-duotone text-xl" />
+        </div>
+        <div
+          class="h-10 w-10 flex items-center justify-center rounded-xl bg-white/15 text-white transition-all active:scale-90 active:bg-white/25"
+          @tap="handleBatchPublic"
+        >
+          <div class="i-solar-earth-bold-duotone text-xl" />
+        </div>
+        <div
+          class="h-10 w-10 flex items-center justify-center rounded-xl bg-red-500/20 text-red-500 transition-all active:scale-90"
+          @tap="handleBatchDelete"
+        >
+          <div class="i-solar-trash-bin-trash-bold-duotone text-xl" />
+        </div>
+        <div class="h-6 w-[1px] bg-white/10" />
+        <div
+          class="h-10 w-10 flex items-center justify-center rounded-xl bg-white text-gray-900 transition-all active:scale-90"
+          @tap="isSelectionMode = false; selectedIds.clear()"
+        >
+          <div class="i-solar-close-circle-bold-duotone text-xl" />
+        </div>
       </div>
     </div>
+
+    <!-- 悬浮操作按钮 -->
+    <wd-fab
+      v-if="!isSelectionMode"
+      type="primary"
+      position="right-bottom"
+      direction="top"
+      :gap="{ bottom: 20 + safeAreaInsetsBottom, right: 30 }"
+    >
+      <div class="flex flex-col items-center gap-2">
+        <wd-button type="primary" round custom-class="!px-3 !h-10 !min-w-0" @click="handleUpload">
+          <div class="flex items-center gap-1.5">
+            <div class="i-solar-upload-bold-duotone text-lg" />
+            <span class="text-sm">上传图片</span>
+          </div>
+        </wd-button>
+        <wd-button type="success" round custom-class="!px-3 !h-10 !min-w-0" @click="isSelectionMode = true">
+          <div class="flex items-center gap-1.5">
+            <div class="i-solar-checklist-minimalistic-bold-duotone text-lg" />
+            <span class="text-sm">批量管理</span>
+          </div>
+        </wd-button>
+      </div>
+    </wd-fab>
 
     <!-- 排序操作面板 -->
     <SortSheet
       v-model="showSortSheet" :options="orderOptions" :current-value="order" title="排序方式"
       subtitle="选择图片内容的展示顺序" @select="handleSortSelect" />
+    <!-- 权限设置面板 -->
+    <wd-action-sheet
+      v-model="showPublicSheet"
+      :actions="publicOptions"
+      title="设置图片权限"
+      @select="handlePublicSelect"
+      :z-index="11"
+    />
+    <wd-message-box />
   </div>
 </template>
