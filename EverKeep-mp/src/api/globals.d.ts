@@ -1123,6 +1123,16 @@ declare global {
       >(
         config: Config
       ): Alova2Method<ApiResult<Page<AlbumItem>>, 'everkeep.albumPage', Config>;
+      // 相册列表
+      albumList<Config extends Alova2MethodConfig<{
+        name?: string
+      }> & {
+        params: {
+          name?: string;
+        };
+      }>(
+        config: Config
+      ): Alova2Method<ApiResult<AlbumItem[]>, 'everkeep.albumList', Config>;
       // 相册图片
       imagePage<
         Config extends Alova2MethodConfig<{
@@ -1179,6 +1189,20 @@ declare global {
       >(
         config: Config
       ): Alova2Method<ApiResult<string>, 'everkeep.updateStatus', Config>;
+      // 移动图片
+      batchMove<
+        Config extends Alova2MethodConfig<{
+          ids: (string | number)[];
+          albumId: string | number;
+        }> & {
+          data: {
+            ids: (string | number)[];
+            albumId: string | number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<string>, 'everkeep.batchMove', Config>;
       // 删除图片
       delete<
         Config extends Alova2MethodConfig<null> & {

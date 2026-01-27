@@ -51,10 +51,11 @@ export default {
   'everkeep.getSummary': ['GET', '/stats/summary'],
   'everkeep.publicPage': ['POST', '/image/public/page'],
   'everkeep.albumPage': ['POST', '/album/page'],
+  'everkeep.albumList': ['GET', '/album/list'],
   'everkeep.imagePage': ['POST', '/image/page'],
   'everkeep.uploadImage': ['POST', '/file/upload'],
   'everkeep.getMessage': ['GET', '/message/my/page'],
   'everkeep.updateStatus': ['POST', '/image/updateStatus'],
-  'everkeep.move': ['POST', '/image/move'],
+  'everkeep.batchMove': ['POST', '/image/batchMove'],
   'everkeep.delete': ['DELETE', '/image/delete'],
 };

@@ -27,6 +27,8 @@ const searchQuery = ref('')
 const order = ref<'newest' | 'earliest' | 'utmost' | 'least'>('newest')
 const showSortSheet = ref(false)
 const showPublicSheet = ref(false)
+const showMoveSheet = ref(false)
+const albumOptions = ref<{ name: string; value: string | number }[]>([])
 const uploading = ref(false)
 const { isDark } = useManualTheme()
 
@@ -221,7 +223,70 @@ function handlePublicSelect({ item, index }: { item: { name: string; value?: any
 
 function handleBatchMove() {
   if (selectedIds.value.size === 0) return
-  toast.info('暂未实现移动功能')
+
+  // 加载相册列表
+  uni.showLoading({ title: '加载相册...' })
+  Apis.everkeep.albumList({
+    params: {
+      name: searchQuery.value || undefined,
+    },
+  }).then((res) => {
+    if (res.code === 200 && res.data) {
+      const albums = res.data || []
+      // 过滤掉当前相册
+      albumOptions.value = albums
+        .filter((a: any) => String(a.id) !== String(albumId.value))
+        .map((a: any) => ({
+          name: a.name,
+          value: a.id,
+        }))
+
+      if (albumOptions.value.length === 0) {
+        toast.info('没有可选的其他相册')
+        return
+      }
+      showMoveSheet.value = true
+    } else {
+      toast.error('加载相册失败')
+    }
+  }).catch((err) => {
+    console.error('Fetch albums error:', err)
+    toast.error('网络错误')
+  }).finally(() => {
+    uni.hideLoading()
+  })
+}
+
+function handleMoveSelect({ item }: { item: { name: string; value?: any } }) {
+  const targetAlbumId = item.value
+  message.confirm({
+    title: '移动确认',
+    msg: `确定将选中的 ${selectedIds.value.size} 张图片移动到“${item.name}”吗？`,
+  }).then(async () => {
+    uni.showLoading({ title: '正在移动...', mask: true })
+    try {
+      const res = await Apis.everkeep.batchMove({
+        data: {
+          albumId: targetAlbumId,
+          ids: Array.from(selectedIds.value),
+        },
+      })
+
+      if (res.code === 200) {
+        toast.success('移动成功')
+        selectedIds.value.clear()
+        reset()
+        refresh()
+      } else {
+        toast.error(res.message || '移动失败')
+      }
+    } catch (err) {
+      console.error('Move images error:', err)
+      toast.error('网络请求失败')
+    } finally {
+      uni.hideLoading()
+    }
+  }).catch(() => {})
 }
 
 function handleBatchDelete() {
@@ -386,8 +451,16 @@ onReachBottom(() => {
       :actions="publicOptions"
       title="设置图片权限"
       @select="handlePublicSelect"
-      :z-index="11"
     />
+
+    <!-- 移动相册面板 -->
+    <wd-action-sheet
+      v-model="showMoveSheet"
+      :actions="albumOptions"
+      title="移动到相册"
+      @select="handleMoveSelect"
+    />
+
     <wd-message-box />
   </div>
 </template>
