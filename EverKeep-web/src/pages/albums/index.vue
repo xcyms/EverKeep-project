@@ -447,7 +447,7 @@ const handleDeleteAlbum = (album: API.Album) => {
             class="group relative aspect-square rounded-lg overflow-hidden border border-gray-100"
           >
             <a-image 
-              :src="getImageUrl(img.url)" 
+              :src="getImageUrl(img.thumbnailUrl || img.url)" 
               :fallback="DEFAULT_IMAGE"
               class="w-full h-full object-cover" 
             />
