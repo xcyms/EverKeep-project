@@ -4,7 +4,7 @@ import { message, Modal, Select } from 'ant-design-vue'
 import { ExclamationCircleOutlined, FolderOutlined } from '@ant-design/icons-vue'
 import { getMyImagesApi, deleteImagesApi, updateImagesStatusApi, moveImageToAlbumApi, setAlbumCoverApi, batchMoveImagesApi } from '../../api/image'
 import { getMyAlbumsApi } from '../../api/album'
-import { getImageUrl, DEFAULT_IMAGE } from '../../utils/common'
+import { getImageUrl, DEFAULT_IMAGE, formatSize } from '../../utils/common'
 import type { API } from '../../types'
 
 // --- 状态变量 ---
@@ -177,11 +177,6 @@ const handleBatchMove = () => {
       }
     },
   })
-}
-
-const formatSize = (bytes: number) => {
-  const kb = bytes / 1024
-  return kb >= 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(2)} KB`
 }
 
 // --- 右键菜单操作 ---

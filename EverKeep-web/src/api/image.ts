@@ -133,3 +133,15 @@ export const deletePermanentlyApi = (ids: number[]): Promise<string> => {
     data: ids
   })
 }
+
+/**
+ * 获取所有图片分页列表(管理员)
+ */
+export const getAdminImagesApi = (params: { current: number; size: number; column?: string; asc?: boolean }, data?: any): Promise<API.PageResult<API.Image>> => {
+  return request({
+    url: '/image/admin/page',
+    method: 'post',
+    params,
+    data
+  })
+}

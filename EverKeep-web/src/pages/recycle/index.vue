@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { getRecycleImagesApi, restoreImagesApi, deletePermanentlyApi } from '../../api/image'
-import { getImageUrl, DEFAULT_IMAGE } from '../../utils/common'
+import { getImageUrl, DEFAULT_IMAGE, formatSize } from '../../utils/common'
 import type { API } from '../../types'
 
 const loading = ref(false)
@@ -94,11 +94,6 @@ const handleDeletePermanently = (ids: number[]) => {
       } catch (err) {}
     },
   })
-}
-
-const formatSize = (bytes: number) => {
-  const kb = bytes / 1024
-  return kb >= 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(2)} KB`
 }
 </script>
 

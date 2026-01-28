@@ -144,6 +144,7 @@ onMounted(loadUsers)
         @change="handleTableChange"
         rowKey="id"
       >
+        <a-table-column title="用户ID" dataIndex="id" key="id" width="80" />
         <a-table-column title="用户信息" key="user">
           <template #default="{ record }">
             <div class="flex items-center gap-3">

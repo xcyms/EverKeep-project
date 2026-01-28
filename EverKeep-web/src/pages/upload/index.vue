@@ -5,6 +5,7 @@ import { getMyConfigsApi } from '../../api/config'
 import { uploadImageApi } from '../../api/image'
 import { getMyAlbumsApi } from '../../api/album'
 import type { API } from '../../types'
+import { formatSize } from '../../utils/common'
 
 const fileList = ref<API.UploadFile[]>([])  
 const albumList = ref<API.Album[]>([])
@@ -55,15 +56,6 @@ onUnmounted(() => {
 
 // 检查是否有待上传的文件
 const hasPendingFiles = computed(() => fileList.value.some(f => f.status === 'pending' || f.status === 'error'))
-
-// 格式化文件大小
-const formatSize = (bytes: number) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 
 // 处理文件选择
 const handleFileChange = (e: Event) => {

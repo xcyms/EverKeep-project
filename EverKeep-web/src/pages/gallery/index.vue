@@ -2,7 +2,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { getPublicImagesApi } from '../../api/image'
 import type { API } from '../../types'
-import { getImageUrl, DEFAULT_IMAGE } from '../../utils/common'
+import { getImageUrl, DEFAULT_IMAGE, formatSize } from '../../utils/common'
 
 // --- 状态定义 ---
 const loading = ref(false)
@@ -65,15 +65,6 @@ const handleLoadMore = () => {
   if (loadingMore.value || !hasMore.value) return
   queryParams.current++
   loadData()
-}
-
-// 格式化文件大小
-const formatSize = (bytes: number) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 </script>
 

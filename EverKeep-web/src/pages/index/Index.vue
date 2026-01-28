@@ -6,6 +6,7 @@ import { getNoticeListApi } from '../../api/notice'
 import type { API } from '../../types'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
+import { formatSize } from '../../utils/common'
 
 const userStore = useUserStore()
 const loading = ref(true)
@@ -23,15 +24,6 @@ const summary = ref<API.StatsSummary>({
 
 // 公告数据
 const notices = ref<API.Notice[]>([])
-
-// 格式化文件大小
-const formatSize = (bytes: number) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 
 // 动态统计项
 const stats = computed(() => [

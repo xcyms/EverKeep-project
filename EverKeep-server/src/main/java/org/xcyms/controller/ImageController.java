@@ -1,5 +1,6 @@
 package org.xcyms.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
@@ -123,5 +124,20 @@ public class ImageController {
     @PostMapping("/batchMove")
     public ApiResult<String> batchMove(@RequestBody ImageDTO imageDTO) {
         return imageService.batchMove(imageDTO);
+    }
+
+    @ApiDoc("获取所有图片分页列表(管理员)")
+    @SaCheckRole("ADMIN")
+    @PostMapping("/admin/page")
+    public ApiResult<IPage<ImageDTO>> adminPage(@RequestParam(required = false) String column,
+                                                @RequestParam(required = false, defaultValue = "false") boolean asc,
+                                                Page<Image> page,
+                                                @RequestBody ImageDTO imageDTO) {
+        if (StringUtils.isNotBlank(column)) {
+            page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
+        } else {
+            page.addOrder(OrderItem.desc("create_time"));
+        }
+        return imageService.getPage(page, imageDTO);
     }
 }
