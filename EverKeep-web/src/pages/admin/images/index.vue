@@ -127,7 +127,13 @@ onMounted(loadData)
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'thumbnailUrl'">
-            <a-image :width="60" :height="60" class="rounded object-cover" :src="getImageUrl(record.url || record.thumbnailUrl)" />
+            <a-image 
+              :width="60" 
+              :height="60" 
+              class="rounded object-cover" 
+              :src="getImageUrl(record.thumbnailUrl || record.url)"
+              :preview="{ src: getImageUrl(record.url) }"
+            />
           </template>
           <template v-else-if="column.key === 'size'">{{ formatSize(record.size) }}</template>
           <template v-else-if="column.key === 'status'">
