@@ -127,6 +127,24 @@ onUnmounted(() => {
         <h2 class="text-2xl font-bold text-gray-800">你好，{{ userStore.name }}！</h2>
         <p class="text-gray-400 mt-1">欢迎回来，EverKeep 运行状况良好，随时准备为您存储精彩瞬间。</p>
       </div>
+
+      <!-- 微信小程序预览按钮 -->
+      <div class="z-10">
+        <a-popover placement="left" :mouse-enter-delay="0.1">
+          <template #content>
+            <div class="p-1">
+              <img 
+                src="https://personal-navhub.site/uploads/image/2026/01/29/2016791948966367232.jpg" 
+                alt="Preview"
+                class="max-w-[200px] rounded shadow-sm"
+              />
+            </div>
+          </template>
+          <div class="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-all hover:scale-110 border border-gray-100">
+            <div class="i-ant-design:wechat-filled text-[#07C160] text-3xl" />
+          </div>
+        </a-popover>
+      </div>
     </div>
 
     <!-- 统计卡片：PC 端五列布局 -->
