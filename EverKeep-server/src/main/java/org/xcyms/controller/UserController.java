@@ -2,6 +2,7 @@ package org.xcyms.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -57,6 +58,8 @@ public class UserController {
     @SaCheckRole("ADMIN")
     @PostMapping("/page")
     public ApiResult<Page<UserDTO>> getPage(Page<User> page, @RequestBody UserDTO userDTO) {
+        // 增加 id 作为二级排序，防止分页重复
+        page.addOrder(OrderItem.desc("id"));
         return userService.getPage(page, userDTO);
     }
 

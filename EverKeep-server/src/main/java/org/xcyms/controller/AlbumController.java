@@ -58,6 +58,9 @@ public class AlbumController {
                 log.warn("检测到非法的排序字段请求: {}", column);
             }
         }
+        // 增加 id 作为二级排序，防止分页重复
+        page.addOrder(OrderItem.desc("id"));
+
         albumDTO.setUserId(StpUtil.getLoginIdAsLong());
         // 业务层根据 albumDTO.getName() 进行模糊查询
         return albumService.getPage(page, albumDTO);

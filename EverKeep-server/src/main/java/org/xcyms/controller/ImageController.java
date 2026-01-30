@@ -52,6 +52,9 @@ public class ImageController {
         if (StringUtils.isNotBlank(column)) {
             page.addOrder(asc ? OrderItem.asc(column) : OrderItem.desc(column));
         }
+        // 增加 id 作为二级排序，防止分页重复
+        page.addOrder(OrderItem.desc("id"));
+
         // 只能查看自己的图片
         imageDTO.setUserId(StpUtil.getLoginIdAsLong());
         return imageService.getPage(page, imageDTO);
@@ -72,6 +75,9 @@ public class ImageController {
             // 默认按时间倒序
             page.addOrder(OrderItem.desc("create_time"));
         }
+        // 增加 id 作为二级排序，防止分页重复
+        page.addOrder(OrderItem.desc("id"));
+
         // 强制查询公开状态的图片
         imageDTO.setStatus(YesNoEnum.YES);
         imageDTO.setUserId(null); // 查询所有用户的
@@ -138,6 +144,9 @@ public class ImageController {
         } else {
             page.addOrder(OrderItem.desc("create_time"));
         }
+        // 增加 id 作为二级排序，防止分页重复
+        page.addOrder(OrderItem.desc("id"));
+
         return imageService.getPage(page, imageDTO);
     }
 }
