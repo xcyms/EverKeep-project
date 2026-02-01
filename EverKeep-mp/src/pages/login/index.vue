@@ -145,7 +145,7 @@ function toggleMode() {
 
     <!-- 登录卡片 -->
     <view class="flex-1 px-6">
-      <view class="overflow-hidden rounded-3xl bg-white/70 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+      <view class="overflow-hidden border border-white/50 rounded-3xl bg-white/80 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-2xl">
         <!-- 登录类型切换 (仅在登录模式显示) -->
         <view v-if="mode === 'login'" class="relative mb-8 h-12 flex items-center rounded-xl bg-gray-100/80 p-1">
           <view
@@ -258,7 +258,7 @@ function toggleMode() {
         <view class="mb-4 text-center text-lg text-gray-900 font-bold">用户协议</view>
         <view class="text-sm text-gray-500 leading-relaxed space-y-3">
           <view class="text-gray-900 font-medium">
-            《光影密匣》 是一款由 AI 辅助开发的云端图片管理工具，支持 PC 网页端
+            《光影秘匣》 是一款由 AI 辅助开发的云端图片管理工具，支持 PC 网页端
             <text class="mx-1 text-blue-500 underline active:opacity-60" @tap="handleCopyUrl">（https://personal-navhub.site）</text>
             与小程序端同步。本应用致力于提供安全、便捷的图片存储与智能管理体验。
           </view>

@@ -14,7 +14,6 @@ definePage({
 
 const statusBarHeight = ref(0)
 const appName = ref('光影秘匣')
-const version = ref('v1.0.0')
 
 onMounted(() => {
   uni.getSystemInfo({
@@ -79,18 +78,6 @@ function goBack() {
             >
               {{ tech }}
             </span>
-          </div>
-        </div>
-
-        <!-- 版本信息 -->
-        <div class="overflow-hidden rounded-3xl p-6 shadow-sm transition-colors duration-300" :class="isDark ? 'bg-[#1c1c1e]' : 'bg-white'">
-          <h3 class="mb-4 flex items-center gap-2 text-[17px] font-bold" :class="isDark ? 'text-white' : 'text-gray-900'">
-            <div class="i-solar-letter-bold-duotone text-primary text-xl" />
-            版本信息
-          </h3>
-          <div class="flex items-center justify-between">
-            <span :class="isDark ? 'text-gray-400' : 'text-gray-600'">当前版本</span>
-            <span class="bg-primary/10 text-primary rounded-lg px-2 py-1 text-xs font-bold">{{ version }}</span>
           </div>
         </div>
       </div>
