@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
      * 获取用户名称
      */
     userName: (state) => {
-      return state.user?.nickname || '未登录用户'
+      return state.user?.nickname || state.user?.username || '未登录用户'
     },
   },
 

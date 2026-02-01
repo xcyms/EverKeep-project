@@ -10,23 +10,21 @@ definePage({
 const router = useRouter()
 const user = useAuthStore()
 const { success: showSuccess, error: showError } = useToast()
-const loginType = ref<'account' | 'phone'>('account') // 'account' for username/password, 'phone' for phone/code
-const textType = ref<'primary' | 'default'>('primary')
-const text = ref('获取验证码')
-const isCountingDown = ref(false)
+const mode = ref<'login' | 'register'>('login')
+const loginType = ref<'account' | 'phone'>('account')
 const statusBarHeight = ref(0) // 获取状态栏高度
 const protocolShow = ref(false) // 协议弹窗显示状态
-const loginLoading = ref(false) // 登录loading状态
+const loading = ref(false) // 按钮loading状态
 
 const model = reactive<{
   username: string
   password: string
-  code: string
+  confirmPassword: string
   read: boolean
 }>({
   username: '',
   password: '',
-  code: '',
+  confirmPassword: '',
   read: false
 })
 
@@ -38,16 +36,19 @@ onMounted(() => {
   })
 })
 
-const { send: login } = useRequest(
-  (username: string, password: string) => Apis.everkeep.login({
-  data: {
-    username,
-    password,
-  },
-}), {immediate: false})
-
 function handleProtocolClick() {
   protocolShow.value = true
+}
+
+function handleCopyUrl() {
+  uni.setClipboardData({
+    data: 'https://personal-navhub.site',
+    success: () => {
+      showSuccess({
+        msg: '网址已复制',
+      })
+    },
+  })
 }
 
 function handleClose() {
@@ -57,19 +58,29 @@ function handleClose() {
 async function handleSubmit() {
   if (!model.username) {
     showError({
-      msg: loginType.value === 'account' ? '请输入用户名' : '请输入手机号'
+      msg: '请输入用户名'
     })
     return
   }
-  if (loginType.value === 'account' && !model.password) {
+  if (!model.password) {
     showError({
       msg: '请输入密码'
     })
     return
   }
-  if (loginType.value === 'phone' && !model.code) {
+  // 注册时的密码复杂度校验
+  if (mode.value === 'register') {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    if (!passwordRegex.test(model.password)) {
+      showError({
+        msg: '密码复杂度不足：需至少8位，包含大小写字母、数字及特殊字符'
+      })
+      return
+    }
+  }
+  if (mode.value === 'register' && model.password !== model.confirmPassword) {
     showError({
-      msg: '请输入验证码'
+      msg: '两次输入的密码不一致'
     })
     return
   }
@@ -79,66 +90,40 @@ async function handleSubmit() {
     })
     return
   }
-  if (loginType.value === 'phone') {
-    showError({
-      msg: '手机号登录暂未开放'
-    })
-    return
-  }
-  if (loginType.value === 'account') {
-    loginLoading.value = true
-    const res = await login(model.username, model.password);
-    loginLoading.value = false
-    if (res.code === 200) {
-      showSuccess({
-        msg: '登录成功'
+
+  loading.value = true
+  try {
+    if (mode.value === 'login') {
+      const res = await Apis.everkeep.login({
+        data: { username: model.username, password: model.password }
       })
-      user.login({
-        username: model.username,
-      }, res.data || '')
-      router.pushTab({
-        name: 'home'
-      })
+      if (res.code === 200) {
+        showSuccess({ msg: '登录成功' })
+        user.login({ username: model.username }, res.data || '')
+        router.pushTab({ name: 'home' })
+      } else {
+        showError({ msg: res.message || '登录失败' })
+      }
     } else {
-      showError({
-        msg: res.message || '登录失败'
+      const res = await Apis.everkeep.register({
+        data: { username: model.username, password: model.password }
       })
+      if (res.code === 200) {
+        showSuccess({ msg: '注册成功，请登录' })
+        mode.value = 'login'
+      } else {
+        showError({ msg: res.message || '注册失败' })
+      }
     }
-  } else {
-    showError({
-      msg: '暂未开放'
-    })
+  } catch (err: any) {
+    showError({ msg: err.message || '网络错误' })
+  } finally {
+    loading.value = false
   }
 }
 
-function toggleLoginType() {
-  loginType.value = loginType.value === 'account' ? 'phone' : 'account'
-}
-function getCode() {
-  if (!model.username) {
-    showError({
-      msg: '请输入手机号'
-    })
-    return
-  }
-  textType.value = 'default'
-  showSuccess({
-    msg: '验证码已发送'
-  })
-  isCountingDown.value = true
-  let countDown = 60;
-    text.value = `${countDown}秒后重新获取`;
-    const timer = setInterval(() => {
-      if (countDown > 1) {
-        countDown--;
-        text.value = `${countDown}秒后重新获取`;
-      } else {
-        clearInterval(timer);
-        textType.value = 'primary'
-        text.value = '获取验证码';
-        isCountingDown.value = false
-      }
-    }, 1000);
+function toggleMode() {
+  mode.value = mode.value === 'login' ? 'register' : 'login'
 }
 </script>
 
@@ -150,41 +135,58 @@ function getCode() {
 
     <!-- 顶部标题区 -->
     <view class="px-8 pb-10 pt-24" :style="{ paddingTop: `${statusBarHeight + 40}px` }">
-      <view class="text-3xl text-gray-900 font-bold tracking-tight">欢迎回来</view>
-      <view class="mt-2 text-sm text-gray-400">请登录以管理您的云端资源</view>
+      <view class="text-3xl text-gray-900 font-bold tracking-tight">
+        {{ mode === 'login' ? '欢迎回来' : '开启新旅程' }}
+      </view>
+      <view class="mt-2 text-sm text-gray-400">
+        {{ mode === 'login' ? '请登录以管理您的云端资源' : '创建一个账号来存储您的珍贵记忆' }}
+      </view>
     </view>
 
     <!-- 登录卡片 -->
     <view class="flex-1 px-6">
       <view class="overflow-hidden rounded-3xl bg-white/70 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
-        <!-- 登录类型切换 -->
-        <view class="relative mb-8 h-12 flex items-center rounded-xl bg-gray-100/80 p-1" @click="toggleLoginType">
-          <view class="z-10 flex flex-1 items-center justify-center text-sm font-medium transition-colors duration-300" :class="{ 'text-white': loginType === 'account', 'text-gray-500': loginType !== 'account' }">账号登录</view>
-          <view class="z-10 flex flex-1 items-center justify-center text-sm font-medium transition-colors duration-300" :class="{ 'text-white': loginType === 'phone', 'text-gray-500': loginType !== 'phone' }">验证码登录</view>
+        <!-- 登录类型切换 (仅在登录模式显示) -->
+        <view v-if="mode === 'login'" class="relative mb-8 h-12 flex items-center rounded-xl bg-gray-100/80 p-1">
+          <view
+            class="z-10 flex flex-1 items-center justify-center text-sm font-medium transition-colors duration-300"
+            :class="{ 'text-white': loginType === 'account', 'text-gray-500': loginType !== 'account' }"
+            @click="loginType = 'account'"
+          >
+            账号登录
+          </view>
+          <view
+            class="z-10 flex flex-1 items-center justify-center text-sm font-medium opacity-50 transition-colors duration-300"
+            :class="{ 'text-white': loginType === 'phone', 'text-gray-500': loginType !== 'phone' }"
+            @click="showError({ msg: '手机号登录暂未开放' })"
+          >
+            验证码登录
+          </view>
           <view class="absolute bottom-1 left-1 top-1 w-[calc(50%-4px)] transform-gpu rounded-lg bg-blue-500 shadow-sm transition-transform duration-300" :class="{ 'translate-x-full': loginType === 'phone' }"/>
         </view>
+        <view v-else class="mb-8 text-center text-xl text-gray-800 font-bold">用户注册</view>
 
         <!-- 表单区域 -->
         <view class="space-y-6">
           <view>
-            <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">{{ loginType === 'account' ? '用户名 / 邮箱' : '手机号码' }}</view>
+            <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">用户名 / 邮箱</view>
             <wd-input
               v-model="model.username"
-              :placeholder="loginType === 'account' ? '请输入用户名' : '请输入手机号'"
+              placeholder="请输入用户名"
               no-border
               custom-class="!bg-gray-50/80 !rounded-xl !py-3 !px-4 border border-gray-100"
             >
               <template #prefix>
-                <wd-icon :name="loginType === 'account' ? 'user' : 'mobile'" size="18px" color="#94a3b8" class="mr-2" />
+                <wd-icon name="user" size="18px" color="#94a3b8" class="mr-2" />
               </template>
             </wd-input>
           </view>
 
-          <view v-if="loginType === 'account'">
+          <view>
             <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">登录密码</view>
             <wd-input
               v-model="model.password"
-              placeholder="请输入登录密码"
+              placeholder="请输入密码"
               no-border
               show-password
               custom-class="!bg-gray-50/80 !rounded-xl !py-3 !px-4 border border-gray-100"
@@ -195,36 +197,40 @@ function getCode() {
             </wd-input>
           </view>
 
-          <view v-if="loginType === 'phone'">
-            <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">短信验证码</view>
+          <view v-if="mode === 'register'">
+            <view class="mb-2 ml-1 text-xs text-gray-400 font-medium tracking-wide uppercase">确认密码</view>
             <wd-input
-              v-model="model.code"
-              placeholder="请输入验证码"
+              v-model="model.confirmPassword"
+              placeholder="请再次输入密码"
               no-border
+              show-password
               custom-class="!bg-gray-50/80 !rounded-xl !py-3 !px-4 border border-gray-100"
             >
               <template #prefix>
-                <wd-icon name="chat-error" size="18px" color="#94a3b8" class="mr-2" />
-              </template>
-              <template #suffix>
-                <view class="text-sm font-medium transition-opacity active:opacity-60" :class="isCountingDown ? 'text-gray-300' : 'text-blue-500'" @tap="!isCountingDown && getCode()">
-                  {{ text }}
-                </view>
+                <wd-icon name="lock-on" size="18px" color="#94a3b8" class="mr-2" />
               </template>
             </wd-input>
           </view>
 
-          <!-- 登录按钮 -->
+          <!-- 登录/注册按钮 -->
           <view class="pt-4">
             <wd-button
               block
               size="large"
               custom-class="!rounded-xl !bg-blue-500 !h-12 !text-lg !font-bold shadow-lg shadow-blue-500/20 active:opacity-90"
               @click="handleSubmit"
-              :loading="loginLoading"
+              :loading="loading"
             >
-              立即登录
+              {{ mode === 'login' ? '立即登录' : '立即注册' }}
             </wd-button>
+          </view>
+
+          <!-- 模式切换 -->
+          <view class="flex justify-center text-sm">
+            <text class="text-gray-400">{{ mode === 'login' ? '还没有账号？' : '已有账号？' }}</text>
+            <text class="ml-1 text-blue-500 font-medium" @tap="toggleMode">
+              {{ mode === 'login' ? '立即注册' : '返回登录' }}
+            </text>
           </view>
 
           <!-- 协议勾选 -->
@@ -250,8 +256,18 @@ function getCode() {
     >
       <view class="p-8 pb-12">
         <view class="mb-4 text-center text-lg text-gray-900 font-bold">用户协议</view>
-        <view class="text-sm text-gray-500 leading-relaxed">
-          本应用仅作为功能演示与 UI 交互展示使用，不涉及任何违法违规内容。应用内所有展示数据均为模拟 Mock 数据，不代表真实业务场景。请放心体验相关功能。
+        <view class="text-sm text-gray-500 leading-relaxed space-y-3">
+          <view class="text-gray-900 font-medium">
+            《光影密匣》 是一款由 AI 辅助开发的云端图片管理工具，支持 PC 网页端
+            <text class="mx-1 text-blue-500 underline active:opacity-60" @tap="handleCopyUrl">（https://personal-navhub.site）</text>
+            与小程序端同步。本应用致力于提供安全、便捷的图片存储与智能管理体验。
+          </view>
+          <view class="text-xs space-y-1">
+            <view>1. 本小程序仅作为技术工具，不对用户上传内容的合法性负责。</view>
+            <view>2. 用户严禁上传违反法律法规、危害国家安全 or 侵犯他人版权的内容。</view>
+            <view>3. 应用处于持续完善阶段，建议用户对重要数据自行备份，开发者不对因不可抗力导致的数据丢失承担赔偿责任。</view>
+            <view>4. 一经发现违规内容，开发者有权在不通知的情况下采取删除、封禁账号等措施。</view>
+          </view>
         </view>
         <view class="mt-8">
           <wd-button block @tap="handleClose">我知道了</wd-button>

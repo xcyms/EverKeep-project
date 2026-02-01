@@ -28,7 +28,7 @@ export const menuItems: MenuItem[] = [
     ],
   },
   {
-    label: '配置',
+    label: '管理',
     type: 'group',
     roles: ['ADMIN'],
     children: [

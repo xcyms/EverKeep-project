@@ -1065,6 +1065,17 @@ declare global {
       >(
         config: Config
       ): Alova2Method<ApiResult<string>, 'everkeep.login', Config>;
+      // 注册
+      register<
+        Config extends Alova2MethodConfig<ApiResult<string>> & {
+          data: {
+            username?: string;
+            password?: string;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<string>, 'everkeep.register', Config>;
       // 获取用户信息
       getUserInfo<Config extends Alova2MethodConfig<null>>(
         config: Config
