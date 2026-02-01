@@ -211,9 +211,15 @@ function handlePublicSelect({ item, index }: { item: { name: string; value?: any
         },
       })
       toast.success('设置成功')
+      // 本地更新图片状态
+      images.value = images.value.map(img => {
+        if (selectedIds.value.has(img.id)) {
+          return { ...img, status: { ...img.status, code: index } }
+        }
+        return img
+      })
       selectedIds.value.clear()
-      reset()
-      refresh()
+      isSelectionMode.value = false
     } catch (error) {
       console.error('Failed to update image status:', error)
       toast.error('设置失败')
@@ -274,9 +280,10 @@ function handleMoveSelect({ item }: { item: { name: string; value?: any } }) {
 
       if (res.code === 200) {
         toast.success('移动成功')
+        // 从本地列表移除已移动的图片
+        images.value = images.value.filter(img => !selectedIds.value.has(img.id))
         selectedIds.value.clear()
-        reset()
-        refresh()
+        isSelectionMode.value = false
       } else {
         toast.error(res.message || '移动失败')
       }
@@ -300,13 +307,14 @@ function handleBatchDelete() {
         data: Array.from(selectedIds.value),
       })
       toast.success('删除成功')
+      // 从本地列表移除已删除的图片
+      images.value = images.value.filter(img => !selectedIds.value.has(img.id))
     } catch (error) {
       console.error('Failed to delete images:', error)
       toast.error('删除失败')
     }
     selectedIds.value.clear()
-    reset()
-    refresh()
+    isSelectionMode.value = false
   }).catch(() => {})
 }
 

@@ -26,8 +26,6 @@ const queryParams = reactive({
 
 // --- 计算属性：时间轴分组 ---
 const groupedImages = computed(() => {
-  if (queryParams.viewMode !== 'timeline') return []
-  
   const groups: { date: string | undefined, images: API.Image[] }[] = []
   displayedImages.value.forEach(img => {
     const date = img.createTime ? img.createTime.split(' ')[0] : '未知日期'
@@ -39,6 +37,17 @@ const groupedImages = computed(() => {
     }
   })
   return groups
+})
+
+// --- 计算属性：网格行分组 ---
+const gridRows = computed(() => {
+  if (queryParams.viewMode !== 'grid') return []
+  const itemsPerRow = 6 // 对应 xl:grid-cols-6
+  const rows: API.Image[][] = []
+  for (let i = 0; i < displayedImages.value.length; i += itemsPerRow) {
+    rows.push(displayedImages.value.slice(i, i + itemsPerRow))
+  }
+  return rows
 })
 
 // --- 核心逻辑：获取数据 ---
@@ -77,7 +86,6 @@ const loadData = async (isRefresh = false) => {
 
     hasMore.value = displayedImages.value.length < (res.total || 0)
   } catch (error) {
-    console.error('加载图片失败', error)
   } finally {
     loading.value = false
     loadingMore.value = false
@@ -106,6 +114,22 @@ const toggleSelect = (id: number) => {
     selectedIds.value.splice(index, 1)
   } else {
     selectedIds.value.push(id)
+  }
+}
+
+const toggleRowSelect = (images: API.Image[]) => {
+  const allSelected = images.every(img => selectedIds.value.includes(img.id))
+  if (allSelected) {
+    // 全选状态下，取消勾选本行所有
+    const idsToRemove = images.map(img => img.id)
+    selectedIds.value = selectedIds.value.filter(id => !idsToRemove.includes(id))
+  } else {
+    // 非全选状态下，勾选本行所有未勾选的
+    images.forEach(img => {
+      if (!selectedIds.value.includes(img.id)) {
+        selectedIds.value.push(img.id)
+      }
+    })
   }
 }
 
@@ -434,84 +458,95 @@ const handleSetCover = async (img: API.Image) => {
     <!-- 图片列表区 -->
     <a-spin :spinning="loading" tip="加载中...">
       <div v-if="displayedImages.length > 0">
-        <!-- 1. 网格模式 (保持原样) -->
-        <div v-if="queryParams.viewMode === 'grid'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 min-h-[200px]">
-          <a-dropdown 
-            v-for="img in displayedImages" 
-            :key="img.id"
-            :trigger="['contextmenu']"
-          >
-            <div 
-              class="group relative bg-white rounded-lg overflow-hidden border transition-all hover:shadow-md cursor-pointer"
-              :class="selectedIds.includes(img.id) ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-100'"
-            >
-              <!-- 复选框 -->
-              <div 
-                class="absolute top-2 left-2 z-10 w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors"
-                :class="selectedIds.includes(img.id) ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white/80 border-gray-300'"
-                @click.stop="toggleSelect(img.id)"
-              >
-                <div v-if="selectedIds.includes(img.id)" class="i-fa6-solid:check text-[10px]" />
-              </div>
-
-              <!-- 图片预览 -->
-              <div class="aspect-square overflow-hidden bg-gray-50">
-                <a-image
-                  :src="getImageUrl(img.thumbnailUrl || img.url)"
-                  :fallback="DEFAULT_IMAGE"
-                  class="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  :preview="{
-                    src: getImageUrl(img.url)
-                  }"
-                />
-              </div>
-
-              <!-- 图片信息 -->
-              <div class="p-2 space-y-1">
-                <div class="text-sm font-medium truncate text-gray-800" :title="img.name">
-                  {{ img.name }}
-                </div>
-                <div class="flex items-center justify-between text-[10px] text-gray-400">
-                  <span>{{ formatSize(img.size) }}</span>
-                  <a-tag :color="img.status.code === 1 ? 'green' : 'orange'" size="small" class="m-0 scale-90 origin-right">
-                    {{ img.status.code === 1 ? '公开' : '私有' }}
-                  </a-tag>
-                </div>
-                <div class="text-[10px] text-gray-400 truncate">
-                  {{ img.createTime }}
-                </div>
-              </div>
-
-              <!-- 悬浮操作层 -->
-              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 pointer-events-none transition-colors" />
+        <!-- 1. 网格模式 -->
+        <div v-if="queryParams.viewMode === 'grid'" class="space-y-4 py-4">
+          <div v-for="(row, index) in gridRows" :key="index" class="flex gap-4 items-start">
+            <!-- 行勾选框 -->
+            <div>
+              <a-checkbox 
+                :checked="row.every(img => selectedIds.includes(img.id))"
+                :indeterminate="row.some(img => selectedIds.includes(img.id)) && !row.every(img => selectedIds.includes(img.id))"
+                @change="toggleRowSelect(row)"
+              />
             </div>
+            
+            <!-- 行内图片网格 -->
+            <div class="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              <a-dropdown 
+                v-for="img in row" 
+                :key="img.id"
+                :trigger="['contextmenu']"
+              >
+                <div 
+                  class="group relative bg-white rounded-lg overflow-hidden border transition-all hover:shadow-md cursor-pointer"
+                  :class="selectedIds.includes(img.id) ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-100'"
+                >
+                  <!-- 复选框 -->
+                  <div 
+                    class="absolute top-2 left-2 z-10 w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors"
+                    :class="selectedIds.includes(img.id) ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white/80 border-gray-300'"
+                    @click.stop="toggleSelect(img.id)"
+                  >
+                    <div v-if="selectedIds.includes(img.id)" class="i-fa6-solid:check text-[10px]" />
+                  </div>
 
-            <template #overlay>
-              <a-menu @click="({ key }) => handleMenuClick(key as string, img)">
-                <a-menu-item key="details">
-                  <template #icon><div class="i-fa6-solid:circle-info" /></template>
-                  图片详情
-                </a-menu-item>
-                <a-menu-item key="copyUrl">
-                  <template #icon><div class="i-fa6-solid:copy" /></template>
-                  复制图片链接
-                </a-menu-item>
-                <a-menu-item key="move">
-                  <template #icon><div class="i-fa6-solid:folder-open" /></template>
-                  移动到相册
-                </a-menu-item>
-                <a-menu-item key="setCover" :disabled="!img.albumId">
-                  <template #icon><div class="i-fa6-solid:image" /></template>
-                  设置为相册封面
-                </a-menu-item>
-                <a-menu-divider />
-                <a-menu-item key="delete" danger>
-                  <template #icon><div class="i-fa6-solid:trash-can" /></template>
-                  删除图片
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
+                  <!-- 图片预览 -->
+                  <div class="aspect-square overflow-hidden bg-gray-50">
+                    <a-image
+                      :src="getImageUrl(img.thumbnailUrl || img.url)"
+                      :fallback="DEFAULT_IMAGE"
+                      class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      :preview="{
+                        src: getImageUrl(img.url)
+                      }"
+                    />
+                  </div>
+
+                  <!-- 图片信息 -->
+                  <div class="p-2">
+                    <div class="text-sm font-medium truncate text-gray-800" :title="img.name">
+                      {{ img.name }}
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-gray-400 mt-1">
+                      <span>{{ formatSize(img.size) }}</span>
+                      <a-tag :color="img.status.code === 1 ? 'green' : 'orange'" size="small" class="m-0 scale-90 origin-right">
+                        {{ img.status.code === 1 ? '公开' : '私有' }}
+                      </a-tag>
+                    </div>
+                  </div>
+
+                  <!-- 悬浮操作层 -->
+                  <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 pointer-events-none transition-colors" />
+                </div>
+
+                <template #overlay>
+                  <a-menu @click="({ key }) => handleMenuClick(key as string, img)">
+                    <a-menu-item key="details">
+                      <template #icon><div class="i-fa6-solid:circle-info" /></template>
+                      图片详情
+                    </a-menu-item>
+                    <a-menu-item key="copyUrl">
+                      <template #icon><div class="i-fa6-solid:copy" /></template>
+                      复制图片链接
+                    </a-menu-item>
+                    <a-menu-item key="move">
+                      <template #icon><div class="i-fa6-solid:folder-open" /></template>
+                      移动到相册
+                    </a-menu-item>
+                    <a-menu-item key="setCover" :disabled="!img.albumId">
+                      <template #icon><div class="i-fa6-solid:image" /></template>
+                      设置为相册封面
+                    </a-menu-item>
+                    <a-menu-divider />
+                    <a-menu-item key="delete" danger>
+                      <template #icon><div class="i-fa6-solid:trash-can" /></template>
+                      删除图片
+                    </a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </div>
+          </div>
         </div>
 
         <!-- 2. 时间轴模式 (新增加) -->
@@ -522,6 +557,11 @@ const handleSetCover = async (img: API.Image) => {
             
             <div class="mb-4 -mt-1 flex items-center justify-between">
               <div class="flex items-center gap-3">
+                <a-checkbox 
+                  :checked="group.images.every(img => selectedIds.includes(img.id))"
+                  :indeterminate="group.images.some(img => selectedIds.includes(img.id)) && !group.images.every(img => selectedIds.includes(img.id))"
+                  @change="toggleRowSelect(group.images)"
+                />
                 <span class="text-lg font-bold text-gray-800">{{ group.date }}</span>
                 <span class="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-500">{{ group.images.length }} 张图片</span>
               </div>
