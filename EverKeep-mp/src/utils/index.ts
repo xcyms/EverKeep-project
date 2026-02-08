@@ -21,10 +21,34 @@ export function generateUUID() {
 }
 
 export function getImageUrl(url: string | undefined) {
-  if (!url) return ''
+  if (!url)
+    return ''
   // 如果是完整的 http 地址则直接返回
-  if (url.startsWith('http')) return url
+  if (url.startsWith('http'))
+    return url
   // 否则拼接公共图片访问前缀
   const baseUrl = import.meta.env.VITE_IMAGE_BASE_URL || ''
   return `${baseUrl}${url}`
+}
+
+/**
+ * 格式化视频时长
+ * @param seconds 秒数
+ * @returns 格式化后的时长字符串 (HH:mm:ss 或 mm:ss)
+ */
+export function formatDuration(seconds: number | undefined): string {
+  if (seconds === undefined || seconds === null || Number.isNaN(seconds))
+    return ''
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+
+  const parts = []
+  if (h > 0) {
+    parts.push(h.toString().padStart(2, '0'))
+  }
+  parts.push(m.toString().padStart(2, '0'))
+  parts.push(s.toString().padStart(2, '0'))
+
+  return parts.join(':')
 }

@@ -62,3 +62,20 @@ export interface MessageItem {
   iconBg: string
   iconColor: string
 }
+
+export interface VideoItem {
+  id: number
+  userId: number
+  albumId: number
+  url: string
+  coverUrl?: string
+  name: string
+  size: number
+  type: string
+  duration?: number
+  status: {
+    code: number
+    desc: string
+  }
+  createTime: string
+}

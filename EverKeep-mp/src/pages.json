@@ -129,6 +129,16 @@
         "navigationBarTitleText": "相册图片",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/video/preview",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "视频预览",
+        "navigationBarBackgroundColor": "#000000",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#000000"
+      }
     }
   ],
   "subPackages": [

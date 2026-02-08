@@ -16,3 +16,17 @@ export const formatSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
+
+export const formatDuration = (seconds: number | undefined) => {
+  if (!seconds) return '00:00'
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+  
+  const parts = []
+  if (h > 0) parts.push(h.toString().padStart(2, '0'))
+  parts.push(m.toString().padStart(2, '0'))
+  parts.push(s.toString().padStart(2, '0'))
+  
+  return parts.join(':')
+}

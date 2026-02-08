@@ -21,13 +21,14 @@ const currentAlbumName = computed(() => {
 
 // 配置相关
 const configs = ref<API.SysConfig[]>([])
-const maxFileSize = computed(() => {
-  const config = configs.value.find(c => c.configKey === 'max_file_size')
-  return config ? parseInt(config.configValue) : 10 * 1024 * 1024 // 默认10MB
-})
 const allowedExtensions = computed(() => {
   const config = configs.value.find(c => c.configKey === 'allowed_extensions')
   return config ? config.configValue.split(',').map(s => s.trim().toLowerCase()) : ['jpg', 'jpeg', 'png', 'gif', 'webp']
+})
+
+const maxFileSize = computed(() => {
+  const config = configs.value.find(c => c.configKey === 'max_file_size')
+  return config ? parseInt(config.configValue) : 10 * 1024 * 1024 // 默认10MB
 })
 
 // 加载配置和相册
@@ -70,7 +71,7 @@ const handleFileChange = (e: Event) => {
         progress: 0,
         status: 'pending' as const
       }
-      if (f.type.startsWith('image/')) {
+      if (f.type.startsWith('image/') || f.type.startsWith('video/')) {
         item.preview = URL.createObjectURL(f)
       }
       return item
@@ -122,7 +123,9 @@ const startUpload = async () => {
     try {
       const formData = new FormData()
       formData.append('file', item.file)
-      formData.append('category', 'image')
+      const isVideo = item.file.type.startsWith('video/')
+      formData.append('category', isVideo ? 'video' : 'image')
+      
       if (selectedAlbumId.value) {
         formData.append('albumId', selectedAlbumId.value.toString())
       }
@@ -209,7 +212,7 @@ const handleDrop = (e: DragEvent) => {
         progress: 0,
         status: 'pending' as const
       }
-      if (f.type.startsWith('image/')) {
+      if (f.type.startsWith('image/') || f.type.startsWith('video/')) {
         item.preview = URL.createObjectURL(f)
       }
       return item
@@ -272,7 +275,7 @@ const handleDrop = (e: DragEvent) => {
         type="file" 
         multiple 
         class="hidden" 
-        accept="image/*"
+        :accept="allowedExtensions.map(ext => '.' + ext).join(',')"
         @change="handleFileChange"
       />
       
@@ -295,7 +298,7 @@ const handleDrop = (e: DragEvent) => {
             {{ hasPendingFiles ? '准备就绪，点击开始上传' : '点击或拖拽图片至此处' }}
           </h3>
           <p class="text-gray-400 text-sm">
-            {{ hasPendingFiles ? `已选择 ${fileList.filter(f => f.status === 'pending').length} 张新图片` : '支持多选批量上传，极速云端存储' }}
+            {{ hasPendingFiles ? `已选择 ${fileList.filter(f => f.status === 'pending').length} 个新文件` : '支持多选批量上传，极速云端存储' }}
           </p>
         </div>
 
@@ -324,8 +327,13 @@ const handleDrop = (e: DragEvent) => {
         <div v-for="item in fileList" :key="item.id" class="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
           <!-- 缩略图预览 (本地) -->
           <div class="w-12 h-12 rounded bg-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
-            <img v-if="item.preview" :src="item.preview" class="w-full h-full object-cover" />
-            <div v-else class="i-ant-design:picture-outlined text-gray-300 text-xl" />
+            <template v-if="item.preview">
+              <video v-if="item.file.type.startsWith('video/')" :src="item.preview" class="w-full h-full object-cover" muted />
+              <img v-else :src="item.preview" class="w-full h-full object-cover" />
+            </template>
+            <div v-else class="text-xl text-gray-300">
+              <div :class="item.file.type.startsWith('video/') ? 'i-ant-design:video-camera-outlined' : 'i-ant-design:picture-outlined'" />
+            </div>
           </div>
 
           <!-- 文件信息与进度 -->

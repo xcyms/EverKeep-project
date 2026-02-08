@@ -58,4 +58,13 @@ export default {
   'everkeep.updateStatus': ['POST', '/image/updateStatus'],
   'everkeep.batchMove': ['POST', '/image/batchMove'],
   'everkeep.delete': ['DELETE', '/image/delete'],
+  // 视频相关接口
+  'everkeep.videoPage': ['POST', '/video/page'],
+  'everkeep.publicVideoPage': ['POST', '/video/public/page'],
+  'everkeep.videoUpdateStatus': ['POST', '/video/updateStatus'],
+  'everkeep.videoBatchMove': ['POST', '/video/batchMove'],
+  'everkeep.videoDelete': ['DELETE', '/video/delete'],
+  'everkeep.videoRecyclePage': ['GET', '/video/recycle/page'],
+  'everkeep.videoRestore': ['POST', '/video/restore'],
+  'everkeep.videoDeletePermanently': ['DELETE', '/video/deletePermanently'],
 };

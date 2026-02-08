@@ -6,8 +6,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.xcyms.common.ApiResult;
 import org.xcyms.common.annotation.ApiDoc;
 import org.xcyms.common.annotation.UploadLimit;
-import org.xcyms.entity.dto.ImageDTO;
 import org.xcyms.service.IImageService;
+import org.xcyms.service.IVideoService;
 
 /**
  * <p>
@@ -23,14 +23,18 @@ import org.xcyms.service.IImageService;
 public class FileController {
 
     private final IImageService imageService;
+    private final IVideoService videoService;
 
     @ApiDoc("通用文件上传接口")
     @PostMapping("/upload")
     @UploadLimit()
-    public ApiResult<ImageDTO> upload(
+    public ApiResult<?> upload(
             @RequestPart("file") MultipartFile file,
             @RequestParam(value = "albumId", required = false) Long albumId,
             @RequestParam(value = "category", required = false, defaultValue = "image") String category) {
+        if ("video".equals(category)) {
+            return videoService.uploadVideo(file, albumId, category);
+        }
         return imageService.uploadImage(file, albumId, category);
     }
 }

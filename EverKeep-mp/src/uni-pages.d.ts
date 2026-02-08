@@ -13,6 +13,7 @@ type _LocationUrl =
   "/pages/message/index" |
   "/pages/search/images" |
   "/pages/search/index" |
+  "/pages/video/preview" |
   "/subPages/ci/index" |
   "/subPages/create-uni/index" |
   "/subPages/feedback/index" |

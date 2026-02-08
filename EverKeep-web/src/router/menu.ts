@@ -21,8 +21,9 @@ export const menuItems: MenuItem[] = [
     label: '我的',
     type: 'group',
     children: [
-      { key: '/upload', label: '上传图片', icon: 'i-fa6-solid:cloud-arrow-up' },
+      { key: '/upload', label: '上传', icon: 'i-fa6-solid:cloud-arrow-up' },
       { key: '/images', label: '我的图片', icon: 'i-fa6-solid:image' },
+      { key: '/videos', label: '我的视频', icon: 'i-fa6-solid:video' },
       { key: '/albums', label: '我的相册', icon: 'i-fa6-solid:folder' },
       { key: '/recycle', label: '回收站', icon: 'i-fa6-solid:trash-can' },
     ],
@@ -34,6 +35,7 @@ export const menuItems: MenuItem[] = [
     children: [
       { key: '/users', label: '用户管理', icon: 'i-fa6-solid:user' },
       { key: '/admin/images', label: '照片管理', icon: 'i-fa6-solid:image' },
+      { key: '/admin/videos', label: '视频管理', icon: 'i-fa6-solid:video' },
       { key: '/messages', label: '消息管理', icon: 'i-fa6-solid:message' },
       { key: '/settings', label: '系统设置', icon: 'i-fa6-solid:wrench' },
       { key: '/endpoints', label: '接口列表', icon: 'i-fa6-solid:list-check' },

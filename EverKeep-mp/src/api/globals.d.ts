@@ -1222,6 +1222,29 @@ declare global {
       >(
         config: Config
       ): Alova2Method<ApiResult<string>, 'everkeep.delete', Config>;
+      // 视频列表
+      videoPage<
+        Config extends Alova2MethodConfig<{
+          current?: number;
+          size?: number;
+          column?: string;
+          asc?: boolean;
+        }, {
+          name?: string;
+        }> & {
+          params: {
+            current?: number;
+            size?: number;
+            column?: string;
+            asc?: boolean;
+          };
+          data: {
+            name?: string;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<Page<VideoItem>>, 'everkeep.videoPage', Config>;
     }
   }
 

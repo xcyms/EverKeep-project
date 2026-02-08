@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import type { SortOption } from '@/types/common'
-import type { ImageItem } from '@/types/page'
+import type { ImageItem, VideoItem } from '@/types/page'
 import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { computed, ref, watch } from 'vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import SortSheet from '@/components/common/SortSheet.vue'
 import ImageWaterfall from '@/components/ImageWaterfall.vue'
 import { useListPagination } from '@/composables/usePagination'
-import { getImageUrl } from '@/utils'
+import { formatDuration, getImageUrl } from '@/utils'
 import { PAGINATION } from '@/utils/constants'
 
 definePage({
@@ -38,26 +38,38 @@ const orderOptions: SortOption[] = [
 const category = ref([
   { name: '画廊', id: 0 },
   { name: '时光', id: 1 },
-  { name: '推荐', id: 2 },
+  { name: '视频', id: 2 },
+  { name: '推荐', id: 3 },
 ])
 
-// 使用 useListPagination 管理图片列表
+// 使用 useListPagination 管理列表数据
 const {
-  list: allImages,
+  list: listData,
   loading,
   hasMore,
   loadMore,
   refresh,
   reset,
-} = useListPagination<ImageItem>({
+} = useListPagination<ImageItem | VideoItem>({
   fetchFn: async (currentPage) => {
     // 模拟网络延迟
     await new Promise(resolve => setTimeout(resolve, 800))
 
     // 未登录时返回模拟数据
     if (!user.isLoggedIn) {
+      // 视频分类不需要模拟数据
+      if (categoryId.value === 2) {
+        return {
+          data: [],
+          current_page: currentPage,
+          last_page: 0,
+          total: 0,
+          per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+        }
+      }
+
       const mockImages: ImageItem[] = []
-      // 模拟所有分类都有 3 页数据
+      // 模拟其他分类都有 3 页数据
       for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
         const width = 200 + Math.floor(Math.random() * 100)
         const height = 200 + Math.floor(Math.random() * 200)
@@ -74,7 +86,7 @@ const {
           type: 'image/jpeg',
           url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
           userId: user.user?.id || 'mock-user',
-        })
+        } as ImageItem)
       }
 
       return {
@@ -87,7 +99,7 @@ const {
     }
 
     // 已登录：调用真实接口实现功能
-    const sortMap: Record<string, { column: string; asc: boolean }> = {
+    const sortMap: Record<string, { column: string, asc: boolean }> = {
       newest: { column: 'create_time', asc: false },
       earliest: { column: 'create_time', asc: true },
       utmost: { column: 'size', asc: false },
@@ -97,10 +109,11 @@ const {
 
     try {
       // 根据不同分类配置接口和参数
-      const tabConfigs: Record<number, { api: any; params?: any }> = {
+      const tabConfigs: Record<number, { api: any, params?: any }> = {
         0: { api: Apis.everkeep.publicPage }, // 画廊
-        1: { api: Apis.everkeep.imagePage },  // 时光
-        2: { api: Apis.everkeep.publicPage, params: { column: 'size', asc: false } }, // 推荐
+        1: { api: Apis.everkeep.imagePage }, // 时光
+        2: { api: Apis.everkeep.videoPage }, // 视频
+        3: { api: Apis.everkeep.publicPage, params: { column: 'size', asc: false } }, // 推荐
       }
 
       const config = tabConfigs[categoryId.value] || tabConfigs[0]
@@ -126,7 +139,8 @@ const {
         }
       }
       throw new Error(res.message || '获取数据失败')
-    } catch (e) {
+    }
+    catch (e) {
       console.error('Failed to fetch images:', e)
       return {
         data: [],
@@ -141,24 +155,37 @@ const {
   immediate: true,
 })
 
-// 计算属性：将 allImages 按日期分组
+// 视频列表数据
+const allVideos = computed(() => listData.value as VideoItem[])
+
+// 推荐/画廊列表数据
+const allGalleryItems = computed(() => listData.value as ImageItem[])
+
+// 计算属性：将 listData 按日期分组
 const timeGroups = computed(() => {
-  if (categoryId.value !== 1) return []
+  if (categoryId.value !== 1) {
+    return []
+  }
 
   const groups: Record<string, ImageItem[]> = {}
   const now = new Date()
   const todayMonthDay = `${now.getMonth() + 1}-${now.getDate()}`
 
-  allImages.value.forEach((img) => {
+  listData.value.forEach((item) => {
+    const img = item as ImageItem
     // 统一处理日期格式，确保只保留 YYYY-MM-DD
     const rawDate = img.createTime || (img as any).create_time || ''
-    if (!rawDate) return
+    if (!rawDate) {
+      return
+    }
 
     const date = rawDate.includes('T')
       ? rawDate.split('T')[0]
       : rawDate.split(' ')[0]
 
-    if (!groups[date]) groups[date] = []
+    if (!groups[date]) {
+      groups[date] = []
+    }
     groups[date].push(img)
   })
 
@@ -170,8 +197,12 @@ const timeGroups = computed(() => {
       const diffDays = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime()) / (1000 * 60 * 60 * 24))
 
       let displayDate = date
-      if (diffDays === 0) displayDate = '今天'
-      else if (diffDays === 1) displayDate = '昨天'
+      if (diffDays === 0) {
+        displayDate = '今天'
+      }
+      else if (diffDays === 1) {
+        displayDate = '昨天'
+      }
 
       const monthDay = `${dateObj.getMonth() + 1}-${dateObj.getDate()}`
       return {
@@ -189,14 +220,20 @@ onPullDownRefresh(async () => {
 })
 
 function handleImageTap(url: string) {
-  const urls = allImages.value.map((img) => getImageUrl(img.url))
+  const urls = (listData.value as ImageItem[]).map(img => getImageUrl(img.url))
   uni.previewImage({
     urls,
     current: getImageUrl(url),
   })
 }
 
-function changeCategory(event: { index: number; name: string }) {
+function handleVideoTap(video: VideoItem) {
+  uni.navigateTo({
+    url: `/pages/video/preview?url=${encodeURIComponent(getImageUrl(video.url))}&name=${encodeURIComponent(video.name)}&duration=${video.duration || 0}`,
+  })
+}
+
+function changeCategory(event: { index: number, name: string }) {
   categoryId.value = event.index
 }
 
@@ -231,7 +268,7 @@ watch(
       reset()
       refresh()
     }
-  }
+  },
 )
 
 // 触底加载更多
@@ -259,9 +296,9 @@ onReachBottom(() => {
             inactive-color="#999"
             :active-color="isDark ? '#fff' : '#333'"
             line-height="2px"
-            @change="changeCategory"
             custom-class="!bg-transparent"
             custom-nav-class="!bg-transparent"
+            @change="changeCategory"
           >
             <block v-for="item in category" :key="item.id">
               <wd-tab :title="item.name" custom-class="!bg-transparent" />
@@ -272,7 +309,7 @@ onReachBottom(() => {
         <div class="h-10 flex flex-shrink-0 items-center justify-center px-3" @tap="showSortSheet = true">
           <div
             class="text-xl transition-all duration-300" :class="[
-              order !== 'newest' ? 'i-solar-tuning-bold-duotone scale-110' : 'i-solar-sort-vertical-line-duotone'
+              order !== 'newest' ? 'i-solar-tuning-bold-duotone scale-110' : 'i-solar-sort-vertical-line-duotone',
             ]"
             :style="{ color: order !== 'newest' ? (isDark ? '#5189fb' : '#2979ff') : (isDark ? '#eee' : '#666') }"
           />
@@ -281,19 +318,19 @@ onReachBottom(() => {
     </div>
 
     <!-- 顶部占位，防止内容被固定头遮挡 -->
-    <div :style="{ height: `${statusBarHeight + 44}px` }"/>
+    <div :style="{ height: `${statusBarHeight + 44}px` }" />
 
     <!-- 内容区域 - 使用原生页面滚动 -->
     <div class="px-3 pt-3">
       <!-- 初始加载骨架屏 -->
-      <template v-if="loading && allImages.length === 0">
+      <template v-if="loading && listData.length === 0">
         <!-- 画廊骨架屏 -->
         <div v-if="categoryId === 0" class="flex gap-3">
           <div v-for="col in 2" :key="col" class="flex flex-1 flex-col gap-3">
             <div
               v-for="i in 4" :key="i"
               class="skeleton-pulse w-full rounded-2xl bg-gray-100 dark:bg-gray-900"
-              :style="{ height: `${[220, 160, 260, 200][i - 1]  }px` }"
+              :style="{ height: `${[220, 160, 260, 200][i - 1]}px` }"
             />
           </div>
         </div>
@@ -311,18 +348,18 @@ onReachBottom(() => {
           </div>
         </div>
 
-        <!-- 推荐骨架屏 -->
-        <div v-else-if="categoryId === 2" class="space-y-4">
+        <!-- 推荐/视频骨架屏 -->
+        <div v-else-if="categoryId >= 2" class="space-y-4">
           <div v-for="i in 3" :key="i" class="skeleton-pulse h-64 w-full rounded-2xl bg-gray-100 dark:bg-gray-900" />
         </div>
       </template>
 
       <!-- 画廊模式：瀑布流 -->
-      <ImageWaterfall v-if="categoryId === 0" :list="allImages" :loading="loading" />
+      <ImageWaterfall v-if="categoryId === 0" :list="allGalleryItems" :loading="loading" />
 
       <!-- 时光模式：时间轴分组 -->
       <div v-else-if="categoryId === 1" class="space-y-6">
-        <template v-if="allImages.length > 0">
+        <template v-if="listData.length > 0">
           <div v-for="group in timeGroups" :key="group.date" class="relative pb-8 pl-6">
             <!-- 左侧时间轴线条 -->
             <div class="absolute bottom-0 left-[7px] top-0 w-[2px] bg-gray-100 dark:bg-gray-800" />
@@ -386,15 +423,61 @@ onReachBottom(() => {
         </div>
       </div>
 
-      <!-- 推荐模式：大图精选流 -->
+      <!-- 视频模式 -->
       <div v-else-if="categoryId === 2" class="pb-10 space-y-6">
-        <template v-if="allImages.length > 0">
+        <template v-if="allVideos.length > 0">
+          <div
+            v-for="(video, index) in allVideos"
+            :key="`${video.id}-${index}`"
+            class="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all active:scale-[0.99] dark:bg-gray-900"
+            @tap="handleVideoTap(video)"
+          >
+            <div class="relative h-72 w-full overflow-hidden bg-gray-900">
+              <image
+                :src="getImageUrl(video.coverUrl)"
+                mode="aspectFill"
+                class="h-full w-full opacity-70 transition-transform duration-500 group-active:scale-105"
+                lazy-load
+              />
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="i-solar-play-circle-bold text-6xl text-white opacity-80" />
+              </div>
+              <!-- 时长显示 -->
+              <div v-if="video.duration" class="absolute bottom-2 right-2 rounded-md bg-black/50 px-2 py-0.5 text-[10px] text-white backdrop-blur-sm">
+                {{ formatDuration(video.duration) }}
+              </div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 from-black/80 via-black/30 to-transparent bg-gradient-to-t p-5">
+              <div class="flex items-end justify-between">
+                <div class="flex-1 overflow-hidden">
+                  <div class="mb-2 flex items-center gap-2">
+                    <span class="rounded bg-blue-500/90 px-1.5 py-0.5 text-[10px] text-white font-bold">视频</span>
+                    <span class="text-[10px] text-white/60 font-medium tracking-wider uppercase">{{ video.type }}</span>
+                  </div>
+                  <h4 class="truncate text-base text-white font-bold">
+                    {{ video.name || '未命名视频' }}
+                  </h4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        <EmptyState v-else-if="!loading" icon="video" title="暂无视频" description="上传您的第一段精彩视频吧" />
+      </div>
+
+      <!-- 推荐模式：大图精选流 -->
+      <div v-else-if="categoryId === 3" class="pb-10 space-y-6">
+        <template v-if="allGalleryItems.length > 0">
           <!-- 顶部专题入口 -->
           <div class="bg-primary/10 dark:bg-primary/5 relative overflow-hidden rounded-2xl p-5">
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="text-primary dark:text-primary-light text-lg font-bold">今日专题</h3>
-                <p class="text-primary/60 dark:text-primary-light/50 mt-1 text-xs">探索世界的美好瞬间</p>
+                <h3 class="text-primary dark:text-primary-light text-lg font-bold">
+                  今日专题
+                </h3>
+                <p class="text-primary/60 dark:text-primary-light/50 mt-1 text-xs">
+                  探索世界的美好瞬间
+                </p>
               </div>
               <wd-icon name="arrow-right" size="20px" custom-class="!text-primary/40" />
             </div>
@@ -402,7 +485,7 @@ onReachBottom(() => {
 
           <!-- 精选图片列表 -->
           <div
-            v-for="(img, index) in allImages"
+            v-for="(img, index) in allGalleryItems"
             :key="`${img.id}-${index}`"
             class="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all active:scale-[0.99] dark:bg-gray-900"
             @tap="handleImageTap(img.url)"
@@ -420,7 +503,9 @@ onReachBottom(() => {
                     <span class="bg-primary/90 rounded px-1.5 py-0.5 text-[10px] text-white font-bold">精选</span>
                     <span class="text-[10px] text-white/60 font-medium tracking-wider">{{ img.type?.split('/')[1]?.toUpperCase() || 'IMAGE' }}</span>
                   </div>
-                  <h4 class="truncate text-base text-white font-bold">{{ img.name || '未命名图片' }}</h4>
+                  <h4 class="truncate text-base text-white font-bold">
+                    {{ img.name || '未命名图片' }}
+                  </h4>
                 </div>
                 <div class="h-10 w-10 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-md active:bg-white/20">
                   <wd-icon name="download" size="18px" color="#fff" />
@@ -433,7 +518,7 @@ onReachBottom(() => {
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="allImages.length > 0">
+      <div v-if="listData.length > 0">
         <wd-loadmore
           v-if="loading || !hasMore"
           custom-class="py-8"
@@ -458,7 +543,9 @@ onReachBottom(() => {
       class="fixed left-0 right-0 z-[100] h-30 flex flex-col items-center justify-center gap-4 rounded-md bg-white/80 py-4 text-gray-600 backdrop-blur-sm dark:bg-black/60 dark:text-gray-300"
     >
       <wd-text text="登录后可查看更多内容" class="mb-4" />
-      <wd-button @click="handleLogin" type="primary">立即登录</wd-button>
+      <wd-button type="primary" @click="handleLogin">
+        立即登录
+      </wd-button>
     </view>
 
     <!-- 排序操作面板 -->
