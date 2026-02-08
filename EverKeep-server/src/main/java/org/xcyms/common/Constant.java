@@ -57,6 +57,18 @@ public class Constant {
      */
     public interface Cache {
         String CONFIG = "config";
+
+        Long EXPIRE_7_DAYS = 60 * 60 * 24 * 7L;
+
+        Long EXPIRE_1_HOUR = 60 * 60L;
+
+        Long EXPIRE_30_MINUTES = 60 * 30L;
+
+        Long EXPIRE_1_MINUTE = 60L;
+
+        Long EXPIRE_5_SECONDS = 5L;
+
+        Long EXPIRE_NONE = -1L;
     }
 
     /**

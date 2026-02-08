@@ -14,6 +14,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.xcyms.common.Constant;
 
 import java.time.Duration;
 
@@ -53,7 +54,7 @@ public class RedisConfig {
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 // 设置缓存有效期 1 小时
-                .entryTtl(Duration.ofHours(1))
+                .entryTtl(Duration.ofSeconds(Constant.Cache.EXPIRE_1_HOUR))
                 // 设置 Key 的序列化方式
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 // 设置 Value 的序列化方式

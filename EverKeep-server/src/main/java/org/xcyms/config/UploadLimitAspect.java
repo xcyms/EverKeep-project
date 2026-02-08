@@ -15,6 +15,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * <p>
+ * 上传限流aop
+ * </p>
+ *
+ * @author liu-xu
+ * @date 2026年01月21日 17:22
+ */
 @Aspect
 @Component
 @Slf4j
