@@ -67,6 +67,7 @@ export default {
   'everkeep.videoUpdateStatus': ['POST', '/video/updateStatus'],
   'everkeep.videoRename': ['POST', '/video/rename'],
   'everkeep.videoBatchMove': ['POST', '/video/batchMove'],
+  'everkeep.videoSetCover': ['POST', '/video/setCover'],
   'everkeep.videoDelete': ['DELETE', '/video/delete'],
   'everkeep.videoRecyclePage': ['GET', '/video/recycle/page'],
   'everkeep.videoRestore': ['POST', '/video/restore'],

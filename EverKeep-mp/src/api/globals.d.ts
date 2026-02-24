@@ -1268,6 +1268,16 @@ declare global {
       >(
         config: Config
       ): Alova2Method<ApiResult<Page<VideoItem>>, 'everkeep.publicVideoPage', Config>;
+      // 设置视频封面
+      videoSetCover<
+        Config extends Alova2MethodConfig<null> & {
+          data: {
+            videoId: string | number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<ApiResult<string>, 'everkeep.videoSetCover', Config>;
     }
   }
 

@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.xcyms.common.ApiResult;
 import org.xcyms.common.Constant;
+import org.xcyms.entity.Album;
 import org.xcyms.entity.Video;
 import org.xcyms.entity.dto.VideoDTO;
+import org.xcyms.mapper.AlbumMapper;
 import org.xcyms.mapper.VideoMapper;
 import org.xcyms.service.IConfigService;
 import org.xcyms.service.IVideoService;
@@ -47,6 +49,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     private final IConfigService configService;
     private final StorageFactory storageFactory;
     private final VideoProcessor videoProcessor;
+    private final AlbumMapper albumMapper;
 
     @Override
     public ApiResult<VideoDTO> uploadVideo(MultipartFile file, Long albumId, String category) {
@@ -228,5 +231,17 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             }
         }
         return ApiResult.success("已永久删除");
+    }
+
+    @Override
+    public ApiResult<String> setCover(Long videoId) {
+        Video video = this.getById(videoId);
+        if (video == null) {
+            return ApiResult.error("视频不存在");
+        }
+        Album updateAlbum = new Album();
+        updateAlbum.setCover(video.getCoverUrl());
+        albumMapper.update(updateAlbum, new LambdaQueryWrapper<Album>().eq(Album::getId, video.getAlbumId()));
+        return ApiResult.success();
     }
 }

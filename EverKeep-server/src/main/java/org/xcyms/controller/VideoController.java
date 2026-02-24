@@ -121,4 +121,10 @@ public class VideoController {
         page.addOrder(OrderItem.desc("id"));
         return videoService.getPage(page, videoDTO);
     }
+
+    @ApiDoc("设置视频封面")
+    @PostMapping("/setCover")
+    public ApiResult<String> setCover(@RequestParam Long videoId) {
+        return videoService.setCover(videoId);
+    }
 }

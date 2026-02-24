@@ -203,8 +203,26 @@ watch(currentTab, (tab) => {
   }
 })
 
-// 处理上传
-function handleUpload() {
+const showUploadSheet = ref(false)
+const uploadOptions = [
+  { name: '上传图片', icon: 'i-solar-gallery-bold-duotone', color: '#007aff' },
+  { name: '上传视频', icon: 'i-solar-videocamera-record-bold-duotone', color: '#ff9500' },
+]
+
+function handleUploadClick() {
+  showUploadSheet.value = true
+}
+
+function handleUploadSelect({ index }: { index: number }) {
+  if (index === 0) {
+    handleImageUpload()
+  } else {
+    handleVideoUpload()
+  }
+}
+
+// 处理图片上传
+function handleImageUpload() {
   if (uploading.value) return
 
   uni.chooseImage({
@@ -213,51 +231,76 @@ function handleUpload() {
     sourceType: ['album', 'camera'],
     success: async (res: any) => {
       const tempFilePath = res.tempFilePaths[0]
-
-      try {
-        uploading.value = true
-        uni.showLoading({ title: '正在上传...', mask: true })
-
-        uni.uploadFile({
-          url: `${import.meta.env.VITE_API_BASE_URL}/file/upload`,
-          filePath: tempFilePath,
-          name: 'file',
-          header: {
-            Authorization: `Bearer ${user.token}`,
-            Accept: 'application/json',
-          },
-          formData: {
-            albumId: String(albumId.value),
-          },
-          success: (uploadRes) => {
-            const data = JSON.parse(uploadRes.data)
-            if (data.code === 200) {
-              toast.success('上传成功')
-              setTimeout(() => {
-                reset()
-                refresh()
-              }, 800)
-            } else {
-              toast.error(data.message || '上传失败')
-            }
-          },
-          fail: (err) => {
-            console.error('uni.uploadFile error:', err)
-            toast.error('网络请求失败')
-          },
-          complete: () => {
-            uploading.value = false
-            uni.hideLoading()
-          },
-        })
-      } catch (error) {
-        console.error('Upload catch error:', error)
-        toast.error('上传准备失败')
-        uploading.value = false
-        uni.hideLoading()
-      }
+      uploadFile(tempFilePath, 'image')
     },
   })
+}
+
+// 处理视频上传
+function handleVideoUpload() {
+  if (uploading.value) return
+
+  uni.chooseVideo({
+    sourceType: ['album', 'camera'],
+    compressed: true,
+    maxDuration: 60,
+    success: async (res: any) => {
+      const tempFilePath = res.tempFilePath
+      uploadFile(tempFilePath, 'video')
+    },
+  })
+}
+
+// 通用上传逻辑
+async function uploadFile(filePath: string, type: 'image' | 'video') {
+  try {
+    uploading.value = true
+    uni.showLoading({ title: '正在上传...', mask: true })
+
+    uni.uploadFile({
+      url: `${import.meta.env.VITE_API_BASE_URL}/file/upload`,
+      filePath,
+      name: 'file',
+      header: {
+        Authorization: `Bearer ${user.token}`,
+        Accept: 'application/json',
+      },
+      formData: {
+        albumId: String(albumId.value),
+        category: type,
+      },
+      success: (uploadRes) => {
+        const data = JSON.parse(uploadRes.data)
+        if (data.code === 200) {
+          toast.success('上传成功')
+          setTimeout(() => {
+            if (type === 'image') {
+              reset()
+              refresh()
+            } else {
+              resetVideos()
+              refreshVideos()
+            }
+          }, 800)
+        } else {
+          toast.error(data.message || '上传失败')
+        }
+      },
+      fail: (err) => {
+        console.error('uni.uploadFile error:', err)
+        toast.error('网络请求失败')
+      },
+      complete: () => {
+        uploading.value = false
+        uni.hideLoading()
+      },
+    })
+  } catch (error) {
+    console.error('Upload catch error:', error)
+    toast.error('上传准备失败')
+    uploading.value = false
+    uni.hideLoading()
+  }
 }
 
 const publicOptions = [
@@ -443,10 +486,19 @@ function toggleSelection(id: string | number) {
 function handleSetCover() {
   if (selectedIds.value.size !== 1) return
   const id = Array.from(selectedIds.value)[0]
-  message.confirm({ title: '设置封面', msg: '确定将该图片设为相册封面吗？' })
+  message.confirm({
+    title: '设置封面',
+    msg: `确定将该${currentTab.value === 'image' ? '图片' : '视频封面'}设为相册封面吗？`
+  })
     .then(async () => {
       try {
-        const res = await (Apis as any).everkeep.setAlbumCover({ params: { imageId: id } })
+        let res
+        if (currentTab.value === 'image') {
+          res = await (Apis as any).everkeep.setAlbumCover({ params: { imageId: id } })
+        } else {
+          res = await (Apis as any).everkeep.videoSetCover({ params: { videoId: id } })
+        }
+
         if (res.code === 200) {
           toast.success('已设置为相册封面')
           selectedIds.value.clear()
@@ -623,11 +675,12 @@ onReachBottom(() => {
 
       <template v-else>
         <!-- 视频瀑布流 -->
-        <div v-if="videos.length > 0" class="flex flex-row items-start gap-3">
-          <div class="flex flex-1 flex-col gap-3">
+        <div v-if="videos.length > 0" class="w-full flex flex-row items-start gap-3 overflow-hidden">
+          <!-- 左列 -->
+          <div class="min-w-0 flex flex-1 flex-col gap-3">
             <div
               v-for="video in videoLeft" :key="video.id"
-              class="relative overflow-hidden rounded-xl bg-white shadow-sm transition-all dark:bg-gray-900 active:opacity-80"
+              class="relative w-full overflow-hidden rounded-xl bg-white shadow-sm transition-all dark:bg-gray-900 active:opacity-80"
               :class="[selectedIds.has(video.id) ? 'ring-2 ring-blue-500 scale-[0.98]' : '']"
               @tap="openVideo(video)"
               @longpress="handleVideoLongPress(video)">
@@ -668,10 +721,11 @@ onReachBottom(() => {
               </view>
             </div>
           </div>
-          <div class="flex flex-1 flex-col gap-3">
+          <!-- 右列 -->
+          <div class="min-w-0 flex flex-1 flex-col gap-3">
             <div
               v-for="video in videoRight" :key="video.id"
-              class="relative overflow-hidden rounded-xl bg-white shadow-sm transition-all dark:bg-gray-900 active:opacity-80"
+              class="relative w-full overflow-hidden rounded-xl bg-white shadow-sm transition-all dark:bg-gray-900 active:opacity-80"
               :class="[selectedIds.has(video.id) ? 'ring-2 ring-blue-500 scale-[0.98]' : '']"
               @tap="openVideo(video)"
               @longpress="handleVideoLongPress(video)">
@@ -689,8 +743,18 @@ onReachBottom(() => {
                     <div v-if="selectedIds.has(video.id)" class="i-solar-check-read-bold text-xs text-white" />
                   </div>
                 </div>
-                <div class="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white font-medium backdrop-blur-sm">
-                  {{ formatDuration(video.duration) }}
+                <div class="absolute bottom-2 right-2 flex items-center gap-1.5">
+                  <!-- 权限状态 -->
+                  <div
+                    class="rounded px-1.5 py-0.5 text-[10px] text-white font-medium backdrop-blur-sm"
+                    :class="video.status?.code === 1 ? 'bg-gray-500/60' : 'bg-blue-500/60'"
+                  >
+                    {{ video.status?.code === 1 ? '公开' : '私有' }}
+                  </div>
+                  <!-- 时长 -->
+                  <div class="rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white font-medium backdrop-blur-sm">
+                    {{ formatDuration(video.duration) }}
+                  </div>
                 </div>
               </div>
               <view class="p-3">
@@ -738,11 +802,11 @@ onReachBottom(() => {
           <div class="i-solar-earth-bold-duotone text-xl" />
         </div>
         <div
-          v-show="selectedIds.size === 1 && currentTab === 'image'"
+          v-show="selectedIds.size === 1"
           class="h-10 w-10 flex items-center justify-center rounded-xl bg-white/15 text-white transition-all active:scale-90 active:bg-white/25"
           @tap="handleSetCover"
         >
-          <div class="i-solar-image-add-bold-duotone text-xl" />
+          <div class="i-solar-gallery-add-bold-duotone text-xl" />
         </div>
         <div
           class="h-10 w-10 flex items-center justify-center rounded-xl bg-red-500/20 text-red-500 transition-all active:scale-90"
@@ -769,10 +833,10 @@ onReachBottom(() => {
       :gap="{ bottom: 20 + safeAreaInsetsBottom, right: 30 }"
     >
       <div class="flex flex-col items-center gap-2">
-        <wd-button type="primary" round custom-class="!px-3 !h-10 !min-w-0" @click="handleUpload">
+        <wd-button type="primary" round custom-class="!px-3 !h-10 !min-w-0" @click="handleUploadClick">
           <div class="flex items-center gap-1.5">
-            <div class="i-solar-upload-bold-duotone text-lg" />
-            <span class="text-sm">上传图片</span>
+            <div class="i-solar-cloud-upload-bold-duotone text-lg" />
+            <span class="text-sm">上传内容</span>
           </div>
         </wd-button>
         <wd-button type="info" round custom-class="!px-3 !h-10 !min-w-0" @click="toggleTab">
@@ -817,6 +881,14 @@ onReachBottom(() => {
       :actions="albumOptions"
       title="移动到相册"
       @select="handleMoveSelect"
+    />
+
+    <!-- 上传选择面板 -->
+    <wd-action-sheet
+      v-model="showUploadSheet"
+      :actions="uploadOptions"
+      title="选择上传类型"
+      @select="handleUploadSelect"
     />
 
     <wd-message-box />

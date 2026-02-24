@@ -44,4 +44,6 @@ public interface IVideoService extends IService<Video> {
      * 彻底删除视频
      */
     ApiResult<String> deletePermanently(List<Long> idList);
+
+    ApiResult<String> setCover(Long videoId);
 }
