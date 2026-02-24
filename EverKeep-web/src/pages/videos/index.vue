@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, watch, h, onMounted } from 'vue'
+import { ref, reactive, watch, h, onMounted, computed } from 'vue'
 import { message, Modal, Select } from 'ant-design-vue'
 import { FolderOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
 import { getVideoPageApi, deleteVideosApi, updateVideoStatusApi, batchMoveVideosApi } from '../../api/video'
@@ -14,6 +14,7 @@ const hasMore = ref(true)
 const selectedIds = ref<number[]>([])
 const displayedVideos = ref<API.Video[]>([])
 const albumList = ref<API.Album[]>([])
+const albumNameMap = computed(() => Object.fromEntries(albumList.value.map(a => [a.id, a.name])))
 const previewVisible = ref(false)
 const currentVideoUrl = ref('')
 
@@ -298,6 +299,10 @@ const playVideo = (video: API.Video) => {
             <div class="flex items-center justify-between text-[11px] text-gray-400">
               <span>{{ formatSize(video.size) }} · {{ video.type.toUpperCase() }}</span>
               <span>{{ video.createTime?.split(' ')[0] }}</span>
+            </div>
+            <div class="mt-1 text-[11px] text-gray-500 truncate flex items-center gap-1">
+              <span class="i-fa6-solid:folder-closed"></span>
+              <span>{{ albumNameMap[video.albumId] || '未分配相册' }}</span>
             </div>
           </div>
 
