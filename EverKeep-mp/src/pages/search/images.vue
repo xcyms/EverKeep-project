@@ -444,19 +444,28 @@ function handleMoveSelect({ item }: { item: { name: string; value?: any } }) {
 
 function handleBatchDelete() {
   if (selectedIds.value.size === 0) return
+  const isImage = currentTab.value === 'image'
   message.confirm({
     title: '批量删除',
-    msg: `确定要删除选中的 ${selectedIds.value.size} 张图片吗？删除后不可恢复。`,
+    msg: `确定要删除选中的 ${selectedIds.value.size} 个${isImage ? '图片' : '视频'}吗？删除后不可恢复。`,
   }).then(async () => {
     try {
-      await Apis.everkeep.delete({
-        data: Array.from(selectedIds.value),
-      })
+      if (isImage) {
+        await Apis.everkeep.delete({
+          data: Array.from(selectedIds.value),
+        })
+        // 从本地列表移除已删除的图片
+        images.value = images.value.filter(img => !selectedIds.value.has(img.id))
+      } else {
+        await (Apis as any).everkeep.videoDelete({
+          data: Array.from(selectedIds.value),
+        })
+        // 从本地列表移除已删除的视频
+        videos.value = videos.value.filter(v => !selectedIds.value.has(v.id))
+      }
       toast.success('删除成功')
-      // 从本地列表移除已删除的图片
-      images.value = images.value.filter(img => !selectedIds.value.has(img.id))
     } catch (error) {
-      console.error('Failed to delete images:', error)
+      console.error('Failed to delete items:', error)
       toast.error('删除失败')
     }
     selectedIds.value.clear()
