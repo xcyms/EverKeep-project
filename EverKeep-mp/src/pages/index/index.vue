@@ -57,46 +57,67 @@ const {
 
     // 未登录时返回模拟数据
     if (!user.isLoggedIn) {
-      // 视频分类不需要模拟数据
+      // 视频分类改为获取公开视频，不需要模拟数据
       if (categoryId.value === 2) {
+        try {
+          const res = await Apis.everkeep.publicVideoPage({
+            params: {
+              current: currentPage,
+              size: PAGINATION.DEFAULT_PAGE_SIZE,
+              column: 'create_time',
+              asc: false,
+            },
+            data: {},
+          })
+          if (res.code === 200 && res.data) {
+            return {
+              data: res.data.records || [],
+              current_page: res.data.current || currentPage,
+              last_page: res.data.pages || 1,
+              total: res.data.total || 0,
+              per_page: res.data.size || PAGINATION.DEFAULT_PAGE_SIZE,
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch public videos:', e)
+        }
+        return { data: [], current_page: currentPage, last_page: 0, total: 0, per_page: PAGINATION.DEFAULT_PAGE_SIZE }
+      }
+
+      if (categoryId.value === 1) {
+        const mockImages: ImageItem[] = []
+        // 模拟时光分类有 3 页数据
+        for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
+          const width = 200 + Math.floor(Math.random() * 100)
+          const height = 200 + Math.floor(Math.random() * 200)
+          mockImages.push({
+            albumId: categoryId.value,
+            createTime: new Date().toISOString(),
+            id: `img-${categoryId.value}-${currentPage}-${i}`,
+            name: `图片 ${categoryId.value}-${currentPage}-${i}`,
+            size: width * height,
+            status: {
+              code: 0,
+              desc: '',
+            },
+            type: 'image/jpeg',
+            url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
+            userId: user.user?.id || 'mock-user',
+          } as ImageItem)
+        }
+
         return {
-          data: [],
+          data: mockImages,
           current_page: currentPage,
-          last_page: 0,
-          total: 0,
+          last_page: 3,
+          total: 3 * PAGINATION.DEFAULT_PAGE_SIZE,
           per_page: PAGINATION.DEFAULT_PAGE_SIZE,
         }
       }
-
-      const mockImages: ImageItem[] = []
-      // 模拟其他分类都有 3 页数据
-      for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
-        const width = 200 + Math.floor(Math.random() * 100)
-        const height = 200 + Math.floor(Math.random() * 200)
-        mockImages.push({
-          albumId: categoryId.value,
-          createTime: new Date().toISOString(),
-          id: `img-${categoryId.value}-${currentPage}-${i}`,
-          name: `图片 ${categoryId.value}-${currentPage}-${i}`,
-          size: width * height,
-          status: {
-            code: 0,
-            desc: '',
-          },
-          type: 'image/jpeg',
-          url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
-          userId: user.user?.id || 'mock-user',
-        } as ImageItem)
-      }
-
-      return {
-        data: mockImages,
-        current_page: currentPage,
-        last_page: 3,
-        total: 3 * PAGINATION.DEFAULT_PAGE_SIZE,
-        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
-      }
+      // categoryId 0 和 2 将继续执行，调用真实公开接口
     }
+
+
 
     // 已登录：调用真实接口实现功能
     const sortMap: Record<string, { column: string, asc: boolean }> = {
@@ -112,11 +133,14 @@ const {
       const tabConfigs: Record<number, { api: any, params?: any }> = {
         0: { api: Apis.everkeep.publicPage }, // 画廊
         1: { api: Apis.everkeep.imagePage }, // 时光
-        2: { api: Apis.everkeep.videoPage }, // 视频
-        3: { api: Apis.everkeep.publicPage, params: { column: 'size', asc: false } }, // 推荐
+        2: { api: Apis.everkeep.publicVideoPage }, // 视频 (展示所有公开内容)
+        3: { api: null }, // 推荐 (暂时放空)
       }
 
       const config = tabConfigs[categoryId.value] || tabConfigs[0]
+      if (!config.api) {
+        return { data: [], current_page: currentPage, last_page: 0, total: 0, per_page: PAGINATION.DEFAULT_PAGE_SIZE }
+      }
       const apiMethod = config.api
       const finalParams = config.params || { column, asc }
 
@@ -273,8 +297,8 @@ watch(
 
 // 触底加载更多
 onReachBottom(() => {
-  if (!user.isLoggedIn && categoryId.value !== 0) {
-    // 未登录且不是画廊分类，不加载更多
+  if (!user.isLoggedIn && ![0, 2].includes(categoryId.value)) {
+    // 未登录且不是画廊或视频分类，不加载更多
     return
   }
   loadMore()
@@ -462,7 +486,7 @@ onReachBottom(() => {
             </div>
           </div>
         </template>
-        <EmptyState v-else-if="!loading" icon="video" title="暂无视频" description="上传您的第一段精彩视频吧" />
+        <EmptyState v-else-if="!loading" icon="video" title="暂无视频" description="等待公开精彩视频吧" />
       </div>
 
       <!-- 推荐模式：大图精选流 -->

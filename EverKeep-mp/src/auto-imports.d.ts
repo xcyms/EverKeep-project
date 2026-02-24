@@ -52,6 +52,7 @@ declare global {
   const effectScope: typeof import('vue')['effectScope']
   const extendRef: typeof import('@vueuse/core')['extendRef']
   const formatDuration: typeof import('./utils/index')['formatDuration']
+  const formatSize: typeof import('./utils/index')['formatSize']
   const generateUUID: typeof import('./utils/index')['generateUUID']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
@@ -421,6 +422,7 @@ declare module 'vue' {
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly formatDuration: UnwrapRef<typeof import('./utils/index')['formatDuration']>
+    readonly formatSize: UnwrapRef<typeof import('./utils/index')['formatSize']>
     readonly generateUUID: UnwrapRef<typeof import('./utils/index')['generateUUID']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>

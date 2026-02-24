@@ -90,7 +90,7 @@
       "name": "search",
       "layout": "tabbar",
       "style": {
-        "navigationBarTitleText": "搜索",
+        "navigationBarTitleText": "相册",
         "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
