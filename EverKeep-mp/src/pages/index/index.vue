@@ -57,64 +57,36 @@ const {
 
     // 未登录时返回模拟数据
     if (!user.isLoggedIn) {
-      // 视频分类改为获取公开视频，不需要模拟数据
-      if (categoryId.value === 2) {
-        try {
-          const res = await Apis.everkeep.publicVideoPage({
-            params: {
-              current: currentPage,
-              size: PAGINATION.DEFAULT_PAGE_SIZE,
-              column: 'create_time',
-              asc: false,
-            },
-            data: {},
-          })
-          if (res.code === 200 && res.data) {
-            return {
-              data: res.data.records || [],
-              current_page: res.data.current || currentPage,
-              last_page: res.data.pages || 1,
-              total: res.data.total || 0,
-              per_page: res.data.size || PAGINATION.DEFAULT_PAGE_SIZE,
-            }
-          }
-        } catch (e) {
-          console.error('Failed to fetch public videos:', e)
-        }
+      // 视频分类和推荐分类不展示数据
+      if ([2, 3].includes(categoryId.value)) {
         return { data: [], current_page: currentPage, last_page: 0, total: 0, per_page: PAGINATION.DEFAULT_PAGE_SIZE }
       }
 
-      if (categoryId.value === 1) {
-        const mockImages: ImageItem[] = []
-        // 模拟时光分类有 3 页数据
-        for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
-          const width = 200 + Math.floor(Math.random() * 100)
-          const height = 200 + Math.floor(Math.random() * 200)
-          mockImages.push({
-            albumId: categoryId.value,
-            createTime: new Date().toISOString(),
-            id: `img-${categoryId.value}-${currentPage}-${i}`,
-            name: `图片 ${categoryId.value}-${currentPage}-${i}`,
-            size: width * height,
-            status: {
-              code: 0,
-              desc: '',
-            },
-            type: 'image/jpeg',
-            url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
-            userId: user.user?.id || 'mock-user',
-          } as ImageItem)
-        }
-
-        return {
-          data: mockImages,
-          current_page: currentPage,
-          last_page: 3,
-          total: 3 * PAGINATION.DEFAULT_PAGE_SIZE,
-          per_page: PAGINATION.DEFAULT_PAGE_SIZE,
-        }
+      // 画廊和时光分类返回模拟数据
+      const mockItems: any[] = []
+      for (let i = 0; i < PAGINATION.DEFAULT_PAGE_SIZE; i++) {
+        const width = 200 + Math.floor(Math.random() * 100)
+        const height = 200 + Math.floor(Math.random() * 200)
+        mockItems.push({
+          albumId: categoryId.value,
+          createTime: new Date().toISOString(),
+          id: `mock-${categoryId.value}-${currentPage}-${i}`,
+          name: `模拟内容 ${categoryId.value}-${currentPage}-${i}`,
+          size: width * height,
+          status: { code: 0, desc: '' },
+          type: 'image/jpeg',
+          url: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/${width}/${height}`,
+          userId: 'mock-user',
+        })
       }
-      // categoryId 0 和 2 将继续执行，调用真实公开接口
+
+      return {
+        data: mockItems,
+        current_page: currentPage,
+        last_page: 3,
+        total: 3 * PAGINATION.DEFAULT_PAGE_SIZE,
+        per_page: PAGINATION.DEFAULT_PAGE_SIZE,
+      }
     }
 
 
@@ -297,8 +269,8 @@ watch(
 
 // 触底加载更多
 onReachBottom(() => {
-  if (!user.isLoggedIn && ![0, 2].includes(categoryId.value)) {
-    // 未登录且不是画廊或视频分类，不加载更多
+  if (!user.isLoggedIn && ![0, 1].includes(categoryId.value)) {
+    // 未登录且不是画廊或时光分类，不加载更多
     return
   }
   loadMore()

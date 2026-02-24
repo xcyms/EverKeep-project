@@ -472,7 +472,7 @@ onPullDownRefresh(async () => {
     </div>
 
     <!-- 悬浮功能按钮 -->
-    <div class="fixed bottom-24 right-6 z-50 flex flex-col gap-4 transition-all duration-300">
+    <div v-if="user.isLoggedIn" class="fixed bottom-24 right-6 z-50 flex flex-col gap-4 transition-all duration-300">
       <div
         class="h-12 w-12 flex items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-md transition-transform active:scale-90 dark:bg-gray-800/90"
         @click="showCreateAlbum = true">

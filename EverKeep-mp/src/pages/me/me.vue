@@ -224,7 +224,7 @@ watch(
     </div>
 
     <!-- 核心数据看板 -->
-    <div class="relative mx-5">
+    <div class="relative mx-5 m-t-4">
       <div class="grid grid-cols-2 gap-4">
         <!-- 容量卡片 -->
         <div class="col-span-2 overflow-hidden rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-gray-900 dark:shadow-none">
