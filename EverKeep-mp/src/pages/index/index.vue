@@ -3,6 +3,7 @@ import type { SortOption } from '@/types/common'
 import type { ImageItem, VideoItem } from '@/types/page'
 import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { computed, ref, watch } from 'vue'
+import DownloadSheet from '@/components/common/DownloadSheet.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import SortSheet from '@/components/common/SortSheet.vue'
 import ImageWaterfall from '@/components/ImageWaterfall.vue'
@@ -27,6 +28,7 @@ const categoryId = ref(0)
 const order = ref<'newest' | 'earliest' | 'utmost' | 'least'>('newest')
 const showSortSheet = ref(false)
 const { isDark } = useManualTheme()
+const toast = useToast()
 
 const orderOptions: SortOption[] = [
   { name: '最新发布', value: 'newest', subname: '按上传时间从新到旧', icon: 'i-solar-clock-circle-bold-duotone' },
@@ -215,6 +217,9 @@ onPullDownRefresh(async () => {
   uni.stopPullDownRefresh()
 })
 
+const showDownloadSheet = ref(false)
+const downloadItem = ref<{ url: string, type: 'image' | 'video' } | null>(null)
+
 function handleImageTap(url: string) {
   const urls = (listData.value as ImageItem[]).map(img => getImageUrl(img.url))
   uni.previewImage({
@@ -223,9 +228,53 @@ function handleImageTap(url: string) {
   })
 }
 
+function handleImageLongPress(item: ImageItem) {
+  downloadItem.value = { url: getImageUrl(item.url), type: 'image' }
+  showDownloadSheet.value = true
+}
+
 function handleVideoTap(video: VideoItem) {
   uni.navigateTo({
     url: `/pages/video/preview?url=${encodeURIComponent(getImageUrl(video.url))}&name=${encodeURIComponent(video.name)}&duration=${video.duration || 0}`,
+  })
+}
+
+function handleVideoLongPress(video: VideoItem) {
+  downloadItem.value = { url: getImageUrl(video.url), type: 'video' }
+  showDownloadSheet.value = true
+}
+
+function onDownloadSelect() {
+  if (!downloadItem.value) return
+  showDownloadSheet.value = false
+  downloadMedia(downloadItem.value.url, downloadItem.value.type)
+}
+
+function downloadMedia(url: string, type: 'image' | 'video') {
+  uni.showLoading({ title: '正在下载...', mask: true })
+  uni.downloadFile({
+    url,
+    success: (res) => {
+      if (res.statusCode === 200) {
+        const saveFn = type === 'image' ? uni.saveImageToPhotosAlbum : uni.saveVideoToPhotosAlbum
+        saveFn({
+          filePath: res.tempFilePath,
+          success: () => toast.success('已保存到相册'),
+          fail: (err) => {
+            console.error('Save failed:', err)
+            if (err.errMsg.includes('auth deny')) {
+              toast.error('请授权相册访问权限')
+            } else {
+              toast.error('保存失败')
+            }
+          },
+        })
+      } else {
+        toast.error('下载失败')
+      }
+    },
+    fail: () => toast.error('网络错误'),
+    complete: () => uni.hideLoading(),
   })
 }
 
@@ -402,6 +451,7 @@ onReachBottom(() => {
                 :key="`${img.id}-${imgIndex}`"
                 class="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 ring-1 ring-black/5 transition-all active:scale-95 dark:bg-gray-800 dark:ring-white/5"
                 @tap="handleImageTap(img.url)"
+                @longpress="handleImageLongPress(img)"
               >
                 <image :src="getImageUrl(img.thumbnailUrl || img.url)" mode="aspectFill" class="h-full w-full" lazy-load />
               </div>
@@ -427,6 +477,7 @@ onReachBottom(() => {
             :key="`${video.id}-${index}`"
             class="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all active:scale-[0.99] dark:bg-gray-900"
             @tap="handleVideoTap(video)"
+            @longpress="handleVideoLongPress(video)"
           >
             <div class="relative h-72 w-full overflow-hidden bg-gray-900">
               <image
@@ -485,6 +536,7 @@ onReachBottom(() => {
             :key="`${img.id}-${index}`"
             class="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all active:scale-[0.99] dark:bg-gray-900"
             @tap="handleImageTap(img.url)"
+            @longpress="handleImageLongPress(img)"
           >
             <image
               :src="getImageUrl(img.thumbnailUrl || img.url)"
@@ -550,6 +602,13 @@ onReachBottom(() => {
       :options="orderOptions"
       :current-value="order"
       @select="handleSortSelect"
+    />
+
+    <!-- 下载操作面板 -->
+    <DownloadSheet
+      v-model="showDownloadSheet"
+      :type="downloadItem?.type"
+      @download="onDownloadSelect"
     />
   </div>
 </template>

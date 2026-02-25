@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    CommonDownloadSheet: typeof import('./components/common/DownloadSheet.vue')['default']
     CommonEmptyState: typeof import('./components/common/EmptyState.vue')['default']
     CommonSortSheet: typeof import('./components/common/SortSheet.vue')['default']
     DemoBlock: typeof import('./components/DemoBlock.vue')['default']

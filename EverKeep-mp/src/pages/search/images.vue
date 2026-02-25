@@ -135,7 +135,7 @@ const {
     try {
       const res = await Apis.everkeep.videoPage({
         params: { current: currentPage, size: PAGINATION.DEFAULT_PAGE_SIZE, column, asc },
-        data: { albumId: albumId.value }
+        data: { albumId: albumId.value, name: searchQuery.value || undefined }
       })
       if (res.code === 200 && res.data) {
         return {
@@ -164,8 +164,13 @@ const showSearch = ref(false)
 // 处理搜索
 function handleSearch() {
   uni.pageScrollTo({ scrollTop: 0, duration: 200 })
-  reset()
-  refresh()
+  if (currentTab.value === 'image') {
+    reset()
+    refresh()
+  } else {
+    resetVideos()
+    refreshVideos()
+  }
 }
 
 function toggleSearch() {
@@ -188,8 +193,13 @@ function handleSortSelect(option: SortOption) {
 // 监听排序变化
 watch(order, () => {
   uni.pageScrollTo({ scrollTop: 0, duration: 200 })
-  reset()
-  refresh()
+  if (currentTab.value === 'image') {
+    reset()
+    refresh()
+  } else {
+    resetVideos()
+    refreshVideos()
+  }
 })
 
 watch(currentTab, (tab) => {
@@ -213,7 +223,8 @@ function handleUploadClick() {
   showUploadSheet.value = true
 }
 
-function handleUploadSelect({ index }: { index: number }) {
+function handleUploadSelect({ index }: { item: any; index: number }) {
+  showUploadSheet.value = false
   if (index === 0) {
     handleImageUpload()
   } else {
@@ -839,6 +850,7 @@ onReachBottom(() => {
       type="primary"
       position="right-bottom"
       direction="top"
+      :z-index="99"
       :gap="{ bottom: 20 + safeAreaInsetsBottom, right: 30 }"
     >
       <div class="flex flex-col items-center gap-2">
@@ -895,10 +907,29 @@ onReachBottom(() => {
     <!-- 上传选择面板 -->
     <wd-action-sheet
       v-model="showUploadSheet"
-      :actions="uploadOptions"
       title="选择上传类型"
+      :z-index="10010"
       @select="handleUploadSelect"
-    />
+    >
+      <div class="grid grid-cols-2 gap-4 p-6">
+        <div
+          v-for="(item, index) in uploadOptions"
+          :key="index"
+          class="flex flex-col items-center justify-center gap-3 rounded-2xl py-6 transition-all active:scale-95 active:bg-gray-100 dark:active:bg-gray-800"
+          @tap="handleUploadSelect({ item, index })"
+        >
+          <div
+            class="h-14 w-14 flex items-center justify-center rounded-2xl text-2xl shadow-sm"
+            :class="[
+              index === 0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30' : 'bg-orange-50 text-orange-600 dark:bg-orange-900/30'
+            ]"
+          >
+            <div :class="item.icon" />
+          </div>
+          <span class="text-sm text-gray-700 font-bold dark:text-gray-200">{{ item.name }}</span>
+        </div>
+      </div>
+    </wd-action-sheet>
 
     <wd-message-box />
 

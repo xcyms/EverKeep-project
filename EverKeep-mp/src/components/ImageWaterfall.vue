@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { ImageItem } from '@/types/page';
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import DownloadSheet from '@/components/common/DownloadSheet.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 const props = defineProps<{
@@ -12,6 +13,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['click', 'selection-change', 'update:selectedIds'])
+
+const showDownloadSheet = ref(false)
+const currentImg = ref<ImageItem | null>(null)
 
 // 内部自动分列，简化父组件逻辑
 const leftCol = computed(() => props.list.filter((_, i) => i % 2 === 0))
@@ -28,6 +32,41 @@ function handleImageTap(img: ImageItem) {
     current: getImageUrl(img.url),
   })
   emit('click', img.url)
+}
+
+function handleLongPress(img: ImageItem) {
+  if (props.isSelectionMode) return
+  currentImg.value = img
+  showDownloadSheet.value = true
+}
+
+function onDownloadSelect() {
+  if (!currentImg.value) return
+  showDownloadSheet.value = false
+  downloadImage(getImageUrl(currentImg.value.url))
+}
+
+function downloadImage(url: string) {
+  uni.showLoading({ title: '正在下载...', mask: true })
+  uni.downloadFile({
+    url,
+    success: (res) => {
+      if (res.statusCode === 200) {
+        uni.saveImageToPhotosAlbum({
+          filePath: res.tempFilePath,
+          success: () => uni.showToast({ title: '已保存到相册', icon: 'success' }),
+          fail: (err) => {
+            console.error('Save failed:', err)
+            uni.showToast({ title: '保存失败', icon: 'none' })
+          },
+        })
+      } else {
+        uni.showToast({ title: '下载失败', icon: 'none' })
+      }
+    },
+    fail: () => uni.showToast({ title: '网络错误', icon: 'none' }),
+    complete: () => uni.hideLoading(),
+  })
 }
 
 function toggleSelection(id: string | number) {
@@ -54,6 +93,7 @@ function toggleSelection(id: string | number) {
           class="relative overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all active:opacity-80"
           :class="{ 'scale-[0.98] ring-2 ring-primary': isSelectionMode && selectedIds?.has(img.id) }"
           @tap="handleImageTap(img)"
+          @longpress="handleLongPress(img)"
         >
           <image
             :src="getImageUrl(img.thumbnailUrl || img.url)"
@@ -88,6 +128,7 @@ function toggleSelection(id: string | number) {
           class="relative overflow-hidden rounded-xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all active:opacity-80"
           :class="{ 'scale-[0.98] ring-2 ring-primary': isSelectionMode && selectedIds?.has(img.id) }"
           @tap="handleImageTap(img)"
+          @longpress="handleLongPress(img)"
         >
           <image
             :src="getImageUrl(img.thumbnailUrl || img.url)"
@@ -124,6 +165,14 @@ function toggleSelection(id: string | number) {
       :title="emptyText || '暂无数据'"
       description="这里空空如也，快去上传或探索吧"
       class="py-12"
+    />
+
+    <!-- 下载操作面板 -->
+    <DownloadSheet
+      v-model="showDownloadSheet"
+      type="image"
+      title="下载图片"
+      @download="onDownloadSelect"
     />
   </div>
 </template>
