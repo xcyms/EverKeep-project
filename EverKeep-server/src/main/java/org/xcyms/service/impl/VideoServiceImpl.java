@@ -244,4 +244,12 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         albumMapper.update(updateAlbum, new LambdaQueryWrapper<Album>().eq(Album::getId, video.getAlbumId()));
         return ApiResult.success();
     }
+
+    @Override
+    public ApiResult<String> rename(VideoDTO videoDTO) {
+        Video video = new Video();
+        video.setName(videoDTO.getName());
+        this.update(video, new LambdaQueryWrapper<Video>().eq(Video::getId, videoDTO.getId()));
+        return ApiResult.success();
+    }
 }

@@ -127,4 +127,10 @@ public class VideoController {
     public ApiResult<String> setCover(@RequestParam Long videoId) {
         return videoService.setCover(videoId);
     }
+
+    @ApiDoc("重命名视频")
+    @PostMapping("/rename")
+    public ApiResult<String> rename(@RequestBody VideoDTO videoDTO) {
+        return videoService.rename(videoDTO);
+    }
 }
